@@ -1,0 +1,466 @@
+openapi: 3.0.0
+info:
+  title: Alagar server API
+  version: 1.0.0
+servers:
+- url: /
+security:
+- Authorization: []
+tags:
+- name: Auth
+  description: Operations related to user authentication
+- name: User
+  description: "Operations related to user registration, authentication and management"
+- name: Sensor
+  description: Operations related to sensor data
+- name: Report
+  description: Operations for generating reports
+- name: Vehicle
+  description: Operations related to vehicle management
+- name: Wheel
+  description: Operations related to wheel management
+paths:
+  /login:
+    post:
+      tags:
+      - Auth
+      summary: User login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        "200":
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+      security: []
+  /refresh:
+    post:
+      tags:
+      - Auth
+      summary: Refresh access token
+      responses:
+        "200":
+          description: Successful token refresh
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+  /user:
+    put:
+      tags:
+      - User
+      summary: Update user password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePassword'
+        required: true
+      responses:
+        "200":
+          description: Successful password update
+    post:
+      tags:
+      - User
+      summary: User registration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistration'
+        required: true
+      responses:
+        "200":
+          description: Successful registration
+  /user/{id}:
+    get:
+      tags:
+      - User
+      summary: Get user details
+      parameters:
+      - name: id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetails'
+  /sensor:
+    get:
+      tags:
+      - Sensor
+      summary: Get sensor data
+      parameters:
+      - name: wheelId
+        in: query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Sensor data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SensorData'
+  /report:
+    get:
+      tags:
+      - Report
+      summary: Generate report
+      parameters:
+      - name: userId
+        in: query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Report in XLSX format
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+      security:
+      - Authorization: []
+  /auto:
+    post:
+      tags:
+      - Vehicle
+      summary: Register a vehicle
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleRegistration'
+        required: true
+      responses:
+        "200":
+          description: Successful vehicle registration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleResponse'
+  /wheels:
+    put:
+      tags:
+      - Wheel
+      summary: Update wheel data
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WheelRegistration'
+        required: true
+      responses:
+        "200":
+          description: Successful wheel update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WheelResponse'
+    post:
+      tags:
+      - Wheel
+      summary: Register a wheel
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WheelRegistration'
+        required: true
+      responses:
+        "200":
+          description: Successful wheel registration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WheelResponse'
+      security:
+      - Authorization: []
+  /wheels/{id}:
+    get:
+      tags:
+      - Wheel
+      summary: Get wheel data
+      parameters:
+      - name: id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Wheel data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WheelResponse'
+components:
+  schemas:
+    LoginRequest:
+      required:
+      - email
+      - password
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    TokenResponse:
+      required:
+      - accessToken
+      - refreshToken
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+      example:
+        accessToken: accessToken
+        refreshToken: refreshToken
+    UserRegistration:
+      required:
+      - email
+      - firstName
+      - lastName
+      - password
+      - phone
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        timeZone:
+          type: string
+        inn:
+          type: string
+        password:
+          type: string
+    UserDetails:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        timeZone:
+          type: string
+        inn:
+          type: string
+        password:
+          type: string
+      example:
+        firstName: firstName
+        lastName: lastName
+        password: password
+        phone: phone
+        inn: inn
+        timeZone: timeZone
+        middleName: middleName
+        email: email
+    UpdatePassword:
+      required:
+      - newPassword
+      type: object
+      properties:
+        newPassword:
+          type: string
+    SensorData:
+      type: object
+      properties:
+        temperature:
+          type: number
+        pressure:
+          type: number
+        time:
+          type: string
+      example:
+        temperature: 0.80082819046101150206595775671303272247314453125
+        pressure: 6.02745618307040320615897144307382404804229736328125
+        time: time
+    ReportResponse:
+      type: string
+      format: byte
+    VehicleRegistration:
+      required:
+      - axleCount
+      - brand
+      - companyInn
+      - deviceId
+      - licensePlate
+      - uniqueId
+      - vehicleType
+      type: object
+      properties:
+        companyInn:
+          type: string
+        deviceId:
+          type: string
+        uniqueId:
+          type: string
+        vehicleType:
+          type: string
+        licensePlate:
+          type: string
+        brand:
+          type: string
+        axleCount:
+          type: integer
+    VehicleResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        companyInn:
+          type: string
+        deviceId:
+          type: string
+        uniqueId:
+          type: string
+        vehicleType:
+          type: string
+        licensePlate:
+          type: string
+        brand:
+          type: string
+        axleCount:
+          type: integer
+      example:
+        licensePlate: licensePlate
+        companyInn: companyInn
+        axleCount: 0
+        id: id
+        deviceId: deviceId
+        brand: brand
+        uniqueId: uniqueId
+        vehicleType: vehicleType
+    WheelRegistration:
+      required:
+      - axleNumber
+      - maxPressure
+      - maxTemperature
+      - mileage
+      - minPressure
+      - minTemperature
+      - sensorNumber
+      - tireBrand
+      - tireCost
+      - tireModel
+      - tireSize
+      - vehicleId
+      - wheelPosition
+      type: object
+      properties:
+        vehicleId:
+          type: string
+        axleNumber:
+          type: integer
+        wheelPosition:
+          type: integer
+        sensorNumber:
+          type: string
+        tireSize:
+          type: string
+        tireCost:
+          type: number
+        tireBrand:
+          type: string
+        tireModel:
+          type: string
+        minPressure:
+          type: number
+        mileage:
+          type: number
+        maxPressure:
+          type: number
+        minTemperature:
+          type: number
+        maxTemperature:
+          type: number
+    WheelResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        vehicleId:
+          type: string
+        axleNumber:
+          type: integer
+        wheelPosition:
+          type: integer
+        sensorNumber:
+          type: string
+        tireSize:
+          type: string
+        tireCost:
+          type: number
+        tireBrand:
+          type: string
+        tireModel:
+          type: string
+        minPressure:
+          type: number
+        mileage:
+          type: number
+        maxPressure:
+          type: number
+        minTemperature:
+          type: number
+        maxTemperature:
+          type: number
+      example:
+        axleNumber: 0
+        maxTemperature: 9.301444243932575517419536481611430644989013671875
+        tireBrand: tireBrand
+        tireModel: tireModel
+        minTemperature: 7.061401241503109105224211816675961017608642578125
+        wheelPosition: 6
+        minPressure: 5.962133916683182377482808078639209270477294921875
+        sensorNumber: sensorNumber
+        maxPressure: 2.3021358869347654518833223846741020679473876953125
+        id: id
+        vehicleId: vehicleId
+        tireCost: 1.46581298050294517310021547018550336360931396484375
+        tireSize: tireSize
+        mileage: 5.63737665663332876420099637471139430999755859375
+  securitySchemes:
+    Authorization:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
