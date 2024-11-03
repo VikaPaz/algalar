@@ -78,6 +78,7 @@ paths:
       responses:
         "200":
           description: Successful registration
+      security: []
   /user/{id}:
     get:
       tags:
