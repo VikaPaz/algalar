@@ -10,7 +10,7 @@ tags:
 - name: Auth
   description: Operations related to user authentication
 - name: User
-  description: "Operations related to user registration, authentication and management"
+  description: "Operations related to user management"
 - name: Sensor
   description: Operations related to sensor data
 - name: Report
