@@ -26,15 +26,15 @@ CREATE TABLE IF NOT EXISTS wheels (
 	id_car uuid references cars,
 	axis_number int,
 	position int,
-	size int,
+	size float,
 	cost int,
 	brand varchar(100),
 	model varchar(100),
 	mileage int,
 	min_temperature int,
-	min_pressure int,
+	min_pressure float,
 	max_temperature int,
-	max_pressure int
+	max_pressure float
 );
 
 CREATE TABLE IF NOT EXISTS drivers (
