@@ -1,9 +1,17 @@
 POSTGRES_PASSWORD ?= password
 POSTGRES_USER ?= user
-POSTGRES_DB ?= users
+POSTGRES_DB ?= algalar
 
-.PHONY: docker_build docker_stop run_postgres swag run oapi
+.PHONY: docker_build docker_stop run_postgres swag run oapi up_migrations down_migrations
 
+up_migrations: ## up migrations from migrations/up.sql
+	docker cp migrations/up.sql build_postgres_1:/ 
+	docker exec -it build_postgres_1 psql -U user -d algalar -f /up.sql
+
+down_migrations: ## up migrations from migrations/down.sql
+	docker cp migrations/down.sql build_postgres_1:/ 
+	docker exec -it build_postgres_1 psql -U user -d algalar -f /down.sql
+	
 oapi: ## generate open-api 
 	oapi-codegen  -generate chi-server,strict-server,types -package rest docs/swagger.yaml \
 	> ./internal/server/rest/server.go
