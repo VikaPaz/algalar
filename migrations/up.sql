@@ -2,7 +2,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS users (
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-	inn int,
+	inn varchar(100),
 	name varchar(100),
 	surname varchar(100),
 	middle_name varchar(100),
@@ -16,8 +16,8 @@ CREATE TABLE IF NOT EXISTS cars (
 	id_company uuid references users,
 	state_namber varchar(100),
 	brand varchar(100),
-	id_device int,
-	id_unicum int,
+	id_device varchar(100),
+	id_unicum varchar(100),
 	count_axis int
 );
 
@@ -27,13 +27,13 @@ CREATE TABLE IF NOT EXISTS wheels (
 	axis_number int,
 	position int,
 	size float,
-	cost int,
+	cost float,
 	brand varchar(100),
 	model varchar(100),
-	mileage int,
-	min_temperature int,
+	mileage float,
+	min_temperature float,
 	min_pressure float,
-	max_temperature int,
+	max_temperature float,
 	max_pressure float
 );
 
