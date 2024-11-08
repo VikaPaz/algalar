@@ -1,12 +1,14 @@
 package app
 
 import (
-	"fmt"
-	"log"
+	"net/http"
 	"os"
 
 	"github.com/VikaPaz/algalar/internal/models"
 	"github.com/VikaPaz/algalar/internal/repository"
+	"github.com/VikaPaz/algalar/internal/server"
+	"github.com/VikaPaz/algalar/internal/server/rest"
+	"github.com/VikaPaz/algalar/internal/service"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 )
@@ -29,6 +31,8 @@ func Run() {
 		Dbname:   os.Getenv("DB_NAME"),
 	}
 
+	port := os.Getenv("PORT")
+
 	dbConn, err := repository.Connection(confPostgres)
 	if err != nil {
 		logger.Errorf("Error connecting to database: %v, config: %v", err, confPostgres)
@@ -38,22 +42,19 @@ func Run() {
 
 	repo := repository.NewRepository(dbConn, logger)
 
-	user := models.User{
-		INN:        1234567890,
-		Name:       "Имя",
-		Surname:    "Фамилия",
-		MiddleName: "Отчество",
-		Login:      "example_login",
-		Password:   "example_password",
-		Timezone:   "UTC",
-	}
+	svc := service.NewService(repo, logger)
 
-	userID, err := repo.CreateUser(user)
-	if err != nil {
-		log.Fatalf("Error creating user: %v", err)
-	}
+	svr := server.NewServer(svc, logger)
 
-	fmt.Println("Создан пользователь с ID:", userID)
+	router := rest.Handler(svr)
+
+	// go func() {
+	if err := http.ListenAndServe(":"+port, router); err != nil {
+		logger.Errorf("Cann't run server: %v", err)
+		return
+	}
+	logger.Infof("Run server on port: %s", port)
+	// }()
 }
 
 func NewLogger(level logrus.Level, formatter logrus.Formatter) *logrus.Logger {

@@ -2,8 +2,6 @@ openapi: 3.0.0
 info:
   title: Alagar server API
   version: 1.0.0
-servers:
-- url: /
 security:
 - Authorization: []
 tags:
@@ -15,8 +13,8 @@ tags:
   description: Operations related to sensor data
 - name: Report
   description: Operations for generating reports
-- name: Vehicle
-  description: Operations related to vehicle management
+- name: Auto
+  description: Operations related to Auto management
 - name: Wheel
   description: Operations related to wheel management
 paths:
@@ -79,18 +77,15 @@ paths:
         "200":
           description: Successful registration
       security: []
-  /user/{id}:
     get:
       tags:
       - User
       summary: Get user details
       parameters:
       - name: id
-        in: path
+        in: query
         required: true
-        style: simple
-        explode: false
-        schema:
+        schema: 
           type: string
       responses:
         "200":
@@ -102,23 +97,59 @@ paths:
   /sensor:
     get:
       tags:
-      - Sensor
-      summary: Get sensor data
+        - Sensor
+      summary: Get sensors by car ID
       parameters:
-      - name: wheelId
-        in: query
-        required: true
-        style: form
-        explode: true
-        schema:
-          type: string
+        - name: car_id
+          in: query
+          required: true
+          schema:
+            type: string
       responses:
         "200":
           description: Sensor data
           content:
             application/json:
               schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SensorData'
+    post:
+      tags:
+        - Sensor
+      summary: Register a new sensor
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SensorRegistration'
+        required: true
+      responses:
+        "201":
+          description: Successful sensor registration
+          content:
+            application/json:
+              schema:
                 $ref: '#/components/schemas/SensorData'
+      security: []
+    put:
+      tags:
+        - Sensor
+      summary: Update an existing sensor
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SensorRegistration'
+        required: true
+      responses:
+        "200":
+          description: Successful sensor update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SensorData'
+      security: []
   /report:
     get:
       tags:
@@ -139,26 +170,67 @@ paths:
             application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
               schema:
                 $ref: '#/components/schemas/ReportResponse'
-      security:
-      - Authorization: []
+  /auto/list:
+    get:
+      tags:
+        - Auto
+      summary: Get list of Autos
+      parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of Autos
+          content:
+            application/json:
+              schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/AutoResponse'
+                    
   /auto:
+    get:
+      tags:
+        - Auto
+      summary: Get a single Auto by ID
+      parameters:
+        - name: car_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Vehicle details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoResponse'
     post:
       tags:
-      - Vehicle
-      summary: Register a vehicle
+      - Auto
+      summary: Register a Auto
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VehicleRegistration'
+              $ref: '#/components/schemas/AutoRegistration'
         required: true
       responses:
         "200":
-          description: Successful vehicle registration
+          description: Successful Auto registration
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VehicleResponse'
+                $ref: '#/components/schemas/AutoResponse'
   /wheels:
     put:
       tags:
@@ -168,7 +240,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/WheelRegistration'
+              $ref: '#/components/schemas/WheelChange'
         required: true
       responses:
         "200":
@@ -196,17 +268,14 @@ paths:
                 $ref: '#/components/schemas/WheelResponse'
       security:
       - Authorization: []
-  /wheels/{id}:
     get:
       tags:
       - Wheel
       summary: Get wheel data
       parameters:
       - name: id
-        in: path
+        in: query
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -216,6 +285,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WheelResponse'
+  /brackeges:
+    get:
+      tags:
+        - Breakage
+      summary: Get breakages by car ID
+      parameters:
+        - name: car_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Breakage data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BreakageResponse'
+    post:
+      tags:
+        - Breakage
+      summary: Register a new breakage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BreakageRegistration'
+        required: true
+      responses:
+        "201":
+          description: Successful breakage registration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BreakageResponse'
+      security: []
 components:
   schemas:
     LoginRequest:
@@ -302,31 +409,18 @@ components:
       properties:
         newPassword:
           type: string
-    SensorData:
-      type: object
-      properties:
-        temperature:
-          type: number
-        pressure:
-          type: number
-        time:
-          type: string
-      example:
-        temperature: 0.80082819046101150206595775671303272247314453125
-        pressure: 6.02745618307040320615897144307382404804229736328125
-        time: time
     ReportResponse:
       type: string
       format: byte
-    VehicleRegistration:
+    AutoRegistration:
       required:
       - axleCount
       - brand
       - companyInn
       - deviceId
-      - licensePlate
+      - stateNumber
       - uniqueId
-      - vehicleType
+      - AutoType
       type: object
       properties:
         companyInn:
@@ -335,15 +429,15 @@ components:
           type: string
         uniqueId:
           type: string
-        vehicleType:
+        AutoType:
           type: string
-        licensePlate:
+        stateNumber:
           type: string
         brand:
           type: string
         axleCount:
           type: integer
-    VehicleResponse:
+    AutoResponse:
       type: object
       properties:
         id:
@@ -354,23 +448,23 @@ components:
           type: string
         uniqueId:
           type: string
-        vehicleType:
+        AutoType:
           type: string
-        licensePlate:
+        stateNumber:
           type: string
         brand:
           type: string
         axleCount:
           type: integer
       example:
-        licensePlate: licensePlate
+        stateNumber: stateNumber
         companyInn: companyInn
         axleCount: 0
         id: id
         deviceId: deviceId
         brand: brand
         uniqueId: uniqueId
-        vehicleType: vehicleType
+        AutoType: AutoType
     WheelRegistration:
       required:
       - axleNumber
@@ -384,11 +478,57 @@ components:
       - tireCost
       - tireModel
       - tireSize
-      - vehicleId
+      - AutoId
       - wheelPosition
       type: object
       properties:
-        vehicleId:
+        AutoId:
+          type: string
+        axleNumber:
+          type: integer
+        wheelPosition:
+          type: integer
+        sensorNumber:
+          type: string
+        tireSize:
+          type: string
+        tireCost:
+          type: number
+        tireBrand:
+          type: string
+        tireModel:
+          type: string
+        minPressure:
+          type: number
+        mileage:
+          type: number
+        maxPressure:
+          type: number
+        minTemperature:
+          type: number
+        maxTemperature:
+          type: number
+    WheelChange:
+      required:
+      - id
+      - axleNumber
+      - maxPressure
+      - maxTemperature
+      - mileage
+      - minPressure
+      - minTemperature
+      - sensorNumber
+      - tireBrand
+      - tireCost
+      - tireModel
+      - tireSize
+      - AutoId
+      - wheelPosition
+      type: object
+      properties:
+        id:
+          type: string
+        AutoId:
           type: string
         axleNumber:
           type: integer
@@ -419,7 +559,7 @@ components:
       properties:
         id:
           type: string
-        vehicleId:
+        AutoId:
           type: string
         axleNumber:
           type: integer
@@ -456,10 +596,60 @@ components:
         sensorNumber: sensorNumber
         maxPressure: 2.3021358869347654518833223846741020679473876953125
         id: id
-        vehicleId: vehicleId
+        AutoId: AutoId
         tireCost: 1.46581298050294517310021547018550336360931396484375
         tireSize: tireSize
-        mileage: 5.63737665663332876420099637471139430999755859375
+        mileage: 5.6373766566333287642009963747113943099975585937
+    SensorData:
+      type: object
+      properties:
+        position:
+          type: integer
+        pressure:
+          type: number
+        temperature:
+          type: number
+        time:
+          type: string
+    BreakageResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        stateNumber:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+        datetime:
+          type: string
+          format: date-tim
+    BreakageRegistration:
+      type: object
+      properties:
+        stateNumber:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+        datetime:
+          type: string
+          format: date-time
+    SensorRegistration:
+      type: object
+      properties:
+        stateNumber:
+          type: string
+        countAxis:
+          type: integer
+        position:
+          type: integer
+        pressure:
+          type: number
+        temperature:
+          type: number
   securitySchemes:
     Authorization:
       type: http

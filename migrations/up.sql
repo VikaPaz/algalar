@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS cars (
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
 	id_company uuid references users,
-	state_namber varchar(100),
+	state_number varchar(100),
 	brand varchar(100),
 	id_device varchar(100),
 	id_unicum varchar(100),
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS cars (
 CREATE TABLE IF NOT EXISTS wheels (
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
 	id_car uuid references cars,
-	axis_number int,
+	count_axis int,
 	position int,
 	size float,
 	cost float,
@@ -51,12 +51,22 @@ CREATE TABLE IF NOT EXISTS drivers (
 	score varchar(100)
 );
 
+
 CREATE TABLE IF NOT EXISTS breakages (
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-	id_company uuid REFERENCES users,
-	id_car uuid REFERENCES cars,
-	id_driver uuid REFERENCES drivers,
+	car_id uuid REFERENCES cars
+	state_number varchar(100),
 	type varchar(100),
 	discription varchar(100),
 	datetime timestamp
+);
+
+CREATE TABLE IF NOT EXISTS sensors (
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+	car_id uuid REFERENCES cars
+	state_number varchar(100),
+	count_axis int,
+	position int,
+	pressure float,
+	temperature float,
 );

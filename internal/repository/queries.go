@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/VikaPaz/algalar/internal/models"
 	"github.com/sirupsen/logrus"
@@ -97,14 +98,29 @@ func (r *Repository) GetIDByEmailAndPassword(email, password string) (string, er
 	return userID, nil
 }
 
+// func (r *Repository) CreateCar(car models.Car) (string, error) {
+// 	query := `
+//         INSERT INTO cars (id_company, state_namber, brand, id_device, id_unicum, count_axis)
+//         VALUES ($1, $2, $3, $4, $5, $6)
+//         RETURNING id`
+
+// 	var carID string
+// 	err := r.conn.QueryRow(query, car.IDCompany, car.StateNamber, car.Brand, car.IDDevice, car.IDUnicum, car.CountAxis).Scan(&carID)
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	return carID, nil
+// }
+
 func (r *Repository) CreateCar(car models.Car) (string, error) {
 	query := `
-        INSERT INTO cars (id_company, state_namber, brand, id_device, id_unicum, count_axis)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO cars (state_namber, brand, id_device, id_unicum, count_axis)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING id`
 
 	var carID string
-	err := r.conn.QueryRow(query, car.IDCompany, car.StateNamber, car.Brand, car.IDDevice, car.IDUnicum, car.CountAxis).Scan(&carID)
+	err := r.conn.QueryRow(query, car.StateNumber, car.Brand, car.IDDevice, car.IDUnicum, car.CountAxis).Scan(&carID)
 	if err != nil {
 		return "", err
 	}
@@ -113,6 +129,7 @@ func (r *Repository) CreateCar(car models.Car) (string, error) {
 }
 
 func (r *Repository) CreateWheel(wheel models.Wheel) (string, error) {
+	fmt.Println(wheel)
 	query := `
         INSERT INTO wheels (id_car, axis_number, position, size, cost, brand, model, mileage, min_temperature, min_pressure, max_temperature, max_pressure)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)

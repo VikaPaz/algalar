@@ -1,6 +1,7 @@
 package models
 
 type User struct {
+	ID         string
 	INN        int
 	Name       string
 	Surname    string
@@ -11,25 +12,36 @@ type User struct {
 }
 
 type Car struct {
+	ID          string
 	IDCompany   string
-	StateNamber string
+	StateNumber string
 	Brand       string
-	IDDevice    int
-	IDUnicum    int
+	IDDevice    string
+	IDUnicum    string
 	CountAxis   int
 }
 
 type Wheel struct {
+	ID             string
 	IDCar          string
 	AxisNumber     int
 	Position       int
-	Size           float64
-	Cost           int
+	Size           float32
+	Cost           float32
 	Brand          string
 	Model          string
-	Mileage        int
-	MinTemperature int
-	MinPressure    float64
-	MaxTemperature int
-	MaxPressure    float64
+	Mileage        float32
+	MinTemperature float32
+	MinPressure    float32
+	MaxTemperature float32
+	MaxPressure    float32
+}
+
+type GetReportParams struct {
+	UserId string `form:"userId" json:"userId"`
+}
+
+// GetSensorParams defines parameters for GetSensor.
+type GetSensorParams struct {
+	WheelId string `form:"wheelId" json:"wheelId"`
 }

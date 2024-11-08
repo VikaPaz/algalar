@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/oapi-codegen/runtime"
@@ -19,6 +20,46 @@ import (
 const (
 	AuthorizationScopes = "Authorization.Scopes"
 )
+
+// AutoRegistration defines model for AutoRegistration.
+type AutoRegistration struct {
+	AutoType    string `json:"AutoType"`
+	AxleCount   int    `json:"axleCount"`
+	Brand       string `json:"brand"`
+	CompanyInn  string `json:"companyInn"`
+	DeviceId    string `json:"deviceId"`
+	StateNumber string `json:"stateNumber"`
+	UniqueId    string `json:"uniqueId"`
+}
+
+// AutoResponse defines model for AutoResponse.
+type AutoResponse struct {
+	AutoType    *string `json:"AutoType,omitempty"`
+	AxleCount   *int    `json:"axleCount,omitempty"`
+	Brand       *string `json:"brand,omitempty"`
+	CompanyInn  *string `json:"companyInn,omitempty"`
+	DeviceId    *string `json:"deviceId,omitempty"`
+	Id          *string `json:"id,omitempty"`
+	StateNumber *string `json:"stateNumber,omitempty"`
+	UniqueId    *string `json:"uniqueId,omitempty"`
+}
+
+// BreakageRegistration defines model for BreakageRegistration.
+type BreakageRegistration struct {
+	Datetime    *time.Time `json:"datetime,omitempty"`
+	Description *string    `json:"description,omitempty"`
+	StateNumber *string    `json:"stateNumber,omitempty"`
+	Type        *string    `json:"type,omitempty"`
+}
+
+// BreakageResponse defines model for BreakageResponse.
+type BreakageResponse struct {
+	Datetime    *string `json:"datetime,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Id          *string `json:"id,omitempty"`
+	StateNumber *string `json:"stateNumber,omitempty"`
+	Type        *string `json:"type,omitempty"`
+}
 
 // LoginRequest defines model for LoginRequest.
 type LoginRequest struct {
@@ -31,9 +72,19 @@ type ReportResponse = []byte
 
 // SensorData defines model for SensorData.
 type SensorData struct {
+	Position    *int     `json:"position,omitempty"`
 	Pressure    *float32 `json:"pressure,omitempty"`
 	Temperature *float32 `json:"temperature,omitempty"`
 	Time        *string  `json:"time,omitempty"`
+}
+
+// SensorRegistration defines model for SensorRegistration.
+type SensorRegistration struct {
+	CountAxis   *int     `json:"countAxis,omitempty"`
+	Position    *int     `json:"position,omitempty"`
+	Pressure    *float32 `json:"pressure,omitempty"`
+	StateNumber *string  `json:"stateNumber,omitempty"`
+	Temperature *float32 `json:"temperature,omitempty"`
 }
 
 // TokenResponse defines model for TokenResponse.
@@ -71,31 +122,27 @@ type UserRegistration struct {
 	TimeZone   *string `json:"timeZone,omitempty"`
 }
 
-// VehicleRegistration defines model for VehicleRegistration.
-type VehicleRegistration struct {
-	AxleCount    int    `json:"axleCount"`
-	Brand        string `json:"brand"`
-	CompanyInn   string `json:"companyInn"`
-	DeviceId     string `json:"deviceId"`
-	LicensePlate string `json:"licensePlate"`
-	UniqueId     string `json:"uniqueId"`
-	VehicleType  string `json:"vehicleType"`
-}
-
-// VehicleResponse defines model for VehicleResponse.
-type VehicleResponse struct {
-	AxleCount    *int    `json:"axleCount,omitempty"`
-	Brand        *string `json:"brand,omitempty"`
-	CompanyInn   *string `json:"companyInn,omitempty"`
-	DeviceId     *string `json:"deviceId,omitempty"`
-	Id           *string `json:"id,omitempty"`
-	LicensePlate *string `json:"licensePlate,omitempty"`
-	UniqueId     *string `json:"uniqueId,omitempty"`
-	VehicleType  *string `json:"vehicleType,omitempty"`
+// WheelChange defines model for WheelChange.
+type WheelChange struct {
+	AutoId         string  `json:"AutoId"`
+	AxleNumber     int     `json:"axleNumber"`
+	Id             string  `json:"id"`
+	MaxPressure    float32 `json:"maxPressure"`
+	MaxTemperature float32 `json:"maxTemperature"`
+	Mileage        float32 `json:"mileage"`
+	MinPressure    float32 `json:"minPressure"`
+	MinTemperature float32 `json:"minTemperature"`
+	SensorNumber   string  `json:"sensorNumber"`
+	TireBrand      string  `json:"tireBrand"`
+	TireCost       float32 `json:"tireCost"`
+	TireModel      string  `json:"tireModel"`
+	TireSize       string  `json:"tireSize"`
+	WheelPosition  int     `json:"wheelPosition"`
 }
 
 // WheelRegistration defines model for WheelRegistration.
 type WheelRegistration struct {
+	AutoId         string  `json:"AutoId"`
 	AxleNumber     int     `json:"axleNumber"`
 	MaxPressure    float32 `json:"maxPressure"`
 	MaxTemperature float32 `json:"maxTemperature"`
@@ -107,12 +154,12 @@ type WheelRegistration struct {
 	TireCost       float32 `json:"tireCost"`
 	TireModel      string  `json:"tireModel"`
 	TireSize       string  `json:"tireSize"`
-	VehicleId      string  `json:"vehicleId"`
 	WheelPosition  int     `json:"wheelPosition"`
 }
 
 // WheelResponse defines model for WheelResponse.
 type WheelResponse struct {
+	AutoId         *string  `json:"AutoId,omitempty"`
 	AxleNumber     *int     `json:"axleNumber,omitempty"`
 	Id             *string  `json:"id,omitempty"`
 	MaxPressure    *float32 `json:"maxPressure,omitempty"`
@@ -125,8 +172,23 @@ type WheelResponse struct {
 	TireCost       *float32 `json:"tireCost,omitempty"`
 	TireModel      *string  `json:"tireModel,omitempty"`
 	TireSize       *string  `json:"tireSize,omitempty"`
-	VehicleId      *string  `json:"vehicleId,omitempty"`
 	WheelPosition  *int     `json:"wheelPosition,omitempty"`
+}
+
+// GetAutoParams defines parameters for GetAuto.
+type GetAutoParams struct {
+	CarId string `form:"car_id" json:"car_id"`
+}
+
+// GetAutoListParams defines parameters for GetAutoList.
+type GetAutoListParams struct {
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+	Limit  *int `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// GetBrackegesParams defines parameters for GetBrackeges.
+type GetBrackegesParams struct {
+	CarId string `form:"car_id" json:"car_id"`
 }
 
 // GetReportParams defines parameters for GetReport.
@@ -136,14 +198,33 @@ type GetReportParams struct {
 
 // GetSensorParams defines parameters for GetSensor.
 type GetSensorParams struct {
-	WheelId string `form:"wheelId" json:"wheelId"`
+	CarId string `form:"car_id" json:"car_id"`
+}
+
+// GetUserParams defines parameters for GetUser.
+type GetUserParams struct {
+	Id string `form:"id" json:"id"`
+}
+
+// GetWheelsParams defines parameters for GetWheels.
+type GetWheelsParams struct {
+	Id string `form:"id" json:"id"`
 }
 
 // PostAutoJSONRequestBody defines body for PostAuto for application/json ContentType.
-type PostAutoJSONRequestBody = VehicleRegistration
+type PostAutoJSONRequestBody = AutoRegistration
+
+// PostBrackegesJSONRequestBody defines body for PostBrackeges for application/json ContentType.
+type PostBrackegesJSONRequestBody = BreakageRegistration
 
 // PostLoginJSONRequestBody defines body for PostLogin for application/json ContentType.
 type PostLoginJSONRequestBody = LoginRequest
+
+// PostSensorJSONRequestBody defines body for PostSensor for application/json ContentType.
+type PostSensorJSONRequestBody = SensorRegistration
+
+// PutSensorJSONRequestBody defines body for PutSensor for application/json ContentType.
+type PutSensorJSONRequestBody = SensorRegistration
 
 // PostUserJSONRequestBody defines body for PostUser for application/json ContentType.
 type PostUserJSONRequestBody = UserRegistration
@@ -155,13 +236,25 @@ type PutUserJSONRequestBody = UpdatePassword
 type PostWheelsJSONRequestBody = WheelRegistration
 
 // PutWheelsJSONRequestBody defines body for PutWheels for application/json ContentType.
-type PutWheelsJSONRequestBody = WheelRegistration
+type PutWheelsJSONRequestBody = WheelChange
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// Register a vehicle
+	// Get a single Auto by ID
+	// (GET /auto)
+	GetAuto(w http.ResponseWriter, r *http.Request, params GetAutoParams)
+	// Register a Auto
 	// (POST /auto)
 	PostAuto(w http.ResponseWriter, r *http.Request)
+	// Get list of Autos
+	// (GET /auto/list)
+	GetAutoList(w http.ResponseWriter, r *http.Request, params GetAutoListParams)
+	// Get breakages by car ID
+	// (GET /brackeges)
+	GetBrackeges(w http.ResponseWriter, r *http.Request, params GetBrackegesParams)
+	// Register a new breakage
+	// (POST /brackeges)
+	PostBrackeges(w http.ResponseWriter, r *http.Request)
 	// User login
 	// (POST /login)
 	PostLogin(w http.ResponseWriter, r *http.Request)
@@ -171,36 +264,66 @@ type ServerInterface interface {
 	// Generate report
 	// (GET /report)
 	GetReport(w http.ResponseWriter, r *http.Request, params GetReportParams)
-	// Get sensor data
+	// Get sensors by car ID
 	// (GET /sensor)
 	GetSensor(w http.ResponseWriter, r *http.Request, params GetSensorParams)
+	// Register a new sensor
+	// (POST /sensor)
+	PostSensor(w http.ResponseWriter, r *http.Request)
+	// Update an existing sensor
+	// (PUT /sensor)
+	PutSensor(w http.ResponseWriter, r *http.Request)
+	// Get user details
+	// (GET /user)
+	GetUser(w http.ResponseWriter, r *http.Request, params GetUserParams)
 	// User registration
 	// (POST /user)
 	PostUser(w http.ResponseWriter, r *http.Request)
 	// Update user password
 	// (PUT /user)
 	PutUser(w http.ResponseWriter, r *http.Request)
-	// Get user details
-	// (GET /user/{id})
-	GetUserId(w http.ResponseWriter, r *http.Request, id string)
+	// Get wheel data
+	// (GET /wheels)
+	GetWheels(w http.ResponseWriter, r *http.Request, params GetWheelsParams)
 	// Register a wheel
 	// (POST /wheels)
 	PostWheels(w http.ResponseWriter, r *http.Request)
 	// Update wheel data
 	// (PUT /wheels)
 	PutWheels(w http.ResponseWriter, r *http.Request)
-	// Get wheel data
-	// (GET /wheels/{id})
-	GetWheelsId(w http.ResponseWriter, r *http.Request, id string)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
 
 type Unimplemented struct{}
 
-// Register a vehicle
+// Get a single Auto by ID
+// (GET /auto)
+func (_ Unimplemented) GetAuto(w http.ResponseWriter, r *http.Request, params GetAutoParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Register a Auto
 // (POST /auto)
 func (_ Unimplemented) PostAuto(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get list of Autos
+// (GET /auto/list)
+func (_ Unimplemented) GetAutoList(w http.ResponseWriter, r *http.Request, params GetAutoListParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get breakages by car ID
+// (GET /brackeges)
+func (_ Unimplemented) GetBrackeges(w http.ResponseWriter, r *http.Request, params GetBrackegesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Register a new breakage
+// (POST /brackeges)
+func (_ Unimplemented) PostBrackeges(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -222,9 +345,27 @@ func (_ Unimplemented) GetReport(w http.ResponseWriter, r *http.Request, params 
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Get sensor data
+// Get sensors by car ID
 // (GET /sensor)
 func (_ Unimplemented) GetSensor(w http.ResponseWriter, r *http.Request, params GetSensorParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Register a new sensor
+// (POST /sensor)
+func (_ Unimplemented) PostSensor(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Update an existing sensor
+// (PUT /sensor)
+func (_ Unimplemented) PutSensor(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get user details
+// (GET /user)
+func (_ Unimplemented) GetUser(w http.ResponseWriter, r *http.Request, params GetUserParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -240,9 +381,9 @@ func (_ Unimplemented) PutUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Get user details
-// (GET /user/{id})
-func (_ Unimplemented) GetUserId(w http.ResponseWriter, r *http.Request, id string) {
+// Get wheel data
+// (GET /wheels)
+func (_ Unimplemented) GetWheels(w http.ResponseWriter, r *http.Request, params GetWheelsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -258,12 +399,6 @@ func (_ Unimplemented) PutWheels(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Get wheel data
-// (GET /wheels/{id})
-func (_ Unimplemented) GetWheelsId(w http.ResponseWriter, r *http.Request, id string) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler            ServerInterface
@@ -272,6 +407,46 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// GetAuto operation middleware
+func (siw *ServerInterfaceWrapper) GetAuto(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAutoParams
+
+	// ------------- Required query parameter "car_id" -------------
+
+	if paramValue := r.URL.Query().Get("car_id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "car_id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "car_id", r.URL.Query(), &params.CarId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "car_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAuto(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // PostAuto operation middleware
 func (siw *ServerInterfaceWrapper) PostAuto(w http.ResponseWriter, r *http.Request) {
@@ -284,6 +459,101 @@ func (siw *ServerInterfaceWrapper) PostAuto(w http.ResponseWriter, r *http.Reque
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostAuto(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAutoList operation middleware
+func (siw *ServerInterfaceWrapper) GetAutoList(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAutoListParams
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", r.URL.Query(), &params.Offset)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAutoList(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetBrackeges operation middleware
+func (siw *ServerInterfaceWrapper) GetBrackeges(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetBrackegesParams
+
+	// ------------- Required query parameter "car_id" -------------
+
+	if paramValue := r.URL.Query().Get("car_id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "car_id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "car_id", r.URL.Query(), &params.CarId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "car_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetBrackeges(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostBrackeges operation middleware
+func (siw *ServerInterfaceWrapper) PostBrackeges(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostBrackeges(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -381,18 +651,18 @@ func (siw *ServerInterfaceWrapper) GetSensor(w http.ResponseWriter, r *http.Requ
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetSensorParams
 
-	// ------------- Required query parameter "wheelId" -------------
+	// ------------- Required query parameter "car_id" -------------
 
-	if paramValue := r.URL.Query().Get("wheelId"); paramValue != "" {
+	if paramValue := r.URL.Query().Get("car_id"); paramValue != "" {
 
 	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "wheelId"})
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "car_id"})
 		return
 	}
 
-	err = runtime.BindQueryParameter("form", true, true, "wheelId", r.URL.Query(), &params.WheelId)
+	err = runtime.BindQueryParameter("form", true, true, "car_id", r.URL.Query(), &params.CarId)
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "wheelId", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "car_id", Err: err})
 		return
 	}
 
@@ -407,14 +677,76 @@ func (siw *ServerInterfaceWrapper) GetSensor(w http.ResponseWriter, r *http.Requ
 	handler.ServeHTTP(w, r)
 }
 
-// PostUser operation middleware
-func (siw *ServerInterfaceWrapper) PostUser(w http.ResponseWriter, r *http.Request) {
+// PostSensor operation middleware
+func (siw *ServerInterfaceWrapper) PostSensor(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostSensor(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutSensor operation middleware
+func (siw *ServerInterfaceWrapper) PutSensor(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutSensor(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetUser operation middleware
+func (siw *ServerInterfaceWrapper) GetUser(w http.ResponseWriter, r *http.Request) {
+
+	var err error
 
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
 
 	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetUserParams
+
+	// ------------- Required query parameter "id" -------------
+
+	if paramValue := r.URL.Query().Get("id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "id", r.URL.Query(), &params.Id)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetUser(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostUser operation middleware
+func (siw *ServerInterfaceWrapper) PostUser(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostUser(w, r)
@@ -447,19 +779,10 @@ func (siw *ServerInterfaceWrapper) PutUser(w http.ResponseWriter, r *http.Reques
 	handler.ServeHTTP(w, r)
 }
 
-// GetUserId operation middleware
-func (siw *ServerInterfaceWrapper) GetUserId(w http.ResponseWriter, r *http.Request) {
+// GetWheels operation middleware
+func (siw *ServerInterfaceWrapper) GetWheels(w http.ResponseWriter, r *http.Request) {
 
 	var err error
-
-	// ------------- Path parameter "id" -------------
-	var id string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
 
 	ctx := r.Context()
 
@@ -467,8 +790,26 @@ func (siw *ServerInterfaceWrapper) GetUserId(w http.ResponseWriter, r *http.Requ
 
 	r = r.WithContext(ctx)
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetWheelsParams
+
+	// ------------- Required query parameter "id" -------------
+
+	if paramValue := r.URL.Query().Get("id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "id", r.URL.Query(), &params.Id)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetUserId(w, r, id)
+		siw.Handler.GetWheels(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -509,37 +850,6 @@ func (siw *ServerInterfaceWrapper) PutWheels(w http.ResponseWriter, r *http.Requ
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PutWheels(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetWheelsId operation middleware
-func (siw *ServerInterfaceWrapper) GetWheelsId(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "id" -------------
-	var id string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetWheelsId(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -663,7 +973,19 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/auto", wrapper.GetAuto)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/auto", wrapper.PostAuto)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/auto/list", wrapper.GetAutoList)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/brackeges", wrapper.GetBrackeges)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/brackeges", wrapper.PostBrackeges)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/login", wrapper.PostLogin)
@@ -678,13 +1000,22 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/sensor", wrapper.GetSensor)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/sensor", wrapper.PostSensor)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/sensor", wrapper.PutSensor)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/user", wrapper.GetUser)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/user", wrapper.PostUser)
 	})
 	r.Group(func(r chi.Router) {
 		r.Put(options.BaseURL+"/user", wrapper.PutUser)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/user/{id}", wrapper.GetUserId)
+		r.Get(options.BaseURL+"/wheels", wrapper.GetWheels)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/wheels", wrapper.PostWheels)
@@ -692,11 +1023,25 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Put(options.BaseURL+"/wheels", wrapper.PutWheels)
 	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/wheels/{id}", wrapper.GetWheelsId)
-	})
 
 	return r
+}
+
+type GetAutoRequestObject struct {
+	Params GetAutoParams
+}
+
+type GetAutoResponseObject interface {
+	VisitGetAutoResponse(w http.ResponseWriter) error
+}
+
+type GetAuto200JSONResponse AutoResponse
+
+func (response GetAuto200JSONResponse) VisitGetAutoResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
 }
 
 type PostAutoRequestObject struct {
@@ -707,11 +1052,62 @@ type PostAutoResponseObject interface {
 	VisitPostAutoResponse(w http.ResponseWriter) error
 }
 
-type PostAuto200JSONResponse VehicleResponse
+type PostAuto200JSONResponse AutoResponse
 
 func (response PostAuto200JSONResponse) VisitPostAutoResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetAutoListRequestObject struct {
+	Params GetAutoListParams
+}
+
+type GetAutoListResponseObject interface {
+	VisitGetAutoListResponse(w http.ResponseWriter) error
+}
+
+type GetAutoList200JSONResponse []AutoResponse
+
+func (response GetAutoList200JSONResponse) VisitGetAutoListResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetBrackegesRequestObject struct {
+	Params GetBrackegesParams
+}
+
+type GetBrackegesResponseObject interface {
+	VisitGetBrackegesResponse(w http.ResponseWriter) error
+}
+
+type GetBrackeges200JSONResponse []BreakageResponse
+
+func (response GetBrackeges200JSONResponse) VisitGetBrackegesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostBrackegesRequestObject struct {
+	Body *PostBrackegesJSONRequestBody
+}
+
+type PostBrackegesResponseObject interface {
+	VisitPostBrackegesResponse(w http.ResponseWriter) error
+}
+
+type PostBrackeges201JSONResponse BreakageResponse
+
+func (response PostBrackeges201JSONResponse) VisitPostBrackegesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -784,9 +1180,60 @@ type GetSensorResponseObject interface {
 	VisitGetSensorResponse(w http.ResponseWriter) error
 }
 
-type GetSensor200JSONResponse SensorData
+type GetSensor200JSONResponse []SensorData
 
 func (response GetSensor200JSONResponse) VisitGetSensorResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostSensorRequestObject struct {
+	Body *PostSensorJSONRequestBody
+}
+
+type PostSensorResponseObject interface {
+	VisitPostSensorResponse(w http.ResponseWriter) error
+}
+
+type PostSensor201JSONResponse SensorData
+
+func (response PostSensor201JSONResponse) VisitPostSensorResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutSensorRequestObject struct {
+	Body *PutSensorJSONRequestBody
+}
+
+type PutSensorResponseObject interface {
+	VisitPutSensorResponse(w http.ResponseWriter) error
+}
+
+type PutSensor200JSONResponse SensorData
+
+func (response PutSensor200JSONResponse) VisitPutSensorResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUserRequestObject struct {
+	Params GetUserParams
+}
+
+type GetUserResponseObject interface {
+	VisitGetUserResponse(w http.ResponseWriter) error
+}
+
+type GetUser200JSONResponse UserDetails
+
+func (response GetUser200JSONResponse) VisitGetUserResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
@@ -825,17 +1272,17 @@ func (response PutUser200Response) VisitPutUserResponse(w http.ResponseWriter) e
 	return nil
 }
 
-type GetUserIdRequestObject struct {
-	Id string `json:"id"`
+type GetWheelsRequestObject struct {
+	Params GetWheelsParams
 }
 
-type GetUserIdResponseObject interface {
-	VisitGetUserIdResponse(w http.ResponseWriter) error
+type GetWheelsResponseObject interface {
+	VisitGetWheelsResponse(w http.ResponseWriter) error
 }
 
-type GetUserId200JSONResponse UserDetails
+type GetWheels200JSONResponse WheelResponse
 
-func (response GetUserId200JSONResponse) VisitGetUserIdResponse(w http.ResponseWriter) error {
+func (response GetWheels200JSONResponse) VisitGetWheelsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
@@ -876,28 +1323,23 @@ func (response PutWheels200JSONResponse) VisitPutWheelsResponse(w http.ResponseW
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetWheelsIdRequestObject struct {
-	Id string `json:"id"`
-}
-
-type GetWheelsIdResponseObject interface {
-	VisitGetWheelsIdResponse(w http.ResponseWriter) error
-}
-
-type GetWheelsId200JSONResponse WheelResponse
-
-func (response GetWheelsId200JSONResponse) VisitGetWheelsIdResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
-	// Register a vehicle
+	// Get a single Auto by ID
+	// (GET /auto)
+	GetAuto(ctx context.Context, request GetAutoRequestObject) (GetAutoResponseObject, error)
+	// Register a Auto
 	// (POST /auto)
 	PostAuto(ctx context.Context, request PostAutoRequestObject) (PostAutoResponseObject, error)
+	// Get list of Autos
+	// (GET /auto/list)
+	GetAutoList(ctx context.Context, request GetAutoListRequestObject) (GetAutoListResponseObject, error)
+	// Get breakages by car ID
+	// (GET /brackeges)
+	GetBrackeges(ctx context.Context, request GetBrackegesRequestObject) (GetBrackegesResponseObject, error)
+	// Register a new breakage
+	// (POST /brackeges)
+	PostBrackeges(ctx context.Context, request PostBrackegesRequestObject) (PostBrackegesResponseObject, error)
 	// User login
 	// (POST /login)
 	PostLogin(ctx context.Context, request PostLoginRequestObject) (PostLoginResponseObject, error)
@@ -907,27 +1349,33 @@ type StrictServerInterface interface {
 	// Generate report
 	// (GET /report)
 	GetReport(ctx context.Context, request GetReportRequestObject) (GetReportResponseObject, error)
-	// Get sensor data
+	// Get sensors by car ID
 	// (GET /sensor)
 	GetSensor(ctx context.Context, request GetSensorRequestObject) (GetSensorResponseObject, error)
+	// Register a new sensor
+	// (POST /sensor)
+	PostSensor(ctx context.Context, request PostSensorRequestObject) (PostSensorResponseObject, error)
+	// Update an existing sensor
+	// (PUT /sensor)
+	PutSensor(ctx context.Context, request PutSensorRequestObject) (PutSensorResponseObject, error)
+	// Get user details
+	// (GET /user)
+	GetUser(ctx context.Context, request GetUserRequestObject) (GetUserResponseObject, error)
 	// User registration
 	// (POST /user)
 	PostUser(ctx context.Context, request PostUserRequestObject) (PostUserResponseObject, error)
 	// Update user password
 	// (PUT /user)
 	PutUser(ctx context.Context, request PutUserRequestObject) (PutUserResponseObject, error)
-	// Get user details
-	// (GET /user/{id})
-	GetUserId(ctx context.Context, request GetUserIdRequestObject) (GetUserIdResponseObject, error)
+	// Get wheel data
+	// (GET /wheels)
+	GetWheels(ctx context.Context, request GetWheelsRequestObject) (GetWheelsResponseObject, error)
 	// Register a wheel
 	// (POST /wheels)
 	PostWheels(ctx context.Context, request PostWheelsRequestObject) (PostWheelsResponseObject, error)
 	// Update wheel data
 	// (PUT /wheels)
 	PutWheels(ctx context.Context, request PutWheelsRequestObject) (PutWheelsResponseObject, error)
-	// Get wheel data
-	// (GET /wheels/{id})
-	GetWheelsId(ctx context.Context, request GetWheelsIdRequestObject) (GetWheelsIdResponseObject, error)
 }
 
 type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
@@ -959,6 +1407,32 @@ type strictHandler struct {
 	options     StrictHTTPServerOptions
 }
 
+// GetAuto operation middleware
+func (sh *strictHandler) GetAuto(w http.ResponseWriter, r *http.Request, params GetAutoParams) {
+	var request GetAutoRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAuto(ctx, request.(GetAutoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAuto")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAutoResponseObject); ok {
+		if err := validResponse.VisitGetAutoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // PostAuto operation middleware
 func (sh *strictHandler) PostAuto(w http.ResponseWriter, r *http.Request) {
 	var request PostAutoRequestObject
@@ -983,6 +1457,89 @@ func (sh *strictHandler) PostAuto(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PostAutoResponseObject); ok {
 		if err := validResponse.VisitPostAutoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAutoList operation middleware
+func (sh *strictHandler) GetAutoList(w http.ResponseWriter, r *http.Request, params GetAutoListParams) {
+	var request GetAutoListRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAutoList(ctx, request.(GetAutoListRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAutoList")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAutoListResponseObject); ok {
+		if err := validResponse.VisitGetAutoListResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetBrackeges operation middleware
+func (sh *strictHandler) GetBrackeges(w http.ResponseWriter, r *http.Request, params GetBrackegesParams) {
+	var request GetBrackegesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetBrackeges(ctx, request.(GetBrackegesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetBrackeges")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetBrackegesResponseObject); ok {
+		if err := validResponse.VisitGetBrackegesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostBrackeges operation middleware
+func (sh *strictHandler) PostBrackeges(w http.ResponseWriter, r *http.Request) {
+	var request PostBrackegesRequestObject
+
+	var body PostBrackegesJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostBrackeges(ctx, request.(PostBrackegesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostBrackeges")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostBrackegesResponseObject); ok {
+		if err := validResponse.VisitPostBrackegesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1097,6 +1654,94 @@ func (sh *strictHandler) GetSensor(w http.ResponseWriter, r *http.Request, param
 	}
 }
 
+// PostSensor operation middleware
+func (sh *strictHandler) PostSensor(w http.ResponseWriter, r *http.Request) {
+	var request PostSensorRequestObject
+
+	var body PostSensorJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostSensor(ctx, request.(PostSensorRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostSensor")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostSensorResponseObject); ok {
+		if err := validResponse.VisitPostSensorResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PutSensor operation middleware
+func (sh *strictHandler) PutSensor(w http.ResponseWriter, r *http.Request) {
+	var request PutSensorRequestObject
+
+	var body PutSensorJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PutSensor(ctx, request.(PutSensorRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutSensor")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PutSensorResponseObject); ok {
+		if err := validResponse.VisitPutSensorResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetUser operation middleware
+func (sh *strictHandler) GetUser(w http.ResponseWriter, r *http.Request, params GetUserParams) {
+	var request GetUserRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetUser(ctx, request.(GetUserRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetUser")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetUserResponseObject); ok {
+		if err := validResponse.VisitGetUserResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // PostUser operation middleware
 func (sh *strictHandler) PostUser(w http.ResponseWriter, r *http.Request) {
 	var request PostUserRequestObject
@@ -1159,25 +1804,25 @@ func (sh *strictHandler) PutUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetUserId operation middleware
-func (sh *strictHandler) GetUserId(w http.ResponseWriter, r *http.Request, id string) {
-	var request GetUserIdRequestObject
+// GetWheels operation middleware
+func (sh *strictHandler) GetWheels(w http.ResponseWriter, r *http.Request, params GetWheelsParams) {
+	var request GetWheelsRequestObject
 
-	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetUserId(ctx, request.(GetUserIdRequestObject))
+		return sh.ssi.GetWheels(ctx, request.(GetWheelsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetUserId")
+		handler = middleware(handler, "GetWheels")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetUserIdResponseObject); ok {
-		if err := validResponse.VisitGetUserIdResponse(w); err != nil {
+	} else if validResponse, ok := response.(GetWheelsResponseObject); ok {
+		if err := validResponse.VisitGetWheelsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1240,32 +1885,6 @@ func (sh *strictHandler) PutWheels(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PutWheelsResponseObject); ok {
 		if err := validResponse.VisitPutWheelsResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// GetWheelsId operation middleware
-func (sh *strictHandler) GetWheelsId(w http.ResponseWriter, r *http.Request, id string) {
-	var request GetWheelsIdRequestObject
-
-	request.Id = id
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetWheelsId(ctx, request.(GetWheelsIdRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetWheelsId")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetWheelsIdResponseObject); ok {
-		if err := validResponse.VisitGetWheelsIdResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
