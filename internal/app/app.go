@@ -3,6 +3,8 @@ package app
 import (
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/VikaPaz/algalar/internal/models"
 	"github.com/VikaPaz/algalar/internal/repository"
@@ -46,15 +48,26 @@ func Run() {
 
 	svr := server.NewServer(svc, logger)
 
+	// TODO: registration with options
+	// options := rest.ChiServerOptions{
+	// 	Middlewares: []rest.MiddlewareFunc{server.JWTMiddleware},
+	// }
+	// router := rest.HandlerWithOptions(svr, options)
+
 	router := rest.Handler(svr)
 
-	// go func() {
-	if err := http.ListenAndServe(":"+port, router); err != nil {
-		logger.Errorf("Cann't run server: %v", err)
-		return
-	}
-	logger.Infof("Run server on port: %s", port)
-	// }()
+	go func() {
+		if err := http.ListenAndServe(":"+port, router); err != nil {
+			logger.Errorf("Cann't run server: %v", err)
+			return
+		}
+		logger.Infof("Run server on port: %s", port)
+	}()
+	logger.Infof("Rest server is running on port: %s", port)
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	<-sigChan
 }
 
 func NewLogger(level logrus.Level, formatter logrus.Formatter) *logrus.Logger {

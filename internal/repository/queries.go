@@ -76,7 +76,7 @@ func (r *Repository) ChangePassword(userID, newPassword string) error {
 	return nil
 }
 
-func (r *Repository) GetIDByEmailAndPassword(email, password string) (string, error) {
+func (r *Repository) GetIDByLoginAndPassword(email, password string) (string, error) {
 	if email == "" || password == "" {
 		return "", errors.New("email and password are required")
 	}
@@ -98,45 +98,36 @@ func (r *Repository) GetIDByEmailAndPassword(email, password string) (string, er
 	return userID, nil
 }
 
-// func (r *Repository) CreateCar(car models.Car) (string, error) {
-// 	query := `
-//         INSERT INTO cars (id_company, state_namber, brand, id_device, id_unicum, count_axis)
-//         VALUES ($1, $2, $3, $4, $5, $6)
-//         RETURNING id`
-
-// 	var carID string
-// 	err := r.conn.QueryRow(query, car.IDCompany, car.StateNamber, car.Brand, car.IDDevice, car.IDUnicum, car.CountAxis).Scan(&carID)
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	return carID, nil
-// }
-
-func (r *Repository) CreateCar(car models.Car) (string, error) {
+func (r *Repository) CreateCar(car models.Car) (models.Car, error) {
 	query := `
-        INSERT INTO cars (state_namber, brand, id_device, id_unicum, count_axis)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING id`
-
-	var carID string
-	err := r.conn.QueryRow(query, car.StateNumber, car.Brand, car.IDDevice, car.IDUnicum, car.CountAxis).Scan(&carID)
+        INSERT INTO cars (id_company, state_number, brand, id_device, id_unicum, count_axis)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *`
+	resp := models.Car{}
+	err := r.conn.QueryRow(query, car.IDCompany, car.StateNumber, car.Brand, car.IDDevice, car.IDUnicum, car.CountAxis).Scan(
+		&resp.ID,
+		&resp.IDCompany,
+		&resp.StateNumber,
+		&resp.Brand,
+		&resp.IDDevice,
+		&resp.IDUnicum,
+		&resp.CountAxis,
+	)
 	if err != nil {
-		return "", err
+		return models.Car{}, err
 	}
 
-	return carID, nil
+	return car, nil
 }
 
 func (r *Repository) CreateWheel(wheel models.Wheel) (string, error) {
-	fmt.Println(wheel)
 	query := `
-        INSERT INTO wheels (id_car, axis_number, position, size, cost, brand, model, mileage, min_temperature, min_pressure, max_temperature, max_pressure)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        INSERT INTO wheels (id_company, id_car, count_axis, position, size, cost, brand, model, mileage, min_temperature, min_pressure, max_temperature, max_pressure)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         RETURNING id`
 
 	var wheelID string
-	err := r.conn.QueryRow(query, wheel.IDCar, wheel.AxisNumber, wheel.Position, wheel.Size, wheel.Cost, wheel.Brand, wheel.Model, wheel.Mileage, wheel.MinTemperature, wheel.MinPressure, wheel.MaxTemperature, wheel.MaxPressure).Scan(&wheelID)
+	err := r.conn.QueryRow(query, wheel.IDCompany, wheel.IDCar, wheel.AxisNumber, wheel.Position, wheel.Size, wheel.Cost, wheel.Brand, wheel.Model, wheel.Mileage, wheel.MinTemperature, wheel.MinPressure, wheel.MaxTemperature, wheel.MaxPressure).Scan(&wheelID)
 	if err != nil {
 		return "", err
 	}
@@ -146,7 +137,7 @@ func (r *Repository) CreateWheel(wheel models.Wheel) (string, error) {
 
 func (r *Repository) GetWheelById(wheelID string) (models.Wheel, error) {
 	query := `
-        SELECT id_car, axis_number, position, size, cost, brand, model, mileage, min_temperature, min_pressure, max_temperature, max_pressure
+        SELECT id_car, count_axis, position, size, cost, brand, model, mileage, min_temperature, min_pressure, max_temperature, max_pressure
         FROM wheels
         WHERE id = $1`
 
@@ -162,16 +153,101 @@ func (r *Repository) GetWheelById(wheelID string) (models.Wheel, error) {
 	return wheel, nil
 }
 
+func (r *Repository) GetCarById(carID string) (models.Car, error) {
+	query := `
+        SELECT id, id_company, state_number, brand, id_device, id_unicum, count_axis
+        FROM cars
+        WHERE id = $1`
+
+	car := models.Car{}
+	err := r.conn.QueryRow(query, carID).Scan(
+		&car.ID,
+		&car.IDCompany,
+		&car.StateNumber,
+		&car.Brand,
+		&car.IDDevice,
+		&car.IDUnicum,
+		&car.CountAxis,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return models.Car{}, nil
+		}
+		return models.Car{}, err
+	}
+
+	return car, nil
+}
+
+func (r *Repository) GetCarsList(userID string, offset int, limit int) ([]models.Car, error) {
+	query := `
+        SELECT id, id_company, state_number, brand, id_device, id_unicum, count_axis
+        FROM cars
+        WHERE id_company = $1
+        LIMIT $2 OFFSET $3`
+
+	cars := []models.Car{}
+
+	rows, err := r.conn.Query(query, userID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var car models.Car
+		if err := rows.Scan(&car.ID, &car.IDCompany, &car.StateNumber, &car.Brand, &car.IDDevice, &car.IDUnicum, &car.CountAxis); err != nil {
+			return nil, err
+		}
+		cars = append(cars, car)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return cars, nil
+}
+
+func (r *Repository) CreateSensor(sensor models.Sensor) (string, error) {
+	query := `
+        INSERT INTO sensors (car_id, state_number, count_axis, position, pressure, temperature)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING id`
+
+	var sensorID string
+	err := r.conn.QueryRow(query, sensor.CarID, sensor.StateNumber, sensor.CountAxis, sensor.Position, sensor.Pressure, sensor.Temperature).Scan(&sensorID)
+	if err != nil {
+		return "", err
+	}
+
+	return sensorID, nil
+}
+
 func (r *Repository) ChangeWheel(wheelID string, wheel models.Wheel) error {
 	query := `
         UPDATE wheels
-        SET id_car = $1, axis_number = $2, position = $3, size = $4, cost = $5, brand = $6, model = $7, mileage = $8, min_temperature = $9, min_pressure = $10, max_temperature = $11, max_pressure = $12
+        SET id_car = $1, count_axis = $2, position = $3, size = $4, cost = $5, brand = $6, model = $7, mileage = $8, min_temperature = $9, min_pressure = $10, max_temperature = $11, max_pressure = $12
         WHERE id = $13`
 
-	_, err := r.conn.Exec(query, wheel.IDCar, wheel.AxisNumber, wheel.Position, wheel.Size, wheel.Cost, wheel.Brand, wheel.Model, wheel.Mileage, wheel.MinTemperature, wheel.MinPressure, wheel.MaxTemperature, wheel.MaxPressure, wheelID)
-	if err != nil {
-		return err
-	}
+	r.conn.QueryRow(query, wheel.IDCar, wheel.AxisNumber, wheel.Position, wheel.Size, wheel.Cost, wheel.Brand, wheel.Model, wheel.Mileage, wheel.MinTemperature, wheel.MinPressure, wheel.MaxTemperature, wheel.MaxPressure, wheel.ID)
 
 	return nil
+}
+
+func (r *Repository) SelectAny(table string, key string, val any) (bool, error) {
+	query := fmt.Sprintf("SELECT 1 FROM %s WHERE %s = $1 LIMIT 1", table, key)
+
+	var exists int
+	err := r.conn.QueryRow(query, val).Scan(&exists)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, fmt.Errorf("error querying database: %v", err)
+	}
+
+	return exists == 1, nil
 }

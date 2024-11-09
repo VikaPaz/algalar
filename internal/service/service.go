@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+	"fmt"
 	"time"
 
 	"github.com/VikaPaz/algalar/internal/models"
@@ -11,7 +13,7 @@ import (
 const (
 	salt       = "hjqrhjqw124617ajfhajs"
 	signingKey = "qrkjk#4#%35FSFJlja#4353KSFjH"
-	accessTTL  = 1 / 3 * time.Minute
+	accessTTL  = 10 * time.Minute
 	refreshTTL = 1000 * time.Hour
 )
 
@@ -24,16 +26,210 @@ type Repository interface {
 	CreateUser(user models.User) (string, error)
 	GetById(userID string) (models.User, error)
 	ChangePassword(userID, newPassword string) error
-	GetIDByEmailAndPassword(email, password string) (string, error)
-	CreateCar(car models.Car) (string, error)
+	GetIDByLoginAndPassword(login, password string) (string, error)
+	CreateCar(car models.Car) (models.Car, error)
 	CreateWheel(wheel models.Wheel) (string, error)
 	GetWheelById(wheelID string) (models.Wheel, error)
 	ChangeWheel(wheelID string, wheel models.Wheel) error
+	SelectAny(table string, key string, val any) (bool, error)
+	CreateSensor(sensor models.Sensor) (string, error)
+	GetCarById(carID string) (models.Car, error)
+	GetCarsList(user_id string, offset int, limit int) ([]models.Car, error)
 }
 
 type Service struct {
 	repo Repository
 	log  *logrus.Logger
+}
+
+func (s *Service) UserLogin(login string, password string) (string, string, error) {
+	id, err := s.repo.GetIDByLoginAndPassword(login, password)
+	if err != nil {
+		s.log.Debugf("Invalid s.login or password: %s", login)
+		return "", "", err
+	}
+
+	access, err := NewToken(id, accessTTL)
+	if err != nil {
+		return "", "", err
+	}
+
+	refresh, err := NewToken(id, refreshTTL)
+	if err != nil {
+		return "", "", err
+	}
+	return access, refresh, nil
+}
+
+func (s *Service) RefreshToken(ctx context.Context) (string, string, error) {
+	id, ok := ctx.Value("user_id").(string)
+	if !ok || id == "" {
+		return "", "", fmt.Errorf("wrong context: %v", ctx)
+	}
+
+	access, err := NewToken(id, accessTTL)
+	if err != nil {
+		return "", "", err
+	}
+
+	refresh, err := NewToken(id, refreshTTL)
+	if err != nil {
+		return "", "", err
+	}
+	return access, refresh, nil
+}
+
+func (s *Service) IsCreatred(table string, key string, val any) (bool, error) {
+	ok, err := s.repo.SelectAny(table, key, val)
+	if err != nil {
+		return false, err
+	}
+	return ok, nil
+}
+
+func (s *Service) RegisterUser(user models.User) error {
+	_, err := s.repo.CreateUser(user)
+	if err != nil {
+		s.log.Debugf("Error creating user: %s", user.Login)
+		return err
+	}
+	return nil
+}
+
+func (s *Service) RegisterAuto(ctx context.Context, car models.Car) (models.Car, error) {
+	id, ok := ctx.Value("user_id").(string)
+	if !ok {
+		return models.Car{}, fmt.Errorf("wrong context: %v", ctx)
+	}
+	car.IDCompany = id
+
+	res, err := s.repo.CreateCar(car)
+	if err != nil {
+		s.log.Debugf("Error registering Auto: %v", car)
+		return models.Car{}, err
+	}
+	return res, nil
+}
+
+func (s *Service) UpdateUserPassword(ctx context.Context, newPassword string) error {
+	userID, ok := ctx.Value("user_id").(string)
+	if !ok {
+		return fmt.Errorf("wrong context: %v", ctx)
+	}
+
+	err := s.repo.ChangePassword(userID, newPassword)
+	if err != nil {
+		s.log.Debugf("Error updating user password: %s", userID)
+		return err
+	}
+
+	s.log.Debugf("User password updated successfully: %s", userID)
+	return nil
+}
+
+func (s *Service) GetUserDetails(ctx context.Context) (models.User, error) {
+	id, ok := ctx.Value("user_id").(string)
+	if !ok {
+		return models.User{}, fmt.Errorf("wrong context: %v", ctx)
+	}
+	user, err := s.repo.GetById(id)
+	if err != nil {
+		s.log.Debugf("User not found: %s", id)
+		return models.User{}, err
+	}
+
+	s.log.Debugf("User details fetched successfully: %s", id)
+	return user, nil
+}
+
+func (s *Service) RegisterWheel(ctx context.Context, wheel models.Wheel) (models.Wheel, error) {
+	id, ok := ctx.Value("user_id").(string)
+	if !ok {
+		return models.Wheel{}, fmt.Errorf("wrong context: %v", ctx)
+	}
+	wheel.IDCompany = id
+	id_wheel, err := s.repo.CreateWheel(wheel)
+	if err != nil {
+		s.log.Debugf("Error registering wheel: %v", wheel)
+		return models.Wheel{}, err
+	}
+	wheel.ID = id_wheel
+
+	s.log.Debugf("Wheel registered successfully: %v", wheel)
+	return wheel, nil
+}
+
+func (s *Service) RegisterSensor(ctx context.Context, sensor models.Sensor) (models.Sensor, error) {
+	id, ok := ctx.Value("user_id").(string)
+	if !ok {
+		return models.Sensor{}, fmt.Errorf("wrong context: %v", ctx)
+	}
+	id_wheel, err := s.repo.CreateSensor(sensor)
+	if err != nil {
+		s.log.Debugf("Error registering sensor: %v", id)
+		return models.Sensor{}, err
+	}
+	sensor.ID = id_wheel
+
+	s.log.Debugf("Sensor registered successfully: %v", id)
+	return sensor, nil
+}
+
+func (s *Service) UpdateWheelData(ctx context.Context, wheel models.Wheel) error {
+	err := s.repo.ChangeWheel(wheel.ID, wheel)
+	if err != nil {
+		s.log.Debugf("Error updating wheel data: %v", wheel)
+		return err
+	}
+
+	s.log.Debugf("Wheel data updated successfully: %v", wheel)
+	return nil
+}
+
+func (s *Service) GetWheelData(ctx context.Context, id string) (models.Wheel, error) {
+	wheel, err := s.repo.GetWheelById(id)
+	if err != nil {
+		s.log.Debugf("Wheel not found: %s", id)
+		return models.Wheel{}, err
+	}
+
+	s.log.Debugf("Wheel data fetched successfully: %s", id)
+	return wheel, nil
+}
+
+func (s *Service) GetAutoData(ctx context.Context, id string) (models.Car, error) {
+	auto, err := s.repo.GetCarById(id)
+	if err != nil {
+		s.log.Debugf("Auto not found: %s", id)
+		return models.Car{}, err
+	}
+
+	s.log.Debugf("Auto data fetched successfully: %s", id)
+	return auto, nil
+}
+
+func (s *Service) GetAutoList(ctx context.Context, offset int, limit int) ([]models.Car, error) {
+	user_id, ok := ctx.Value("user_id").(string)
+	if !ok {
+		return []models.Car{}, fmt.Errorf("wrong context: %v", ctx)
+	}
+
+	list, err := s.repo.GetCarsList(user_id, offset, limit)
+	if err != nil {
+		s.log.Debugf("not found: %s", user_id)
+		return []models.Car{}, err
+	}
+
+	s.log.Debugf("data fetched successfully: %s", user_id)
+	return list, nil
+}
+
+func (s *Service) GenerateReport(ctx context.Context, params models.GetReportParams) (interface{}, error) {
+	return nil, nil
+}
+
+func (s *Service) GetSensorData(ctx context.Context, params models.GetSensorParams) (interface{}, error) {
+	return nil, nil
 }
 
 func NewService(repo Repository, log *logrus.Logger) *Service {
@@ -52,143 +248,4 @@ func NewToken(data string, ttl time.Duration) (string, error) {
 		data,
 	})
 	return token.SignedString([]byte(signingKey))
-}
-
-func (s *Service) UserLogin(login string, password string) (string, string, error) {
-	id, err := s.repo.GetIDByEmailAndPassword(login, password)
-	if err != nil {
-		s.log.Debugf("Invalid s.login or password: %s", login)
-		return "", "", err
-	}
-	s.log.Debug("created new user")
-
-	access, err := NewToken(id, accessTTL)
-	if err != nil {
-		return "", "", err
-	}
-
-	refresh, err := NewToken(id, refreshTTL)
-	if err != nil {
-		return "", "", err
-	}
-
-	s.log.Debugf("User s.logged in successfully: %s", login)
-	return access, refresh, nil
-}
-
-func (s *Service) RefreshToken(token string) (string, string, error) {
-	id := "59186207-1269-4986-ba64-93f76cb288d4"
-	access, err := NewToken(id, accessTTL)
-	if err != nil {
-		return "", "", err
-	}
-
-	refresh, err := NewToken(id, refreshTTL)
-	if err != nil {
-		return "", "", err
-	}
-	s.log.Debugf("Token refreshed successfully: %s", token)
-	return access, refresh, nil
-}
-
-func (s *Service) RegisterUser(user models.User) error {
-	// existingUser, err := s.repo.GetById(user.Id)
-	// if err == nil && existingUser.ID != "" {
-	// 	s.log.Debugf("User already exists: %s", user.Login)
-	// 	return errors.New("user already exists")
-	// }
-
-	_, err := s.repo.CreateUser(user)
-	if err != nil {
-		s.log.Debugf("Error creating user: %s", user.Login)
-		return err
-	}
-
-	s.log.Debugf("User registered successfully: %s", user.Login)
-	return nil
-}
-
-func (s *Service) RegisterAuto(car models.Car) error {
-	_, err := s.repo.CreateCar(car)
-	if err != nil {
-		s.log.Debugf("Error registering Auto: %v", car)
-		return err
-	}
-
-	s.log.Debugf("Auto registered successfully: %v", car)
-	return nil
-}
-
-func (s *Service) UpdateUserPassword(token string, newPassword string) error {
-	// TODO: Parsing token
-
-	// userID, err := s.repo.GetIDByEmailAndPassword(login, newPassword)
-	// if err != nil {
-	// 	s.log.Debugf("Invalid s.login: %s", login)
-	// 	return err
-	// }
-
-	userID := "f5dd3092-e139-4295-8f53-5d9ff1d6da31"
-
-	err := s.repo.ChangePassword(userID, newPassword)
-	if err != nil {
-		s.log.Debugf("Error updating user password: %s", userID)
-		return err
-	}
-
-	s.log.Debugf("User password updated successfully: %s", userID)
-	return nil
-}
-
-func (s *Service) GetUserDetails(id string) (interface{}, error) {
-	userID := "f5dd3092-e139-4295-8f53-5d9ff1d6da31"
-	user, err := s.repo.GetById(userID)
-	if err != nil {
-		s.log.Debugf("User not found: %s", id)
-		return nil, err
-	}
-
-	s.log.Debugf("User details fetched successfully: %s", id)
-	return user, nil
-}
-
-func (s *Service) RegisterWheel(wheel models.Wheel) error {
-	_, err := s.repo.CreateWheel(wheel)
-	if err != nil {
-		s.log.Debugf("Error registering wheel: %v", wheel)
-		return err
-	}
-
-	s.log.Debugf("Wheel registered successfully: %v", wheel)
-	return nil
-}
-
-func (s *Service) UpdateWheelData(wheel models.Wheel) error {
-	err := s.repo.ChangeWheel(wheel.ID, wheel)
-	if err != nil {
-		s.log.Debugf("Error updating wheel data: %v", wheel)
-		return err
-	}
-
-	s.log.Debugf("Wheel data updated successfully: %v", wheel)
-	return nil
-}
-
-func (s *Service) GetWheelData(id string) (interface{}, error) {
-	wheel, err := s.repo.GetWheelById(id)
-	if err != nil {
-		s.log.Debugf("Wheel not found: %s", id)
-		return nil, err
-	}
-
-	s.log.Debugf("Wheel data fetched successfully: %s", id)
-	return wheel, nil
-}
-
-func (s *Service) GenerateReport(params models.GetReportParams) (interface{}, error) {
-	return nil, nil
-}
-
-func (s *Service) GetSensorData(params models.GetSensorParams) (interface{}, error) {
-	return nil, nil
 }

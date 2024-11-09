@@ -23,6 +23,7 @@ type Car struct {
 
 type Wheel struct {
 	ID             string
+	IDCompany      string
 	IDCar          string
 	AxisNumber     int
 	Position       int
@@ -37,11 +38,20 @@ type Wheel struct {
 	MaxPressure    float32
 }
 
+type Sensor struct {
+	ID          string
+	CarID       string
+	StateNumber string
+	CountAxis   int
+	Position    int
+	Pressure    float64
+	Temperature float64
+}
+
 type GetReportParams struct {
 	UserId string `form:"userId" json:"userId"`
 }
 
-// GetSensorParams defines parameters for GetSensor.
 type GetSensorParams struct {
 	WheelId string `form:"wheelId" json:"wheelId"`
 }
