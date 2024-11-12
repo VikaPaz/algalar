@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/VikaPaz/algalar/internal/models"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -180,6 +181,25 @@ func (r *Repository) GetCarById(carID string) (models.Car, error) {
 	return car, nil
 }
 
+func (r *Repository) GetIdCarByStateNumber(stateNumber string) (string, error) {
+	query := `
+        SELECT id
+        FROM cars
+        WHERE state_number = $1`
+
+	var carID string
+	err := r.conn.QueryRow(query, stateNumber).Scan(&carID)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+		return "", err
+	}
+
+	return carID, nil
+}
+
 func (r *Repository) GetCarsList(userID string, offset int, limit int) ([]models.Car, error) {
 	query := `
         SELECT id, id_company, state_number, brand, id_device, id_unicum, count_axis
@@ -225,6 +245,76 @@ func (r *Repository) CreateSensor(sensor models.Sensor) (string, error) {
 	return sensorID, nil
 }
 
+func (r *Repository) CreateBreakage(breakage models.Breakage) (string, error) {
+	query := `
+        INSERT INTO breakages (car_id, state_number, type, description, datetime)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id`
+
+	var breakageID string
+	err := r.conn.QueryRow(query,
+		breakage.CarID, breakage.StateNumber, breakage.Type, breakage.Description, breakage.Datetime).
+		Scan(&breakageID)
+	if err != nil {
+		return "", err
+	}
+
+	return breakageID, nil
+}
+
+func (r *Repository) GetSensorsByCarId(carID string) ([]models.Sensor, error) {
+	query := `
+        SELECT id, car_id, state_number, count_axis, position, pressure, temperature
+        FROM sensors
+        WHERE car_id = $1`
+
+	var sensors []models.Sensor
+
+	parsedUUID, err := uuid.Parse(carID)
+	if err != nil {
+		fmt.Println("Error parsing UUID:", err)
+		return []models.Sensor{}, nil
+	}
+
+	rows, err := r.conn.Query(query, parsedUUID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var sensor models.Sensor
+		if err := rows.Scan(&sensor.ID, &sensor.CarID, &sensor.StateNumber, &sensor.CountAxis, &sensor.Position, &sensor.Pressure, &sensor.Temperature); err != nil {
+			return nil, err
+		}
+		sensors = append(sensors, sensor)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return sensors, nil
+}
+
+func (r *Repository) UpdateSensor(sensor models.Sensor) (models.Sensor, error) {
+	query := `
+        UPDATE sensors
+        SET car_id = $1, state_number = $2, count_axis = $3, position = $4, pressure = $5, temperature = $6
+        WHERE state_number = $7 AND position = $8
+        RETURNING *
+    `
+
+	var updatedSensor models.Sensor
+	err := r.conn.QueryRow(query, sensor.CarID, sensor.StateNumber, sensor.CountAxis, sensor.Position, sensor.Pressure, sensor.Temperature, sensor.StateNumber, sensor.Position).
+		Scan(&updatedSensor.ID, &updatedSensor.CarID, &updatedSensor.StateNumber, &updatedSensor.CountAxis, &updatedSensor.Position, &updatedSensor.Pressure, &updatedSensor.Temperature)
+
+	if err != nil {
+		return models.Sensor{}, fmt.Errorf("error updating sensor: %w", err)
+	}
+	return updatedSensor, nil
+}
+
 func (r *Repository) ChangeWheel(wheelID string, wheel models.Wheel) error {
 	query := `
         UPDATE wheels
@@ -234,6 +324,40 @@ func (r *Repository) ChangeWheel(wheelID string, wheel models.Wheel) error {
 	r.conn.QueryRow(query, wheel.IDCar, wheel.AxisNumber, wheel.Position, wheel.Size, wheel.Cost, wheel.Brand, wheel.Model, wheel.Mileage, wheel.MinTemperature, wheel.MinPressure, wheel.MaxTemperature, wheel.MaxPressure, wheel.ID)
 
 	return nil
+}
+
+func (r *Repository) GetBreakagesByCarId(carID string) ([]models.Breakage, error) {
+	query := `
+        SELECT id, car_id, state_number, type, description, datetime
+        FROM breakages
+        WHERE car_id = $1
+    `
+
+	var breakages []models.Breakage
+
+	parsedUUID, err := uuid.Parse(carID)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing carID '%s' into UUID: %w", carID, err)
+	}
+
+	rows, err := r.conn.Query(query, parsedUUID)
+	if err != nil {
+		return nil, fmt.Errorf("error executing query to get breakages: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var breakage models.Breakage
+		if err := rows.Scan(&breakage.ID, &breakage.CarID, &breakage.StateNumber, &breakage.Type, &breakage.Description, &breakage.Datetime); err != nil {
+			return nil, fmt.Errorf("error scanning row into breakage: %w", err)
+		}
+		breakages = append(breakages, breakage)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over rows: %w", err)
+	}
+	return breakages, nil
 }
 
 func (r *Repository) SelectAny(table string, key string, val any) (bool, error) {

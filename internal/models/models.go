@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type User struct {
 	ID         string
 	INN        int
@@ -44,8 +46,17 @@ type Sensor struct {
 	StateNumber string
 	CountAxis   int
 	Position    int
-	Pressure    float64
-	Temperature float64
+	Pressure    float32
+	Temperature float32
+}
+
+type Breakage struct {
+	ID          string
+	CarID       string
+	StateNumber string
+	Type        string
+	Description string
+	Datetime    time.Time
 }
 
 type GetReportParams struct {

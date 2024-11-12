@@ -58,10 +58,10 @@ CREATE TABLE IF NOT EXISTS breakages (
 	car_id uuid REFERENCES cars,
 	state_number varchar(100),
 	type varchar(100),
-	discription varchar(100),
+	description varchar(100),
 	datetime timestamp
 );
-
+-- TODO: add time
 CREATE TABLE IF NOT EXISTS sensors (
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
 	car_id uuid REFERENCES cars,

@@ -33,8 +33,13 @@ type Repository interface {
 	ChangeWheel(wheelID string, wheel models.Wheel) error
 	SelectAny(table string, key string, val any) (bool, error)
 	CreateSensor(sensor models.Sensor) (string, error)
+	CreateBreakage(breakage models.Breakage) (string, error)
 	GetCarById(carID string) (models.Car, error)
 	GetCarsList(user_id string, offset int, limit int) ([]models.Car, error)
+	GetIdCarByStateNumber(stateNumber string) (string, error)
+	GetSensorsByCarId(carID string) ([]models.Sensor, error)
+	GetBreakagesByCarId(carID string) ([]models.Breakage, error)
+	UpdateSensor(sensor models.Sensor) (models.Sensor, error)
 }
 
 type Service struct {
@@ -175,6 +180,22 @@ func (s *Service) RegisterSensor(ctx context.Context, sensor models.Sensor) (mod
 	return sensor, nil
 }
 
+func (s *Service) RegisterBeakege(ctx context.Context, breakege models.Breakage) (models.Breakage, error) {
+	id, ok := ctx.Value("user_id").(string)
+	if !ok {
+		return models.Breakage{}, fmt.Errorf("wrong context: %v", ctx)
+	}
+	id_wheel, err := s.repo.CreateBreakage(breakege)
+	if err != nil {
+		s.log.Debugf("Error registering sensor: %v", id)
+		return models.Breakage{}, err
+	}
+	breakege.ID = id_wheel
+
+	s.log.Debugf("Sensor registered successfully: %v", id)
+	return breakege, nil
+}
+
 func (s *Service) UpdateWheelData(ctx context.Context, wheel models.Wheel) error {
 	err := s.repo.ChangeWheel(wheel.ID, wheel)
 	if err != nil {
@@ -224,12 +245,40 @@ func (s *Service) GetAutoList(ctx context.Context, offset int, limit int) ([]mod
 	return list, nil
 }
 
+func (s *Service) GetCarId(stateNumber string) (string, error) {
+	id, err := s.repo.GetIdCarByStateNumber(stateNumber)
+	if err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+func (s *Service) UpdateSensor(ctx context.Context, sensor models.Sensor) (models.Sensor, error) {
+	data, err := s.repo.UpdateSensor(sensor)
+	if err != nil {
+		return models.Sensor{}, err
+	}
+	return data, nil
+}
+
 func (s *Service) GenerateReport(ctx context.Context, params models.GetReportParams) (interface{}, error) {
 	return nil, nil
 }
 
-func (s *Service) GetSensorData(ctx context.Context, params models.GetSensorParams) (interface{}, error) {
-	return nil, nil
+func (s *Service) GetSensorData(ctx context.Context, carID string) ([]models.Sensor, error) {
+	list, err := s.repo.GetSensorsByCarId(carID)
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
+func (s *Service) GetBreackegeData(ctx context.Context, carID string) ([]models.Breakage, error) {
+	list, err := s.repo.GetBreakagesByCarId(carID)
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
 }
 
 func NewService(repo Repository, log *logrus.Logger) *Service {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/VikaPaz/algalar/internal/models"
 	"github.com/VikaPaz/algalar/internal/server/rest"
@@ -24,11 +25,15 @@ type Service interface {
 	UpdateWheelData(ctx context.Context, wheel models.Wheel) error
 	GetWheelData(ctx context.Context, id string) (models.Wheel, error)
 	GenerateReport(ctx context.Context, params models.GetReportParams) (interface{}, error)
-	GetSensorData(ctx context.Context, params models.GetSensorParams) (interface{}, error)
+	GetSensorData(ctx context.Context, id string) ([]models.Sensor, error)
+	GetBreackegeData(ctx context.Context, id string) ([]models.Breakage, error)
 	IsCreatred(table string, key string, val any) (bool, error)
 	GetAutoData(ctx context.Context, id string) (models.Car, error)
 	GetAutoList(ctx context.Context, offset int, limit int) ([]models.Car, error)
 	RegisterSensor(ctx context.Context, sensor models.Sensor) (models.Sensor, error)
+	RegisterBeakege(ctx context.Context, breakege models.Breakage) (models.Breakage, error)
+	GetCarId(stateNumber string) (string, error)
+	UpdateSensor(ctx context.Context, sensor models.Sensor) (models.Sensor, error)
 }
 
 type ServImplemented struct {
@@ -198,59 +203,6 @@ func (s *ServImplemented) GetAutoList(w http.ResponseWriter, r *http.Request, pa
 
 // TODO:
 
-// Register a new sensor
-// (POST /sensor)
-func (s *ServImplemented) PostSensor(w http.ResponseWriter, r *http.Request) {
-	// ctx, err := getUserID(r)
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusUnauthorized)
-	// 	return
-	// }
-
-	// var Auto rest.SensorRegistration
-	// if err := json.NewDecoder(r.Body).Decode(&Auto); err != nil {
-	// 	s.log.Error(err)
-	// 	http.Error(w, err.Error(), http.StatusBadRequest)
-	// 	return
-	// }
-
-	// autoList, err := s.service.RegisterSensor(ctx)
-	// if err != nil {
-	// 	s.log.Error(err)
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
-
-	// res := make([]rest.AutoResponse, len(autoList))
-	// for i, val := range autoList {
-	// 	res[i] = ToAutoResponse(val)
-	// }
-
-	// w.WriteHeader(http.StatusOK)
-	// w.Header().Set("Content-Type", "application/json")
-	// json.NewEncoder(w).Encode(res)
-
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Update an existing sensor
-// (PUT /sensor)
-func (s *ServImplemented) PutSensor(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Get breakages by car ID
-// (GET /brackeges)
-func (s *ServImplemented) GetBrackeges(w http.ResponseWriter, r *http.Request, params rest.GetBrackegesParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Register a new breakage
-// (POST /brackeges)
-func (s *ServImplemented) PostBrackeges(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 func (s *ServImplemented) PutUser(w http.ResponseWriter, r *http.Request) {
 	ctx, err := getUserID(r)
 	if err != nil {
@@ -366,6 +318,170 @@ func (s *ServImplemented) GetWheels(w http.ResponseWriter, r *http.Request, para
 	json.NewEncoder(w).Encode(res)
 }
 
+func (s *ServImplemented) GetSensor(w http.ResponseWriter, r *http.Request, params rest.GetSensorParams) {
+	ctx, err := getUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	dateList, err := s.service.GetSensorData(ctx, params.CarId)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	res := make([]rest.SensorData, len(dateList))
+	for i, val := range dateList {
+		res[i] = ToSensorData(val, time.Now().String())
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
+}
+
+// Register a new sensor
+// (POST /sensor)
+func (s *ServImplemented) PostSensor(w http.ResponseWriter, r *http.Request) {
+	ctx, err := getUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	var req rest.SensorRegistration
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	id, err := s.service.GetCarId(*req.StateNumber)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	sensor := ToSensor(req, id)
+
+	new_sensor, err := s.service.RegisterSensor(ctx, sensor)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	res := ToSensorData(new_sensor, time.Now().String())
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
+}
+
+// Update an existing sensor
+// (PUT /sensor)
+func (s *ServImplemented) PutSensor(w http.ResponseWriter, r *http.Request) {
+	ctx, err := getUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	var req rest.SensorRegistration
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	id, err := s.service.GetCarId(*req.StateNumber)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	sensor := ToSensor(req, id)
+
+	data, err := s.service.UpdateSensor(ctx, sensor)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	res := ToSensorData(data, time.Now().String())
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
+}
+
+// Get breakages by car ID
+// (GET /brackeges)
+
+// TODO: fix mistake
+func (s *ServImplemented) GetBrackeges(w http.ResponseWriter, r *http.Request, params rest.GetBrackegesParams) {
+	ctx, err := getUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	dateList, err := s.service.GetBreackegeData(ctx, params.CarId)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	res := make([]rest.BreakageResponse, len(dateList))
+	for i, val := range dateList {
+		res[i] = ToBreakageResponse(val)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
+}
+
+// Register a new breakage
+// (POST /brackeges)
+func (s *ServImplemented) PostBrackeges(w http.ResponseWriter, r *http.Request) {
+	ctx, err := getUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	var req rest.BreakageRegistration
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	id, err := s.service.GetCarId(*req.StateNumber)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	breakege := ToBreakage(req, id)
+
+	new_breackege, err := s.service.RegisterBeakege(ctx, breakege)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	res := ToBreakageResponse(new_breackege)
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
+}
+
 func (s *ServImplemented) GetReport(w http.ResponseWriter, r *http.Request, params rest.GetReportParams) {
 	report, err := s.service.GenerateReport(r.Context(), models.GetReportParams{})
 	if err != nil {
@@ -374,16 +490,6 @@ func (s *ServImplemented) GetReport(w http.ResponseWriter, r *http.Request, para
 		return
 	}
 	w.Write([]byte(report.(string)))
-}
-
-func (s *ServImplemented) GetSensor(w http.ResponseWriter, r *http.Request, params rest.GetSensorParams) {
-	data, err := s.service.GetSensorData(r.Context(), models.GetSensorParams{})
-	if err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Write([]byte(data.(string)))
 }
 
 func ToUser(userDetails rest.UserDetails) models.User {
@@ -467,6 +573,28 @@ func ToAutoResponse(car models.Car) rest.AutoResponse {
 	}
 }
 
+func ToSensor(sensorReg rest.SensorRegistration, carID string) models.Sensor {
+	return models.Sensor{
+		CarID:       carID,
+		StateNumber: *sensorReg.StateNumber,
+		CountAxis:   *sensorReg.CountAxis,
+		Position:    *sensorReg.Position,
+		Pressure:    *sensorReg.Pressure,
+		Temperature: *sensorReg.Temperature,
+	}
+}
+
+func ToBreakage(breakageResponse rest.BreakageRegistration, id string) models.Breakage {
+	return models.Breakage{
+		ID:          "",
+		CarID:       id,
+		StateNumber: *breakageResponse.StateNumber,
+		Type:        *breakageResponse.Type,
+		Description: *breakageResponse.Description,
+		Datetime:    *breakageResponse.Datetime,
+	}
+}
+
 func ToWheel(wheelRegistration rest.WheelRegistration) models.Wheel {
 	return models.Wheel{
 		ID:             wheelRegistration.SensorNumber,
@@ -501,6 +629,30 @@ func ToWheelResponse(wheel models.Wheel) rest.WheelResponse {
 		TireSize:       nil,
 		AutoId:         &wheel.IDCar,
 		WheelPosition:  &wheel.Position,
+	}
+}
+
+func ToSensorData(sensor models.Sensor, time string) rest.SensorData {
+	return rest.SensorData{
+		Position:    &sensor.Position,
+		Pressure:    &sensor.Pressure,
+		Temperature: &sensor.Temperature,
+		Time:        &time,
+	}
+}
+
+func ToBreakageResponse(breakage models.Breakage) rest.BreakageResponse {
+	datetimeStr := ""
+	if !breakage.Datetime.IsZero() {
+		datetimeStr = breakage.Datetime.Format(time.RFC3339)
+	}
+
+	return rest.BreakageResponse{
+		Id:          &breakage.ID,
+		StateNumber: &breakage.StateNumber,
+		Type:        &breakage.Type,
+		Description: &breakage.Description,
+		Datetime:    &datetimeStr,
 	}
 }
 
