@@ -48,6 +48,7 @@ type Sensor struct {
 	Position    int
 	Pressure    float32
 	Temperature float32
+	Datetime    time.Time
 }
 
 type Breakage struct {

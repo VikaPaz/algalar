@@ -202,7 +202,7 @@ func (r *Repository) GetIdCarByStateNumber(stateNumber string) (string, error) {
 
 func (r *Repository) GetCarsList(userID string, offset int, limit int) ([]models.Car, error) {
 	query := `
-        SELECT id, id_company, state_number, brand, id_device, id_unicum, count_axis
+        SELECT id, id_company, state_number, brand, id_device, id_unicum, count_axis, datetime
         FROM cars
         WHERE id_company = $1
         LIMIT $2 OFFSET $3`
@@ -232,12 +232,12 @@ func (r *Repository) GetCarsList(userID string, offset int, limit int) ([]models
 
 func (r *Repository) CreateSensor(sensor models.Sensor) (string, error) {
 	query := `
-        INSERT INTO sensors (car_id, state_number, count_axis, position, pressure, temperature)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO sensors (car_id, state_number, count_axis, position, pressure, temperature, datetime)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING id`
 
 	var sensorID string
-	err := r.conn.QueryRow(query, sensor.CarID, sensor.StateNumber, sensor.CountAxis, sensor.Position, sensor.Pressure, sensor.Temperature).Scan(&sensorID)
+	err := r.conn.QueryRow(query, sensor.CarID, sensor.StateNumber, sensor.CountAxis, sensor.Position, sensor.Pressure, sensor.Temperature, sensor.Datetime).Scan(&sensorID)
 	if err != nil {
 		return "", err
 	}
@@ -264,7 +264,7 @@ func (r *Repository) CreateBreakage(breakage models.Breakage) (string, error) {
 
 func (r *Repository) GetSensorsByCarId(carID string) ([]models.Sensor, error) {
 	query := `
-        SELECT id, car_id, state_number, count_axis, position, pressure, temperature
+        SELECT id, car_id, state_number, count_axis, position, pressure, temperature, datetime
         FROM sensors
         WHERE car_id = $1`
 
@@ -284,7 +284,7 @@ func (r *Repository) GetSensorsByCarId(carID string) ([]models.Sensor, error) {
 
 	for rows.Next() {
 		var sensor models.Sensor
-		if err := rows.Scan(&sensor.ID, &sensor.CarID, &sensor.StateNumber, &sensor.CountAxis, &sensor.Position, &sensor.Pressure, &sensor.Temperature); err != nil {
+		if err := rows.Scan(&sensor.ID, &sensor.CarID, &sensor.StateNumber, &sensor.CountAxis, &sensor.Position, &sensor.Pressure, &sensor.Temperature, &sensor.Datetime); err != nil {
 			return nil, err
 		}
 		sensors = append(sensors, sensor)
@@ -300,14 +300,14 @@ func (r *Repository) GetSensorsByCarId(carID string) ([]models.Sensor, error) {
 func (r *Repository) UpdateSensor(sensor models.Sensor) (models.Sensor, error) {
 	query := `
         UPDATE sensors
-        SET car_id = $1, state_number = $2, count_axis = $3, position = $4, pressure = $5, temperature = $6
-        WHERE state_number = $7 AND position = $8
+        SET car_id = $1, state_number = $2, count_axis = $3, position = $4, pressure = $5, temperature = $6, datetime = $7
+        WHERE state_number = $8 AND position = $9
         RETURNING *
     `
 
 	var updatedSensor models.Sensor
-	err := r.conn.QueryRow(query, sensor.CarID, sensor.StateNumber, sensor.CountAxis, sensor.Position, sensor.Pressure, sensor.Temperature, sensor.StateNumber, sensor.Position).
-		Scan(&updatedSensor.ID, &updatedSensor.CarID, &updatedSensor.StateNumber, &updatedSensor.CountAxis, &updatedSensor.Position, &updatedSensor.Pressure, &updatedSensor.Temperature)
+	err := r.conn.QueryRow(query, sensor.CarID, sensor.StateNumber, sensor.CountAxis, sensor.Position, sensor.Pressure, sensor.Temperature, sensor.Datetime, sensor.StateNumber, sensor.Position).
+		Scan(&updatedSensor.ID, &updatedSensor.CarID, &updatedSensor.StateNumber, &updatedSensor.CountAxis, &updatedSensor.Position, &updatedSensor.Pressure, &updatedSensor.Temperature, &updatedSensor.Datetime)
 
 	if err != nil {
 		return models.Sensor{}, fmt.Errorf("error updating sensor: %w", err)

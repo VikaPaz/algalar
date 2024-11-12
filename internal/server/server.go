@@ -333,7 +333,7 @@ func (s *ServImplemented) GetSensor(w http.ResponseWriter, r *http.Request, para
 
 	res := make([]rest.SensorData, len(dateList))
 	for i, val := range dateList {
-		res[i] = ToSensorData(val, time.Now().String())
+		res[i] = ToSensorData(val, val.Datetime.String())
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -373,7 +373,7 @@ func (s *ServImplemented) PostSensor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := ToSensorData(new_sensor, time.Now().String())
+	res := ToSensorData(new_sensor, new_sensor.Datetime.String())
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)
@@ -411,7 +411,9 @@ func (s *ServImplemented) PutSensor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := ToSensorData(data, time.Now().String())
+	fmt.Println(data)
+
+	res := ToSensorData(data, data.Datetime.String())
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)

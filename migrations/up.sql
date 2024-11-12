@@ -69,5 +69,6 @@ CREATE TABLE IF NOT EXISTS sensors (
 	count_axis int,
 	position int,
 	pressure float,
-	temperature float
+	temperature float,
+	datetime timestamp
 );

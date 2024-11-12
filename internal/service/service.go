@@ -165,6 +165,7 @@ func (s *Service) RegisterWheel(ctx context.Context, wheel models.Wheel) (models
 }
 
 func (s *Service) RegisterSensor(ctx context.Context, sensor models.Sensor) (models.Sensor, error) {
+	sensor.Datetime = time.Now()
 	id, ok := ctx.Value("user_id").(string)
 	if !ok {
 		return models.Sensor{}, fmt.Errorf("wrong context: %v", ctx)
@@ -254,6 +255,7 @@ func (s *Service) GetCarId(stateNumber string) (string, error) {
 }
 
 func (s *Service) UpdateSensor(ctx context.Context, sensor models.Sensor) (models.Sensor, error) {
+	sensor.Datetime = time.Now()
 	data, err := s.repo.UpdateSensor(sensor)
 	if err != nil {
 		return models.Sensor{}, err
