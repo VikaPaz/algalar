@@ -40,6 +40,7 @@ type Repository interface {
 	GetSensorsByCarId(carID string) ([]models.Sensor, error)
 	GetBreakagesByCarId(carID string) ([]models.Breakage, error)
 	UpdateSensor(sensor models.Sensor) (models.Sensor, error)
+	GetReportData(userId string) ([]models.ReportData, error)
 }
 
 type Service struct {
@@ -263,8 +264,12 @@ func (s *Service) UpdateSensor(ctx context.Context, sensor models.Sensor) (model
 	return data, nil
 }
 
-func (s *Service) GenerateReport(ctx context.Context, params models.GetReportParams) (interface{}, error) {
-	return nil, nil
+func (s *Service) GenerateReport(ctx context.Context, userId string) ([]models.ReportData, error) {
+	repost, err := s.repo.GetReportData(userId)
+	if err != nil {
+		return []models.ReportData{}, err
+	}
+	return repost, nil
 }
 
 func (s *Service) GetSensorData(ctx context.Context, carID string) ([]models.Sensor, error) {

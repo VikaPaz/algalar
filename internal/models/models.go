@@ -67,3 +67,12 @@ type GetReportParams struct {
 type GetSensorParams struct {
 	WheelId string `form:"wheelId" json:"wheelId"`
 }
+
+type ReportData struct {
+	IdWheel             string
+	StateNumber         string
+	TireBrand           string
+	Mileage             float32
+	TempOutOfBounds     int
+	PressureOutOfBounds int
+}

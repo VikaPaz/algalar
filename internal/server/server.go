@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/VikaPaz/algalar/internal/server/rest"
 	"github.com/golang-jwt/jwt"
 	"github.com/sirupsen/logrus"
+	"github.com/tealeg/xlsx"
 )
 
 type Service interface {
@@ -24,7 +26,7 @@ type Service interface {
 	RegisterWheel(ctx context.Context, wheel models.Wheel) (models.Wheel, error)
 	UpdateWheelData(ctx context.Context, wheel models.Wheel) error
 	GetWheelData(ctx context.Context, id string) (models.Wheel, error)
-	GenerateReport(ctx context.Context, params models.GetReportParams) (interface{}, error)
+	GenerateReport(ctx context.Context, userId string) ([]models.ReportData, error)
 	GetSensorData(ctx context.Context, id string) ([]models.Sensor, error)
 	GetBreackegeData(ctx context.Context, id string) ([]models.Breakage, error)
 	IsCreatred(table string, key string, val any) (bool, error)
@@ -200,8 +202,6 @@ func (s *ServImplemented) GetAutoList(w http.ResponseWriter, r *http.Request, pa
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)
 }
-
-// TODO:
 
 func (s *ServImplemented) PutUser(w http.ResponseWriter, r *http.Request) {
 	ctx, err := getUserID(r)
@@ -485,13 +485,48 @@ func (s *ServImplemented) PostBrackeges(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *ServImplemented) GetReport(w http.ResponseWriter, r *http.Request, params rest.GetReportParams) {
-	report, err := s.service.GenerateReport(r.Context(), models.GetReportParams{})
+	reportData, err := s.service.GenerateReport(r.Context(), params.UserId)
 	if err != nil {
 		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.Write([]byte(report.(string)))
+
+	file := xlsx.NewFile()
+	sheet, err := file.AddSheet("Report")
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	header := sheet.AddRow()
+	header.AddCell().Value = "Id Wheel"
+	header.AddCell().Value = "State Number"
+	header.AddCell().Value = "Tire Brand"
+	header.AddCell().Value = "Mileage"
+	header.AddCell().Value = "Temp Out of Bounds"
+	header.AddCell().Value = "Pressure Out of Bounds"
+
+	for _, data := range reportData {
+		row := sheet.AddRow()
+		row.AddCell().Value = data.IdWheel
+		row.AddCell().Value = data.StateNumber
+		row.AddCell().Value = data.TireBrand
+		row.AddCell().Value = strconv.FormatFloat(float64(data.Mileage), 'f', 2, 32)
+		row.AddCell().Value = strconv.Itoa(data.TempOutOfBounds)
+		row.AddCell().Value = strconv.Itoa(data.PressureOutOfBounds)
+	}
+
+	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	w.Header().Set("Content-Disposition", "attachment; filename=report.xlsx")
+
+	err = file.Write(w)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func ToUser(userDetails rest.UserDetails) models.User {

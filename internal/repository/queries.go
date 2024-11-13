@@ -375,3 +375,47 @@ func (r *Repository) SelectAny(table string, key string, val any) (bool, error) 
 
 	return exists == 1, nil
 }
+
+func (r *Repository) GetReportData(userId string) ([]models.ReportData, error) {
+	query := `
+		SELECT
+			w.id AS wheel_id,             -- ID колеса
+			c.state_number,              -- Госномер автомобиля
+			w.brand AS tire_brand,       -- Марка шины
+			w.mileage,                   -- Пробег автомобиля
+			COUNT(CASE WHEN s.temperature < w.min_temperature OR s.temperature > w.max_temperature THEN 1 END) AS temp_out_of_bounds,  -- Кол-во выходов температуры за границы
+			COUNT(CASE WHEN s.pressure < w.min_pressure OR s.pressure > w.max_pressure THEN 1 END) AS pressure_out_of_bounds  -- Кол-во выходов давления за границы
+		FROM
+			cars c
+		JOIN wheels w ON w.id_car = c.id
+		JOIN sensors s ON s.car_id = c.id AND s.count_axis = w.count_axis AND s.position = w.position
+		WHERE
+			c.id_company = $1  -- Ограничиваем только машинами текущего пользователя
+		GROUP BY
+			w.id, c.state_number, w.brand, w.mileage, w.position  -- Группируем по колесу, машине и позиции
+		ORDER BY
+			c.state_number, w.position;  -- Сортировка по госномеру и позиции колеса
+	`
+
+	rows, err := r.conn.Query(query, userId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+	defer rows.Close()
+
+	var reportData []models.ReportData
+
+	for rows.Next() {
+		var data models.ReportData
+		if err := rows.Scan(&data.IdWheel, &data.StateNumber, &data.TireBrand, &data.Mileage, &data.TempOutOfBounds, &data.PressureOutOfBounds); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %v", err)
+		}
+		reportData = append(reportData, data)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %v", err)
+	}
+
+	return reportData, nil
+}
