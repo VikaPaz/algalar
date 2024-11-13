@@ -423,7 +423,7 @@ func (s *ServImplemented) PutSensor(w http.ResponseWriter, r *http.Request) {
 // (GET /brackeges)
 
 // TODO: fix mistake
-func (s *ServImplemented) GetBrackeges(w http.ResponseWriter, r *http.Request, params rest.GetBrackegesParams) {
+func (s *ServImplemented) GetBreakages(w http.ResponseWriter, r *http.Request, params rest.GetBreakagesParams) {
 	ctx, err := getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
@@ -448,7 +448,7 @@ func (s *ServImplemented) GetBrackeges(w http.ResponseWriter, r *http.Request, p
 
 // Register a new breakage
 // (POST /brackeges)
-func (s *ServImplemented) PostBrackeges(w http.ResponseWriter, r *http.Request) {
+func (s *ServImplemented) PostBreakages(w http.ResponseWriter, r *http.Request) {
 	ctx, err := getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)

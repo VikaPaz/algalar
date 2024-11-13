@@ -186,8 +186,8 @@ type GetAutoListParams struct {
 	Limit  *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
-// GetBrackegesParams defines parameters for GetBrackeges.
-type GetBrackegesParams struct {
+// GetBreakagesParams defines parameters for GetBreakages.
+type GetBreakagesParams struct {
 	CarId string `form:"car_id" json:"car_id"`
 }
 
@@ -214,8 +214,8 @@ type GetWheelsParams struct {
 // PostAutoJSONRequestBody defines body for PostAuto for application/json ContentType.
 type PostAutoJSONRequestBody = AutoRegistration
 
-// PostBrackegesJSONRequestBody defines body for PostBrackeges for application/json ContentType.
-type PostBrackegesJSONRequestBody = BreakageRegistration
+// PostBreakagesJSONRequestBody defines body for PostBreakages for application/json ContentType.
+type PostBreakagesJSONRequestBody = BreakageRegistration
 
 // PostLoginJSONRequestBody defines body for PostLogin for application/json ContentType.
 type PostLoginJSONRequestBody = LoginRequest
@@ -250,11 +250,11 @@ type ServerInterface interface {
 	// (GET /auto/list)
 	GetAutoList(w http.ResponseWriter, r *http.Request, params GetAutoListParams)
 	// Get breakages by car ID
-	// (GET /brackeges)
-	GetBrackeges(w http.ResponseWriter, r *http.Request, params GetBrackegesParams)
+	// (GET /breakages)
+	GetBreakages(w http.ResponseWriter, r *http.Request, params GetBreakagesParams)
 	// Register a new breakage
-	// (POST /brackeges)
-	PostBrackeges(w http.ResponseWriter, r *http.Request)
+	// (POST /breakages)
+	PostBreakages(w http.ResponseWriter, r *http.Request)
 	// User login
 	// (POST /login)
 	PostLogin(w http.ResponseWriter, r *http.Request)
@@ -316,14 +316,14 @@ func (_ Unimplemented) GetAutoList(w http.ResponseWriter, r *http.Request, param
 }
 
 // Get breakages by car ID
-// (GET /brackeges)
-func (_ Unimplemented) GetBrackeges(w http.ResponseWriter, r *http.Request, params GetBrackegesParams) {
+// (GET /breakages)
+func (_ Unimplemented) GetBreakages(w http.ResponseWriter, r *http.Request, params GetBreakagesParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Register a new breakage
-// (POST /brackeges)
-func (_ Unimplemented) PostBrackeges(w http.ResponseWriter, r *http.Request) {
+// (POST /breakages)
+func (_ Unimplemented) PostBreakages(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -509,8 +509,8 @@ func (siw *ServerInterfaceWrapper) GetAutoList(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
-// GetBrackeges operation middleware
-func (siw *ServerInterfaceWrapper) GetBrackeges(w http.ResponseWriter, r *http.Request) {
+// GetBreakages operation middleware
+func (siw *ServerInterfaceWrapper) GetBreakages(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -521,7 +521,7 @@ func (siw *ServerInterfaceWrapper) GetBrackeges(w http.ResponseWriter, r *http.R
 	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params GetBrackegesParams
+	var params GetBreakagesParams
 
 	// ------------- Required query parameter "car_id" -------------
 
@@ -539,7 +539,7 @@ func (siw *ServerInterfaceWrapper) GetBrackeges(w http.ResponseWriter, r *http.R
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetBrackeges(w, r, params)
+		siw.Handler.GetBreakages(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -549,11 +549,11 @@ func (siw *ServerInterfaceWrapper) GetBrackeges(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
-// PostBrackeges operation middleware
-func (siw *ServerInterfaceWrapper) PostBrackeges(w http.ResponseWriter, r *http.Request) {
+// PostBreakages operation middleware
+func (siw *ServerInterfaceWrapper) PostBreakages(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostBrackeges(w, r)
+		siw.Handler.PostBreakages(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -982,10 +982,10 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/auto/list", wrapper.GetAutoList)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/brackeges", wrapper.GetBrackeges)
+		r.Get(options.BaseURL+"/breakages", wrapper.GetBreakages)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/brackeges", wrapper.PostBrackeges)
+		r.Post(options.BaseURL+"/breakages", wrapper.PostBreakages)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/login", wrapper.PostLogin)
@@ -1078,34 +1078,34 @@ func (response GetAutoList200JSONResponse) VisitGetAutoListResponse(w http.Respo
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetBrackegesRequestObject struct {
-	Params GetBrackegesParams
+type GetBreakagesRequestObject struct {
+	Params GetBreakagesParams
 }
 
-type GetBrackegesResponseObject interface {
-	VisitGetBrackegesResponse(w http.ResponseWriter) error
+type GetBreakagesResponseObject interface {
+	VisitGetBreakagesResponse(w http.ResponseWriter) error
 }
 
-type GetBrackeges200JSONResponse []BreakageResponse
+type GetBreakages200JSONResponse []BreakageResponse
 
-func (response GetBrackeges200JSONResponse) VisitGetBrackegesResponse(w http.ResponseWriter) error {
+func (response GetBreakages200JSONResponse) VisitGetBreakagesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostBrackegesRequestObject struct {
-	Body *PostBrackegesJSONRequestBody
+type PostBreakagesRequestObject struct {
+	Body *PostBreakagesJSONRequestBody
 }
 
-type PostBrackegesResponseObject interface {
-	VisitPostBrackegesResponse(w http.ResponseWriter) error
+type PostBreakagesResponseObject interface {
+	VisitPostBreakagesResponse(w http.ResponseWriter) error
 }
 
-type PostBrackeges201JSONResponse BreakageResponse
+type PostBreakages201JSONResponse BreakageResponse
 
-func (response PostBrackeges201JSONResponse) VisitPostBrackegesResponse(w http.ResponseWriter) error {
+func (response PostBreakages201JSONResponse) VisitPostBreakagesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
 
@@ -1335,11 +1335,11 @@ type StrictServerInterface interface {
 	// (GET /auto/list)
 	GetAutoList(ctx context.Context, request GetAutoListRequestObject) (GetAutoListResponseObject, error)
 	// Get breakages by car ID
-	// (GET /brackeges)
-	GetBrackeges(ctx context.Context, request GetBrackegesRequestObject) (GetBrackegesResponseObject, error)
+	// (GET /breakages)
+	GetBreakages(ctx context.Context, request GetBreakagesRequestObject) (GetBreakagesResponseObject, error)
 	// Register a new breakage
-	// (POST /brackeges)
-	PostBrackeges(ctx context.Context, request PostBrackegesRequestObject) (PostBrackegesResponseObject, error)
+	// (POST /breakages)
+	PostBreakages(ctx context.Context, request PostBreakagesRequestObject) (PostBreakagesResponseObject, error)
 	// User login
 	// (POST /login)
 	PostLogin(ctx context.Context, request PostLoginRequestObject) (PostLoginResponseObject, error)
@@ -1490,25 +1490,25 @@ func (sh *strictHandler) GetAutoList(w http.ResponseWriter, r *http.Request, par
 	}
 }
 
-// GetBrackeges operation middleware
-func (sh *strictHandler) GetBrackeges(w http.ResponseWriter, r *http.Request, params GetBrackegesParams) {
-	var request GetBrackegesRequestObject
+// GetBreakages operation middleware
+func (sh *strictHandler) GetBreakages(w http.ResponseWriter, r *http.Request, params GetBreakagesParams) {
+	var request GetBreakagesRequestObject
 
 	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetBrackeges(ctx, request.(GetBrackegesRequestObject))
+		return sh.ssi.GetBreakages(ctx, request.(GetBreakagesRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetBrackeges")
+		handler = middleware(handler, "GetBreakages")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetBrackegesResponseObject); ok {
-		if err := validResponse.VisitGetBrackegesResponse(w); err != nil {
+	} else if validResponse, ok := response.(GetBreakagesResponseObject); ok {
+		if err := validResponse.VisitGetBreakagesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1516,11 +1516,11 @@ func (sh *strictHandler) GetBrackeges(w http.ResponseWriter, r *http.Request, pa
 	}
 }
 
-// PostBrackeges operation middleware
-func (sh *strictHandler) PostBrackeges(w http.ResponseWriter, r *http.Request) {
-	var request PostBrackegesRequestObject
+// PostBreakages operation middleware
+func (sh *strictHandler) PostBreakages(w http.ResponseWriter, r *http.Request) {
+	var request PostBreakagesRequestObject
 
-	var body PostBrackegesJSONRequestBody
+	var body PostBreakagesJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -1528,18 +1528,18 @@ func (sh *strictHandler) PostBrackeges(w http.ResponseWriter, r *http.Request) {
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PostBrackeges(ctx, request.(PostBrackegesRequestObject))
+		return sh.ssi.PostBreakages(ctx, request.(PostBreakagesRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostBrackeges")
+		handler = middleware(handler, "PostBreakages")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PostBrackegesResponseObject); ok {
-		if err := validResponse.VisitPostBrackegesResponse(w); err != nil {
+	} else if validResponse, ok := response.(PostBreakagesResponseObject); ok {
+		if err := validResponse.VisitPostBreakagesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

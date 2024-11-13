@@ -285,7 +285,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WheelResponse'
-  /brackeges:
+  /breakages:
     get:
       tags:
         - Breakage
