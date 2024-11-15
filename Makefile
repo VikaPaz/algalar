@@ -15,6 +15,9 @@ down_migrations: ## up migrations from migrations/down.sql
 oapi: ## generate open-api 
 	oapi-codegen  -generate chi-server,strict-server,types -package rest docs/swagger.yaml \
 	> ./internal/server/rest/server.go
+	
+docker_compose_run:
+	docker compose -f build/docker-compose.yaml up
 
 run: ## run server in local machine
 	go run cmd/main.go

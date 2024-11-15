@@ -6,7 +6,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/VikaPaz/algalar/internal/models"
 	"github.com/VikaPaz/algalar/internal/repository"
 	"github.com/VikaPaz/algalar/internal/server"
 	"github.com/VikaPaz/algalar/internal/server/rest"
@@ -16,22 +15,24 @@ import (
 )
 
 func Run() {
-	logger := NewLogger(logrus.DebugLevel, &logrus.TextFormatter{
+	logger := NewLogger(logrus.InfoLevel, &logrus.TextFormatter{
 		FullTimestamp: true,
 	})
 
-	if err := godotenv.Overload(); err != nil {
-		logger.Errorf("Error loading .env file: %e", models.ErrLoadEnvFailed)
+	if err := godotenv.Overload("env/.env"); err != nil {
+		logger.Errorf("Error loading .env file: %v", err)
 		return
 	}
 
 	confPostgres := repository.Config{
-		Host:     os.Getenv("HOST"),
+		Host:     os.Getenv("DB_HOST"),
 		Port:     os.Getenv("POSTGRES_PORT"),
 		User:     os.Getenv("USER"),
 		Password: os.Getenv("PASSWORD"),
 		Dbname:   os.Getenv("DB_NAME"),
 	}
+
+	logger.Debugf("config: %v", confPostgres)
 
 	port := os.Getenv("PORT")
 

@@ -6,9 +6,24 @@ services:
     ports:
       - "5432:5432"
     volumes:
+      - ./env:/env
       - ../tmp-postgres:/var/lib/postgresql/data
     environment:
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=user
+      - POSTGRES_DB=algalar
+    restart: on-failure
+
+  server:
+    build:
+      context: ./..
+      dockerfile: build/server.Dockerfile
+    ports:
+      - 8080:8080
+    volumes:
+      - ./env:/env
+      - ../migrations:/migrations
+    depends_on:
+      - postgres
+    restart: on-failure
  
