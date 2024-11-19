@@ -30,7 +30,7 @@ type Repository interface {
 	CreateCar(car models.Car) (models.Car, error)
 	CreateWheel(wheel models.Wheel) (string, error)
 	GetWheelById(wheelID string) (models.Wheel, error)
-	ChangeWheel(wheelID string, wheel models.Wheel) error
+	ChangeWheel(wheel models.Wheel) error
 	SelectAny(table string, key string, val any) (bool, error)
 	CreateSensor(sensor models.Sensor) (string, error)
 	CreateBreakage(breakage models.Breakage) (string, error)
@@ -41,6 +41,7 @@ type Repository interface {
 	GetBreakagesByCarId(carID string) ([]models.Breakage, error)
 	UpdateSensor(sensor models.Sensor) (models.Sensor, error)
 	GetReportData(userId string) ([]models.ReportData, error)
+	GetWheelsByStateNumber(stateNumber string) ([]models.Wheel, error)
 }
 
 type Service struct {
@@ -199,7 +200,7 @@ func (s *Service) RegisterBeakege(ctx context.Context, breakege models.Breakage)
 }
 
 func (s *Service) UpdateWheelData(ctx context.Context, wheel models.Wheel) error {
-	err := s.repo.ChangeWheel(wheel.ID, wheel)
+	err := s.repo.ChangeWheel(wheel)
 	if err != nil {
 		s.log.Debugf("Error updating wheel data: %v", wheel)
 		return err
@@ -218,6 +219,17 @@ func (s *Service) GetWheelData(ctx context.Context, id string) (models.Wheel, er
 
 	s.log.Debugf("Wheel data fetched successfully: %s", id)
 	return wheel, nil
+}
+
+func (s *Service) GetWheelsData(ctx context.Context, stateNumber string) ([]models.Wheel, error) {
+	data, err := s.repo.GetWheelsByStateNumber(stateNumber)
+	if err != nil {
+		s.log.Debugf("Auto not found: %s", stateNumber)
+		return []models.Wheel{}, err
+	}
+
+	s.log.Debugf("Auto data fetched successfully: %s", stateNumber)
+	return data, nil
 }
 
 func (s *Service) GetAutoData(ctx context.Context, id string) (models.Car, error) {

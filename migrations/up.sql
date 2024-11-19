@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
 	middle_name varchar(100),
 	login varchar(100),
 	password varchar(100),
+	post varchar(100),
 	timezone text
 );
 
@@ -31,6 +32,8 @@ CREATE TABLE IF NOT EXISTS wheels (
 	cost float,
 	brand varchar(100),
 	model varchar(100),
+	ngp float,
+	tkvh float,
 	mileage float,
 	min_temperature float,
 	min_pressure float,
@@ -71,4 +74,11 @@ CREATE TABLE IF NOT EXISTS sensors (
 	pressure float,
 	temperature float,
 	datetime timestamp
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+	user_id uuid REFERENCES users,
+	breakages_id uuid REFERENCES breakages,
+	status varchar(100)
 );

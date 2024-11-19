@@ -123,17 +123,55 @@ func (r *Repository) CreateCar(car models.Car) (models.Car, error) {
 
 func (r *Repository) CreateWheel(wheel models.Wheel) (string, error) {
 	query := `
-        INSERT INTO wheels (id_company, id_car, count_axis, position, size, cost, brand, model, mileage, min_temperature, min_pressure, max_temperature, max_pressure)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        INSERT INTO wheels (id_company, id_car, count_axis, position, size, cost, brand, model, mileage, min_temperature, min_pressure, max_temperature, max_pressure, ngp, tkvh)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         RETURNING id`
 
 	var wheelID string
-	err := r.conn.QueryRow(query, wheel.IDCompany, wheel.IDCar, wheel.AxisNumber, wheel.Position, wheel.Size, wheel.Cost, wheel.Brand, wheel.Model, wheel.Mileage, wheel.MinTemperature, wheel.MinPressure, wheel.MaxTemperature, wheel.MaxPressure).Scan(&wheelID)
+	err := r.conn.QueryRow(query, wheel.IDCompany, wheel.IDCar, wheel.AxisNumber, wheel.Position, wheel.Size, wheel.Cost, wheel.Brand, wheel.Model, wheel.Mileage, wheel.MinTemperature, wheel.MinPressure, wheel.MaxTemperature, wheel.MaxPressure, *wheel.Ngp, *wheel.Tkvh).Scan(&wheelID)
 	if err != nil {
 		return "", err
 	}
 
 	return wheelID, nil
+}
+
+func (r *Repository) GetWheelsByStateNumber(stateNumber string) ([]models.Wheel, error) {
+	query := `
+        SELECT w.id, w.id_company, w.id_car, w.count_axis, w.position, w.size, w.cost, w.brand, w.model, 
+               w.ngp, w.tkvh, w.mileage, w.min_temperature, w.min_pressure, w.max_temperature, w.max_pressure, w.ngp, w.tkvh
+        FROM wheels w
+        JOIN cars c ON w.id_car = c.id
+        WHERE c.state_number = $1
+    `
+
+	var wheels []models.Wheel
+
+	rows, err := r.conn.Query(query, stateNumber)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var wheel models.Wheel
+		err := rows.Scan(
+			&wheel.ID, &wheel.IDCompany, &wheel.IDCar, &wheel.AxisNumber, &wheel.Position, &wheel.Size,
+			&wheel.Cost, &wheel.Brand, &wheel.Model, &wheel.Ngp, &wheel.Tkvh, &wheel.Mileage,
+			&wheel.MinTemperature, &wheel.MinPressure, &wheel.MaxTemperature, &wheel.MaxPressure, &wheel.Ngp, &wheel.Tkvh,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		wheels = append(wheels, wheel)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return wheels, nil
 }
 
 func (r *Repository) GetWheelById(wheelID string) (models.Wheel, error) {
@@ -315,14 +353,21 @@ func (r *Repository) UpdateSensor(sensor models.Sensor) (models.Sensor, error) {
 	return updatedSensor, nil
 }
 
-func (r *Repository) ChangeWheel(wheelID string, wheel models.Wheel) error {
+func (r *Repository) ChangeWheel(wheel models.Wheel) error {
+	carID, err := uuid.Parse(wheel.IDCar)
+	if err != nil {
+		return fmt.Errorf("error parsing carID '%s' into UUID: %w", carID, err)
+	}
+
 	query := `
         UPDATE wheels
-        SET id_car = $1, count_axis = $2, position = $3, size = $4, cost = $5, brand = $6, model = $7, mileage = $8, min_temperature = $9, min_pressure = $10, max_temperature = $11, max_pressure = $12
-        WHERE id = $13`
-
-	r.conn.QueryRow(query, wheel.IDCar, wheel.AxisNumber, wheel.Position, wheel.Size, wheel.Cost, wheel.Brand, wheel.Model, wheel.Mileage, wheel.MinTemperature, wheel.MinPressure, wheel.MaxTemperature, wheel.MaxPressure, wheel.ID)
-
+        SET id_car = $1, count_axis = $2, position = $3, size = $4, cost = $5, brand = $6, model = $7, mileage = $8, min_temperature = $9, min_pressure = $10, max_temperature = $11, max_pressure = $12, ngp = $13, tkvh = $14
+        WHERE id_car = $15 AND position = $16`
+	fmt.Println(query, carID, wheel.AxisNumber, wheel.Position, wheel.Size, wheel.Cost, wheel.Brand, wheel.Model, wheel.Mileage, wheel.MinTemperature, wheel.MinPressure, wheel.MaxTemperature, wheel.MaxPressure, *wheel.Ngp, *wheel.Tkvh, carID, wheel.Position)
+	err = r.conn.QueryRow(query, carID, wheel.AxisNumber, wheel.Position, wheel.Size, wheel.Cost, wheel.Brand, wheel.Model, wheel.Mileage, wheel.MinTemperature, wheel.MinPressure, wheel.MaxTemperature, wheel.MaxPressure, *wheel.Ngp, *wheel.Tkvh, carID, wheel.Position).Err()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -379,22 +424,22 @@ func (r *Repository) SelectAny(table string, key string, val any) (bool, error) 
 func (r *Repository) GetReportData(userId string) ([]models.ReportData, error) {
 	query := `
 		SELECT
-			w.id AS wheel_id,             -- ID колеса
-			c.state_number,              -- Госномер автомобиля
-			w.brand AS tire_brand,       -- Марка шины
-			w.mileage,                   -- Пробег автомобиля
-			COUNT(CASE WHEN s.temperature < w.min_temperature OR s.temperature > w.max_temperature THEN 1 END) AS temp_out_of_bounds,  -- Кол-во выходов температуры за границы
-			COUNT(CASE WHEN s.pressure < w.min_pressure OR s.pressure > w.max_pressure THEN 1 END) AS pressure_out_of_bounds  -- Кол-во выходов давления за границы
+			w.id AS wheel_id,             
+			c.state_number,              
+			w.brand AS tire_brand,       
+			w.mileage,                   
+			COUNT(CASE WHEN s.temperature < w.min_temperature OR s.temperature > w.max_temperature THEN 1 END) AS temp_out_of_bounds,  
+			COUNT(CASE WHEN s.pressure < w.min_pressure OR s.pressure > w.max_pressure THEN 1 END) AS pressure_out_of_bounds  
 		FROM
 			cars c
 		JOIN wheels w ON w.id_car = c.id
 		JOIN sensors s ON s.car_id = c.id AND s.count_axis = w.count_axis AND s.position = w.position
 		WHERE
-			c.id_company = $1  -- Ограничиваем только машинами текущего пользователя
+			c.id_company = $1  
 		GROUP BY
-			w.id, c.state_number, w.brand, w.mileage, w.position  -- Группируем по колесу, машине и позиции
+			w.id, c.state_number, w.brand, w.mileage, w.position  
 		ORDER BY
-			c.state_number, w.position;  -- Сортировка по госномеру и позиции колеса
+			c.state_number, w.position; 
 	`
 
 	rows, err := r.conn.Query(query, userId)

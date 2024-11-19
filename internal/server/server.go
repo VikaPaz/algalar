@@ -36,6 +36,7 @@ type Service interface {
 	RegisterBeakege(ctx context.Context, breakege models.Breakage) (models.Breakage, error)
 	GetCarId(stateNumber string) (string, error)
 	UpdateSensor(ctx context.Context, sensor models.Sensor) (models.Sensor, error)
+	GetWheelsData(ctx context.Context, stateNumber string) ([]models.Wheel, error)
 }
 
 type ServImplemented struct {
@@ -318,21 +319,44 @@ func (s *ServImplemented) GetWheels(w http.ResponseWriter, r *http.Request, para
 	json.NewEncoder(w).Encode(res)
 }
 
-func (s *ServImplemented) GetSensor(w http.ResponseWriter, r *http.Request, params rest.GetSensorParams) {
+func (s *ServImplemented) GetWheelsStateNumber(w http.ResponseWriter, r *http.Request, stateNumber string) {
 	ctx, err := getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
-	dateList, err := s.service.GetSensorData(ctx, params.CarId)
+	dataList, err := s.service.GetWheelsData(ctx, stateNumber)
 	if err != nil {
 		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	res := make([]rest.SensorData, len(dateList))
-	for i, val := range dateList {
+	res := make([]rest.WheelResponse, len(dataList))
+	for i, val := range dataList {
+		res[i] = ToWheelResponse(val)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
+}
+
+func (s *ServImplemented) GetSensor(w http.ResponseWriter, r *http.Request, params rest.GetSensorParams) {
+	ctx, err := getUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	dataList, err := s.service.GetSensorData(ctx, params.CarId)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	res := make([]rest.SensorData, len(dataList))
+	for i, val := range dataList {
 		res[i] = ToSensorData(val, val.Datetime.String())
 	}
 
@@ -647,6 +671,8 @@ func ToWheel(wheelRegistration rest.WheelRegistration) models.Wheel {
 		MinPressure:    wheelRegistration.MinPressure,
 		MaxTemperature: wheelRegistration.MaxTemperature,
 		MaxPressure:    wheelRegistration.MaxPressure,
+		Ngp:            &wheelRegistration.Ngp,
+		Tkvh:           &wheelRegistration.Tkvh,
 	}
 }
 
@@ -666,6 +692,8 @@ func ToWheelResponse(wheel models.Wheel) rest.WheelResponse {
 		TireSize:       nil,
 		AutoId:         &wheel.IDCar,
 		WheelPosition:  &wheel.Position,
+		Ngp:            wheel.Ngp,
+		Tkvh:           wheel.Tkvh,
 	}
 }
 

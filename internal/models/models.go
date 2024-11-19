@@ -38,6 +38,8 @@ type Wheel struct {
 	MinPressure    float32
 	MaxTemperature float32
 	MaxPressure    float32
+	Ngp            *float32
+	Tkvh           *float32
 }
 
 type Sensor struct {

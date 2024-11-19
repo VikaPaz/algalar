@@ -132,11 +132,13 @@ type WheelChange struct {
 	Mileage        float32 `json:"mileage"`
 	MinPressure    float32 `json:"minPressure"`
 	MinTemperature float32 `json:"minTemperature"`
+	Ngp            float32 `json:"ngp"`
 	SensorNumber   string  `json:"sensorNumber"`
 	TireBrand      string  `json:"tireBrand"`
 	TireCost       float32 `json:"tireCost"`
 	TireModel      string  `json:"tireModel"`
 	TireSize       string  `json:"tireSize"`
+	Tkvh           float32 `json:"tkvh"`
 	WheelPosition  int     `json:"wheelPosition"`
 }
 
@@ -149,11 +151,13 @@ type WheelRegistration struct {
 	Mileage        float32 `json:"mileage"`
 	MinPressure    float32 `json:"minPressure"`
 	MinTemperature float32 `json:"minTemperature"`
+	Ngp            float32 `json:"ngp"`
 	SensorNumber   string  `json:"sensorNumber"`
 	TireBrand      string  `json:"tireBrand"`
 	TireCost       float32 `json:"tireCost"`
 	TireModel      string  `json:"tireModel"`
 	TireSize       string  `json:"tireSize"`
+	Tkvh           float32 `json:"tkvh"`
 	WheelPosition  int     `json:"wheelPosition"`
 }
 
@@ -167,11 +171,13 @@ type WheelResponse struct {
 	Mileage        *float32 `json:"mileage,omitempty"`
 	MinPressure    *float32 `json:"minPressure,omitempty"`
 	MinTemperature *float32 `json:"minTemperature,omitempty"`
+	Ngp            *float32 `json:"ngp,omitempty"`
 	SensorNumber   *string  `json:"sensorNumber,omitempty"`
 	TireBrand      *string  `json:"tireBrand,omitempty"`
 	TireCost       *float32 `json:"tireCost,omitempty"`
 	TireModel      *string  `json:"tireModel,omitempty"`
 	TireSize       *string  `json:"tireSize,omitempty"`
+	Tkvh           *float32 `json:"tkvh,omitempty"`
 	WheelPosition  *int     `json:"wheelPosition,omitempty"`
 }
 
@@ -291,6 +297,9 @@ type ServerInterface interface {
 	// Update wheel data
 	// (PUT /wheels)
 	PutWheels(w http.ResponseWriter, r *http.Request)
+	// Get wheels by state number
+	// (GET /wheels/{state_number})
+	GetWheelsStateNumber(w http.ResponseWriter, r *http.Request, stateNumber string)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -396,6 +405,12 @@ func (_ Unimplemented) PostWheels(w http.ResponseWriter, r *http.Request) {
 // Update wheel data
 // (PUT /wheels)
 func (_ Unimplemented) PutWheels(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get wheels by state number
+// (GET /wheels/{state_number})
+func (_ Unimplemented) GetWheelsStateNumber(w http.ResponseWriter, r *http.Request, stateNumber string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -859,6 +874,31 @@ func (siw *ServerInterfaceWrapper) PutWheels(w http.ResponseWriter, r *http.Requ
 	handler.ServeHTTP(w, r)
 }
 
+// GetWheelsStateNumber operation middleware
+func (siw *ServerInterfaceWrapper) GetWheelsStateNumber(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "state_number" -------------
+	var stateNumber string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "state_number", chi.URLParam(r, "state_number"), &stateNumber, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state_number", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWheelsStateNumber(w, r, stateNumber)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -1022,6 +1062,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Put(options.BaseURL+"/wheels", wrapper.PutWheels)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/wheels/{state_number}", wrapper.GetWheelsStateNumber)
 	})
 
 	return r
@@ -1323,6 +1366,23 @@ func (response PutWheels200JSONResponse) VisitPutWheelsResponse(w http.ResponseW
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetWheelsStateNumberRequestObject struct {
+	StateNumber string `json:"state_number"`
+}
+
+type GetWheelsStateNumberResponseObject interface {
+	VisitGetWheelsStateNumberResponse(w http.ResponseWriter) error
+}
+
+type GetWheelsStateNumber200JSONResponse []WheelResponse
+
+func (response GetWheelsStateNumber200JSONResponse) VisitGetWheelsStateNumberResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// Get a single Auto by ID
@@ -1376,6 +1436,9 @@ type StrictServerInterface interface {
 	// Update wheel data
 	// (PUT /wheels)
 	PutWheels(ctx context.Context, request PutWheelsRequestObject) (PutWheelsResponseObject, error)
+	// Get wheels by state number
+	// (GET /wheels/{state_number})
+	GetWheelsStateNumber(ctx context.Context, request GetWheelsStateNumberRequestObject) (GetWheelsStateNumberResponseObject, error)
 }
 
 type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
@@ -1885,6 +1948,32 @@ func (sh *strictHandler) PutWheels(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PutWheelsResponseObject); ok {
 		if err := validResponse.VisitPutWheelsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWheelsStateNumber operation middleware
+func (sh *strictHandler) GetWheelsStateNumber(w http.ResponseWriter, r *http.Request, stateNumber string) {
+	var request GetWheelsStateNumberRequestObject
+
+	request.StateNumber = stateNumber
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWheelsStateNumber(ctx, request.(GetWheelsStateNumberRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWheelsStateNumber")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWheelsStateNumberResponseObject); ok {
+		if err := validResponse.VisitGetWheelsStateNumberResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
