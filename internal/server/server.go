@@ -320,12 +320,7 @@ func (s *ServImplemented) GetWheels(w http.ResponseWriter, r *http.Request, para
 }
 
 func (s *ServImplemented) GetWheelsStateNumber(w http.ResponseWriter, r *http.Request, stateNumber string) {
-	ctx, err := getUserID(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-	dataList, err := s.service.GetWheelsData(ctx, stateNumber)
+	dataList, err := s.service.GetWheelsData(r.Context(), stateNumber)
 	if err != nil {
 		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
