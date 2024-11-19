@@ -310,8 +310,7 @@ func (r *Repository) GetSensorsByCarId(carID string) ([]models.Sensor, error) {
 
 	parsedUUID, err := uuid.Parse(carID)
 	if err != nil {
-		fmt.Println("Error parsing UUID:", err)
-		return []models.Sensor{}, nil
+		return []models.Sensor{}, fmt.Errorf("error parsing UUID: %w", err)
 	}
 
 	rows, err := r.conn.Query(query, parsedUUID)
@@ -363,7 +362,6 @@ func (r *Repository) ChangeWheel(wheel models.Wheel) error {
         UPDATE wheels
         SET id_car = $1, count_axis = $2, position = $3, size = $4, cost = $5, brand = $6, model = $7, mileage = $8, min_temperature = $9, min_pressure = $10, max_temperature = $11, max_pressure = $12, ngp = $13, tkvh = $14
         WHERE id_car = $15 AND position = $16`
-	fmt.Println(query, carID, wheel.AxisNumber, wheel.Position, wheel.Size, wheel.Cost, wheel.Brand, wheel.Model, wheel.Mileage, wheel.MinTemperature, wheel.MinPressure, wheel.MaxTemperature, wheel.MaxPressure, *wheel.Ngp, *wheel.Tkvh, carID, wheel.Position)
 	err = r.conn.QueryRow(query, carID, wheel.AxisNumber, wheel.Position, wheel.Size, wheel.Cost, wheel.Brand, wheel.Model, wheel.Mileage, wheel.MinTemperature, wheel.MinPressure, wheel.MaxTemperature, wheel.MaxPressure, *wheel.Ngp, *wheel.Tkvh, carID, wheel.Position).Err()
 	if err != nil {
 		return err
