@@ -10,6 +10,8 @@ import (
 	"github.com/VikaPaz/algalar/internal/server"
 	"github.com/VikaPaz/algalar/internal/server/rest"
 	"github.com/VikaPaz/algalar/internal/service"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 )
@@ -49,9 +51,20 @@ func Run() {
 
 	svr := server.NewServer(svc, logger)
 
+	r := chi.NewRouter()
+
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
+		ExposedHeaders:   []string{"*"},
+		AllowCredentials: false,
+		MaxAge:           300,
+	}))
+
 	// TODO: registration with options
 	options := rest.ChiServerOptions{
-		Middlewares: []rest.MiddlewareFunc{server.AccessControlMiddleware},
+		BaseRouter: r,
 	}
 	router := rest.HandlerWithOptions(svr, options)
 
