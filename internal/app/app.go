@@ -50,12 +50,12 @@ func Run() {
 	svr := server.NewServer(svc, logger)
 
 	// TODO: registration with options
-	// options := rest.ChiServerOptions{
-	// 	Middlewares: []rest.MiddlewareFunc{server.JWTMiddleware},
-	// }
-	// router := rest.HandlerWithOptions(svr, options)
+	options := rest.ChiServerOptions{
+		Middlewares: []rest.MiddlewareFunc{server.AccessControlMiddleware},
+	}
+	router := rest.HandlerWithOptions(svr, options)
 
-	router := rest.Handler(svr)
+	// router := rest.Handler(svr)
 
 	go func() {
 		if err := http.ListenAndServe(":"+port, router); err != nil {
