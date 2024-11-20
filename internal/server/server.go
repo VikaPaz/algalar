@@ -226,7 +226,7 @@ func (s *ServImplemented) PutUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *ServImplemented) GetUser(w http.ResponseWriter, r *http.Request, params rest.GetUserParams) {
+func (s *ServImplemented) GetUser(w http.ResponseWriter, r *http.Request) {
 	ctx, err := getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)

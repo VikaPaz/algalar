@@ -207,11 +207,6 @@ type GetSensorParams struct {
 	CarId string `form:"car_id" json:"car_id"`
 }
 
-// GetUserParams defines parameters for GetUser.
-type GetUserParams struct {
-	Id string `form:"id" json:"id"`
-}
-
 // GetWheelsParams defines parameters for GetWheels.
 type GetWheelsParams struct {
 	Id string `form:"id" json:"id"`
@@ -281,7 +276,7 @@ type ServerInterface interface {
 	PutSensor(w http.ResponseWriter, r *http.Request)
 	// Get user details
 	// (GET /user)
-	GetUser(w http.ResponseWriter, r *http.Request, params GetUserParams)
+	GetUser(w http.ResponseWriter, r *http.Request)
 	// User registration
 	// (POST /user)
 	PostUser(w http.ResponseWriter, r *http.Request)
@@ -374,7 +369,7 @@ func (_ Unimplemented) PutSensor(w http.ResponseWriter, r *http.Request) {
 
 // Get user details
 // (GET /user)
-func (_ Unimplemented) GetUser(w http.ResponseWriter, r *http.Request, params GetUserParams) {
+func (_ Unimplemented) GetUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -723,34 +718,14 @@ func (siw *ServerInterfaceWrapper) PutSensor(w http.ResponseWriter, r *http.Requ
 // GetUser operation middleware
 func (siw *ServerInterfaceWrapper) GetUser(w http.ResponseWriter, r *http.Request) {
 
-	var err error
-
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
 
 	r = r.WithContext(ctx)
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetUserParams
-
-	// ------------- Required query parameter "id" -------------
-
-	if paramValue := r.URL.Query().Get("id"); paramValue != "" {
-
-	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "id"})
-		return
-	}
-
-	err = runtime.BindQueryParameter("form", true, true, "id", r.URL.Query(), &params.Id)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetUser(w, r, params)
+		siw.Handler.GetUser(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1267,7 +1242,6 @@ func (response PutSensor200JSONResponse) VisitPutSensorResponse(w http.ResponseW
 }
 
 type GetUserRequestObject struct {
-	Params GetUserParams
 }
 
 type GetUserResponseObject interface {
@@ -1780,10 +1754,8 @@ func (sh *strictHandler) PutSensor(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetUser operation middleware
-func (sh *strictHandler) GetUser(w http.ResponseWriter, r *http.Request, params GetUserParams) {
+func (sh *strictHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	var request GetUserRequestObject
-
-	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GetUser(ctx, request.(GetUserRequestObject))

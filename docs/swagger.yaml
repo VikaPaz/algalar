@@ -81,12 +81,6 @@ paths:
       tags:
       - User
       summary: Get user details
-      parameters:
-      - name: id
-        in: query
-        required: true
-        schema: 
-          type: string
       responses:
         "200":
           description: User details
