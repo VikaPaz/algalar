@@ -63,10 +63,13 @@ func (s *ServImplemented) PostUser(w http.ResponseWriter, r *http.Request) {
 
 	ok, err := s.service.IsCreatred("users", "login", user.Login)
 	if ok {
-		http.Error(w, "already exists", http.StatusBadRequest)
+		err := models.ErrAlreadyExists
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	if err != nil {
+		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -142,10 +145,13 @@ func (s *ServImplemented) PostAuto(w http.ResponseWriter, r *http.Request) {
 
 	ok, err := s.service.IsCreatred("cars", "state_number", car.StateNumber)
 	if ok {
+		err := models.ErrAlreadyExists
+		s.log.Error(err)
 		http.Error(w, "already exists", http.StatusBadRequest)
 		return
 	}
 	if err != nil {
+		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

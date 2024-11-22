@@ -51,7 +51,7 @@ func (r *Repository) GetById(userID string) (models.User, error) {
 	err := r.conn.QueryRow(query, userID).Scan(&user.INN, &user.Name, &user.Surname, &user.MiddleName, &user.Login, &user.Password, &user.Timezone)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return models.User{}, nil
+			return models.User{}, models.ErrNoContent
 		}
 		return models.User{}, err
 	}
@@ -88,10 +88,10 @@ func (r *Repository) GetIDByLoginAndPassword(email, password string) (string, er
         WHERE login = $1 AND password = $2`
 
 	var userID string
-	err := r.conn.QueryRow(query, email, password).Scan(&userID)
+	err := r.conn.QueryRow(query, email, password).Scan()
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return "", nil
+			return "", models.ErrNoContent
 		}
 		return "", err
 	}
@@ -184,7 +184,7 @@ func (r *Repository) GetWheelById(wheelID string) (models.Wheel, error) {
 	err := r.conn.QueryRow(query, wheelID).Scan(&wheel.IDCar, &wheel.AxisNumber, &wheel.Position, &wheel.Size, &wheel.Cost, &wheel.Brand, &wheel.Model, &wheel.Mileage, &wheel.MinTemperature, &wheel.MinPressure, &wheel.MaxTemperature, &wheel.MaxPressure)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return models.Wheel{}, nil
+			return models.Wheel{}, models.ErrNoContent
 		}
 		return models.Wheel{}, err
 	}
@@ -211,7 +211,7 @@ func (r *Repository) GetCarById(carID string) (models.Car, error) {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return models.Car{}, nil
+			return models.Car{}, models.ErrNoContent
 		}
 		return models.Car{}, err
 	}
@@ -230,7 +230,7 @@ func (r *Repository) GetIdCarByStateNumber(stateNumber string) (string, error) {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return "", nil
+			return "", models.ErrNoContent
 		}
 		return "", err
 	}

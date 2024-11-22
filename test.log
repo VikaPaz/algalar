@@ -1,0 +1,5 @@
+{"level":"info","msg":"Connected to PostgreSQL","time":"22 Nov 24 22:00 +05"}
+{"level":"info","msg":"Rest server is running on port: 8080","time":"22 Nov 24 22:00 +05"}
+{"level":"error","msg":"pq: insert or update on table \"cars\" violates foreign key constraint \"cars_id_company_fkey\"","time":"22 Nov 24 22:01 +05"}
+{"level":"error","msg":"pq: insert or update on table \"cars\" violates foreign key constraint \"cars_id_company_fkey\"","time":"22 Nov 24 22:03 +05"}
+{"level":"error","msg":"faild to create: already exists","time":"22 Nov 24 22:03 +05"}
