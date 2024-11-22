@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
 	inn varchar(100),
 	name varchar(100),
 	surname varchar(100),
-	middle_name varchar(100),
+	gender varchar(100),
 	login varchar(100),
 	password varchar(100),
 	post varchar(100),

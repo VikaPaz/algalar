@@ -366,18 +366,21 @@ components:
         refreshToken: refreshToken
     UserRegistration:
       required:
+      - inn
       - email
       - firstName
       - lastName
       - password
       - phone
+      - gender
+      - timeZone
       type: object
       properties:
         firstName:
           type: string
         lastName:
           type: string
-        middleName:
+        gender:
           type: string
         phone:
           type: string
@@ -396,7 +399,7 @@ components:
           type: string
         lastName:
           type: string
-        middleName:
+        gender:
           type: string
         phone:
           type: string
@@ -415,7 +418,7 @@ components:
         phone: phone
         inn: inn
         timeZone: timeZone
-        middleName: middleName
+        gender: gender
         email: email
     UpdatePassword:
       required:

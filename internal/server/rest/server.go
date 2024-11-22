@@ -100,26 +100,26 @@ type UpdatePassword struct {
 
 // UserDetails defines model for UserDetails.
 type UserDetails struct {
-	Email      *string `json:"email,omitempty"`
-	FirstName  *string `json:"firstName,omitempty"`
-	Inn        *string `json:"inn,omitempty"`
-	LastName   *string `json:"lastName,omitempty"`
-	MiddleName *string `json:"middleName,omitempty"`
-	Password   *string `json:"password,omitempty"`
-	Phone      *string `json:"phone,omitempty"`
-	TimeZone   *string `json:"timeZone,omitempty"`
+	Email     *string `json:"email,omitempty"`
+	FirstName *string `json:"firstName,omitempty"`
+	Gender    *string `json:"gender,omitempty"`
+	Inn       *string `json:"inn,omitempty"`
+	LastName  *string `json:"lastName,omitempty"`
+	Password  *string `json:"password,omitempty"`
+	Phone     *string `json:"phone,omitempty"`
+	TimeZone  *string `json:"timeZone,omitempty"`
 }
 
 // UserRegistration defines model for UserRegistration.
 type UserRegistration struct {
-	Email      string  `json:"email"`
-	FirstName  string  `json:"firstName"`
-	Inn        *string `json:"inn,omitempty"`
-	LastName   string  `json:"lastName"`
-	MiddleName *string `json:"middleName,omitempty"`
-	Password   string  `json:"password"`
-	Phone      string  `json:"phone"`
-	TimeZone   *string `json:"timeZone,omitempty"`
+	Email     string `json:"email"`
+	FirstName string `json:"firstName"`
+	Gender    string `json:"gender"`
+	Inn       string `json:"inn"`
+	LastName  string `json:"lastName"`
+	Password  string `json:"password"`
+	Phone     string `json:"phone"`
+	TimeZone  string `json:"timeZone"`
 }
 
 // WheelChange defines model for WheelChange.

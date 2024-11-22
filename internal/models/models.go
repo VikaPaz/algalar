@@ -3,14 +3,14 @@ package models
 import "time"
 
 type User struct {
-	ID         string
-	INN        int
-	Name       string
-	Surname    string
-	MiddleName string
-	Login      string
-	Password   string
-	Timezone   string
+	ID       string
+	INN      int
+	Name     string
+	Surname  string
+	Gender   string
+	Login    string
+	Password string
+	Timezone string
 }
 
 type Car struct {

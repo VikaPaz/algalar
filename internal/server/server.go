@@ -436,8 +436,6 @@ func (s *ServImplemented) PutSensor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(data)
-
 	res := ToSensorData(data, data.Datetime.String())
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
@@ -560,53 +558,53 @@ func ToUser(userDetails rest.UserDetails) models.User {
 		inn = 123456789
 	}
 	return models.User{
-		ID:         "",
-		INN:        inn,
-		Name:       *userDetails.FirstName,
-		Surname:    *userDetails.LastName,
-		MiddleName: *userDetails.MiddleName,
-		Login:      *userDetails.Email,
-		Password:   *userDetails.Password,
-		Timezone:   *userDetails.TimeZone,
+		ID:       "",
+		INN:      inn,
+		Name:     *userDetails.FirstName,
+		Surname:  *userDetails.LastName,
+		Gender:   *userDetails.Gender,
+		Login:    *userDetails.Email,
+		Password: *userDetails.Password,
+		Timezone: *userDetails.TimeZone,
 	}
 }
 
 func ToUserDetails(user models.User) rest.UserDetails {
 	return rest.UserDetails{
-		Email:      &user.Login,
-		FirstName:  &user.Name,
-		Inn:        nil,
-		LastName:   &user.Surname,
-		MiddleName: &user.MiddleName,
-		Password:   &user.Password,
-		Phone:      nil,
-		TimeZone:   &user.Timezone,
+		Email:     &user.Login,
+		FirstName: &user.Name,
+		Inn:       nil,
+		LastName:  &user.Surname,
+		Gender:    &user.Gender,
+		Password:  &user.Password,
+		Phone:     nil,
+		TimeZone:  &user.Timezone,
 	}
 }
 
 func ToUserRegistration(userRegistration rest.UserRegistration) models.User {
 	return models.User{
-		ID:         "",
-		INN:        123456789,
-		Name:       userRegistration.FirstName,
-		Surname:    userRegistration.LastName,
-		MiddleName: *userRegistration.MiddleName,
-		Login:      userRegistration.Email,
-		Password:   userRegistration.Password,
-		Timezone:   *userRegistration.TimeZone,
+		ID:       "",
+		INN:      123456789,
+		Name:     userRegistration.FirstName,
+		Surname:  userRegistration.LastName,
+		Gender:   userRegistration.Gender,
+		Login:    userRegistration.Email,
+		Password: userRegistration.Password,
+		Timezone: userRegistration.TimeZone,
 	}
 }
 
 func ToUserRegistrationFromUser(user models.User) rest.UserRegistration {
 	return rest.UserRegistration{
-		Email:      user.Login,
-		FirstName:  user.Name,
-		Inn:        nil,
-		LastName:   user.Surname,
-		MiddleName: &user.MiddleName,
-		Password:   user.Password,
-		Phone:      "",
-		TimeZone:   &user.Timezone,
+		Email:     user.Login,
+		FirstName: user.Name,
+		Inn:       string(user.INN),
+		LastName:  user.Surname,
+		Gender:    user.Gender,
+		Password:  user.Password,
+		Phone:     "",
+		TimeZone:  user.Timezone,
 	}
 }
 
