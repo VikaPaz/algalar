@@ -17,7 +17,7 @@ oapi: ## generate open-api
 	> ./internal/server/rest/server.go
 	
 docker_compose_run:
-	docker compose -f build/docker-compose.yaml up
+	docker compose -f build/docker-compose.yaml up -d
 
 run: ## run server in local machine
 	go run cmd/main.go
