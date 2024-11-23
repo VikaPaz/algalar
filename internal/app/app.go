@@ -71,7 +71,7 @@ func Run() {
 	// router := rest.Handler(svr)
 
 	go func() {
-		if err := http.ListenAndServe(":"+port, router); err != nil {
+		if err := http.ListenAndServeTLS(":"+port, "server.crt", "server.key", router); err != nil {
 			logger.Errorf("Cann't run server: %v", err)
 			return
 		}

@@ -3,3 +3,8 @@ bin
 logs
 xlsx
 docs/config.yaml
+test.log
+main.go
+server.crt
+server.csr
+server.key
