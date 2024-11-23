@@ -242,6 +242,10 @@ func (s *ServImplemented) GetUser(w http.ResponseWriter, r *http.Request) {
 	user, err := s.service.GetUserDetails(ctx)
 	if err != nil {
 		s.log.Error(err)
+		if err == models.ErrNoContent {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -553,13 +557,9 @@ func (s *ServImplemented) GetReport(w http.ResponseWriter, r *http.Request, para
 }
 
 func ToUser(userDetails rest.UserDetails) models.User {
-	var inn int
-	if userDetails.Inn != nil {
-		inn = 123456789
-	}
 	return models.User{
 		ID:       "",
-		INN:      inn,
+		INN:      *userDetails.Inn,
 		Name:     *userDetails.FirstName,
 		Surname:  *userDetails.LastName,
 		Gender:   *userDetails.Gender,
@@ -573,11 +573,11 @@ func ToUserDetails(user models.User) rest.UserDetails {
 	return rest.UserDetails{
 		Email:     &user.Login,
 		FirstName: &user.Name,
-		Inn:       nil,
+		Inn:       &user.INN,
 		LastName:  &user.Surname,
 		Gender:    &user.Gender,
 		Password:  &user.Password,
-		Phone:     nil,
+		Phone:     &user.Password,
 		TimeZone:  &user.Timezone,
 	}
 }
@@ -585,7 +585,7 @@ func ToUserDetails(user models.User) rest.UserDetails {
 func ToUserRegistration(userRegistration rest.UserRegistration) models.User {
 	return models.User{
 		ID:       "",
-		INN:      123456789,
+		INN:      string(userRegistration.Inn),
 		Name:     userRegistration.FirstName,
 		Surname:  userRegistration.LastName,
 		Gender:   userRegistration.Gender,

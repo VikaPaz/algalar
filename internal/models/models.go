@@ -4,7 +4,7 @@ import "time"
 
 type User struct {
 	ID       string
-	INN      int
+	INN      string
 	Name     string
 	Surname  string
 	Gender   string
