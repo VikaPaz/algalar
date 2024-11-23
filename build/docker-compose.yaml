@@ -23,6 +23,9 @@ services:
     volumes:
       - ./env:/env
       - ../migrations:/migrations
+      - ../server.crt
+      - ../server.csr
+      - ../server.key
     depends_on:
       - postgres
     restart: on-failure
