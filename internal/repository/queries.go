@@ -84,7 +84,7 @@ func (r *Repository) GetIDByLoginAndPassword(email, password string) (string, er
 
 	query := `
         SELECT id
-        FROM  
+        FROM  users
         WHERE login = $1 AND password = $2`
 
 	var userID string
