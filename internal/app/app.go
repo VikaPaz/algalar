@@ -8,9 +8,11 @@ import (
 	"time"
 
 	"github.com/VikaPaz/algalar/internal/repository"
+	authRepository "github.com/VikaPaz/algalar/internal/repository/auth"
 	"github.com/VikaPaz/algalar/internal/server"
 	"github.com/VikaPaz/algalar/internal/server/rest"
 	"github.com/VikaPaz/algalar/internal/service"
+	authService "github.com/VikaPaz/algalar/internal/service/auth"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
@@ -35,13 +37,6 @@ func Run() {
 		Dbname:   os.Getenv("DB_NAME"),
 	}
 
-	confService := service.Config{
-		Salt:       os.Getenv("JWT_SALT"),
-		SigningKey: os.Getenv("JWT_SIGNING_KEY"),
-		AccessTTL:  10 * time.Minute,
-		RefreshTTL: 1000 * time.Hour,
-	}
-
 	logger.Debugf("config: %v", confPostgres)
 
 	port := os.Getenv("PORT")
@@ -55,9 +50,19 @@ func Run() {
 
 	repo := repository.NewRepository(dbConn, logger)
 
-	svc := service.NewService(confService, repo, logger)
+	authRepo := authRepository.NewRepository(dbConn, logger)
 
-	svr := server.NewServer(svc, logger)
+	svc := service.NewService(repo, logger)
+
+	confService := authService.Config{
+		SigningKey: os.Getenv("JWT_SIGNING_KEY"),
+		AccessTTL:  10 * time.Minute,
+		RefreshTTL: 1000 * time.Hour,
+	}
+
+	auth := authService.NewService(confService, authRepo, logger)
+
+	svr := server.NewServer(svc, auth, logger)
 
 	r := chi.NewRouter()
 
@@ -70,13 +75,10 @@ func Run() {
 		MaxAge:           300,
 	}))
 
-	// TODO: registration with options
 	options := rest.ChiServerOptions{
 		BaseRouter: r,
 	}
 	router := rest.HandlerWithOptions(svr, options)
-
-	// router := rest.Handler(svr)
 
 	go func() {
 		if err := http.ListenAndServe(":"+port, router); err != nil {

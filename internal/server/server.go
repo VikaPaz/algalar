@@ -39,14 +39,24 @@ type Service interface {
 	GetWheelsData(ctx context.Context, stateNumber string) ([]models.Wheel, error)
 }
 
+type AuthService interface {
+	GenerateAccessToken(userID string) (string, error)
+	GenerateRefreshToken(userID string) (string, *time.Time, error)
+	ValidateRefreshToken(refreshToken string) (*string, error)
+	GetUserID(login, password string) (string, error)
+	SaveRefreshToken(userID string, refreshToken string, expiration time.Time) error
+}
+
 type ServImplemented struct {
 	service Service
+	auth    AuthService
 	log     *logrus.Logger
 }
 
-func NewServer(svc Service, logger *logrus.Logger) *ServImplemented {
+func NewServer(svc Service, auth AuthService, logger *logrus.Logger) *ServImplemented {
 	return &ServImplemented{
 		service: svc,
+		auth:    auth,
 		log:     logger,
 	}
 }
@@ -90,16 +100,40 @@ func (s *ServImplemented) PostLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	access, refresh, err := s.service.UserLogin(string(loginDetails.Email), loginDetails.Password)
+	userID, err := s.auth.GetUserID(string(loginDetails.Email), loginDetails.Password)
 	if err != nil {
 		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		if err == models.ErrNoContent {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	accessToken, err := s.auth.GenerateAccessToken(userID)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	refreshToken, exp, err := s.auth.GenerateRefreshToken(userID)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = s.auth.SaveRefreshToken(userID, refreshToken, *exp)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	response := rest.TokenResponse{
-		AccessToken:  access,
-		RefreshToken: refresh,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)

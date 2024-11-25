@@ -82,3 +82,12 @@ CREATE TABLE IF NOT EXISTS notifications (
 	breakages_id uuid REFERENCES breakages,
 	status varchar(100)
 );
+
+create table if not exists refresh_store (
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+	user_id uuid not null REFERENCES users,
+	token text not null,
+	expiration TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)

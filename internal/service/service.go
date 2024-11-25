@@ -300,14 +300,7 @@ func (s *Service) GetBreackegeData(ctx context.Context, carID string) ([]models.
 	return list, nil
 }
 
-type Config struct {
-	Salt       string
-	SigningKey string
-	AccessTTL  time.Duration
-	RefreshTTL time.Duration
-}
-
-func NewService(conf Config, repo Repository, log *logrus.Logger) *Service {
+func NewService(repo Repository, log *logrus.Logger) *Service {
 	return &Service{
 		repo: repo,
 		log:  log,
