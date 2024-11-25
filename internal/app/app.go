@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/VikaPaz/algalar/internal/repository"
 	"github.com/VikaPaz/algalar/internal/server"
@@ -34,6 +35,13 @@ func Run() {
 		Dbname:   os.Getenv("DB_NAME"),
 	}
 
+	confService := service.Config{
+		Salt:       os.Getenv("JWT_SALT"),
+		SigningKey: os.Getenv("JWT_SIGNING_KEY"),
+		AccessTTL:  10 * time.Minute,
+		RefreshTTL: 1000 * time.Hour,
+	}
+
 	logger.Debugf("config: %v", confPostgres)
 
 	port := os.Getenv("PORT")
@@ -47,7 +55,7 @@ func Run() {
 
 	repo := repository.NewRepository(dbConn, logger)
 
-	svc := service.NewService(repo, logger)
+	svc := service.NewService(confService, repo, logger)
 
 	svr := server.NewServer(svc, logger)
 
