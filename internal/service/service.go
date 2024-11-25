@@ -6,21 +6,8 @@ import (
 	"time"
 
 	"github.com/VikaPaz/algalar/internal/models"
-	"github.com/golang-jwt/jwt"
 	"github.com/sirupsen/logrus"
 )
-
-const (
-	salt       = "hjqrhjqw124617ajfhajs"
-	signingKey = "qrkjk#4#%35FSFJlja#4353KSFjH"
-	accessTTL  = 10 * time.Minute
-	refreshTTL = 1000 * time.Hour
-)
-
-type tokenClaims struct {
-	jwt.StandardClaims
-	Data string `json:"data"`
-}
 
 type Repository interface {
 	CreateUser(user models.User) (string, error)
@@ -47,43 +34,6 @@ type Repository interface {
 type Service struct {
 	repo Repository
 	log  *logrus.Logger
-}
-
-func (s *Service) UserLogin(login string, password string) (string, string, error) {
-	id, err := s.repo.GetIDByLoginAndPassword(login, password)
-	if err != nil {
-		s.log.Debugf("Invalid s.login or password: %s", login)
-		return "", "", err
-	}
-
-	access, err := NewToken(id, accessTTL)
-	if err != nil {
-		return "", "", err
-	}
-
-	refresh, err := NewToken(id, refreshTTL)
-	if err != nil {
-		return "", "", err
-	}
-	return access, refresh, nil
-}
-
-func (s *Service) RefreshToken(ctx context.Context) (string, string, error) {
-	id, ok := ctx.Value("user_id").(string)
-	if !ok || id == "" {
-		return "", "", fmt.Errorf("wrong context: %v", ctx)
-	}
-
-	access, err := NewToken(id, accessTTL)
-	if err != nil {
-		return "", "", err
-	}
-
-	refresh, err := NewToken(id, refreshTTL)
-	if err != nil {
-		return "", "", err
-	}
-	return access, refresh, nil
 }
 
 func (s *Service) IsCreatred(table string, key string, val any) (bool, error) {
@@ -305,15 +255,4 @@ func NewService(repo Repository, log *logrus.Logger) *Service {
 		repo: repo,
 		log:  log,
 	}
-}
-
-func NewToken(data string, ttl time.Duration) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
-		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(ttl).Unix(),
-			IssuedAt:  time.Now().Unix(),
-		},
-		data,
-	})
-	return token.SignedString([]byte(signingKey))
 }

@@ -1,17 +1,17 @@
 package auth
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/VikaPaz/algalar/internal/models"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/sirupsen/logrus"
 )
 
 type AuthRepository interface {
 	CreateRefreshToken(userID string, refreshToken string, expiration time.Time) error
-	SelectRefresToken(refreshToken string) (bool, error)
+	GetRefresToken(userID string) (string, error)
 	UpdateRefreshToken(userID string, token string, expiration time.Time) error
 	GetIDByLoginAndPassword(email, password string) (string, error)
 }
@@ -28,10 +28,11 @@ type AuthService struct {
 }
 
 type Config struct {
-	Salt       string
-	SigningKey string
-	AccessTTL  time.Duration
-	RefreshTTL time.Duration
+	Salt              string
+	AccessSigningKey  string
+	RefreshSigningKey string
+	AccessTTL         time.Duration
+	RefreshTTL        time.Duration
 }
 
 func NewService(conf Config, repo AuthRepository, log *logrus.Logger) *AuthService {
@@ -54,7 +55,7 @@ func (s *AuthService) GenerateAccessToken(userID string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	sign, err := token.SignedString([]byte(s.conf.SigningKey))
+	sign, err := token.SignedString([]byte(s.conf.AccessSigningKey))
 	if err != nil {
 		s.log.Errorf("failed to sign access: %v", err)
 		return "", err
@@ -64,7 +65,7 @@ func (s *AuthService) GenerateAccessToken(userID string) (string, error) {
 }
 
 func (s *AuthService) GenerateRefreshToken(userID string) (string, *time.Time, error) {
-	expirationTime := time.Now().Add(s.conf.AccessTTL)
+	expirationTime := time.Now().Add(s.conf.RefreshTTL)
 	claims := &Claims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -75,7 +76,7 @@ func (s *AuthService) GenerateRefreshToken(userID string) (string, *time.Time, e
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	sign, err := token.SignedString([]byte(s.conf.SigningKey))
+	sign, err := token.SignedString([]byte(s.conf.RefreshSigningKey))
 	if err != nil {
 		s.log.Errorf("failed to sign refresh: %v", err)
 		return "", nil, err
@@ -84,24 +85,28 @@ func (s *AuthService) GenerateRefreshToken(userID string) (string, *time.Time, e
 	return sign, &expirationTime, nil
 }
 
-func (s *AuthService) ValidateRefreshToken(refreshToken string) (*string, error) {
+func (s *AuthService) ValidateRefreshToken(refreshToken string) (string, error) {
 	token, err := jwt.ParseWithClaims(refreshToken, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method")
 		}
-		return []byte(s.conf.SigningKey), nil
+		return []byte(s.conf.RefreshSigningKey), nil
 	})
 
 	if err != nil || !token.Valid {
-		return nil, errors.New("invalid refresh token")
+		return "", models.ErrInvalidRefreshToken
 	}
 
 	claims, ok := token.Claims.(*Claims)
 	if !ok {
-		return nil, errors.New("invalid refresh token")
+		return "", models.ErrInvalidRefreshToken
 	}
 
-	return &claims.UserID, nil
+	if claims.UserID == "" {
+		return "", models.ErrInvalidRefreshToken
+	}
+
+	return claims.UserID, nil
 }
 
 func (s *AuthService) SaveRefreshToken(userID string, refreshToken string, expiration time.Time) error {
@@ -110,4 +115,12 @@ func (s *AuthService) SaveRefreshToken(userID string, refreshToken string, expir
 
 func (s *AuthService) GetUserID(login, password string) (string, error) {
 	return s.repo.GetIDByLoginAndPassword(login, password)
+}
+
+func (s *AuthService) GetRefreshToken(userID string) (string, error) {
+	return s.repo.GetRefresToken(userID)
+}
+
+func (s *AuthService) UpdateRefreshToken(userID string, token string, expiration time.Time) error {
+	return s.repo.UpdateRefreshToken(userID, token, expiration)
 }

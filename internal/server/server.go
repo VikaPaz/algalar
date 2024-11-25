@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -18,8 +19,6 @@ import (
 
 type Service interface {
 	RegisterAuto(ctx context.Context, car models.Car) (models.Car, error)
-	UserLogin(login string, password string) (string, string, error)
-	RefreshToken(ctx context.Context) (string, string, error)
 	RegisterUser(user models.User) error
 	UpdateUserPassword(ctx context.Context, newPassword string) error
 	GetUserDetails(ctx context.Context) (models.User, error)
@@ -42,22 +41,30 @@ type Service interface {
 type AuthService interface {
 	GenerateAccessToken(userID string) (string, error)
 	GenerateRefreshToken(userID string) (string, *time.Time, error)
-	ValidateRefreshToken(refreshToken string) (*string, error)
+	ValidateRefreshToken(refreshToken string) (string, error)
 	GetUserID(login, password string) (string, error)
 	SaveRefreshToken(userID string, refreshToken string, expiration time.Time) error
+	GetRefreshToken(userID string) (string, error)
+	UpdateRefreshToken(userID string, token string, expiration time.Time) error
 }
 
 type ServImplemented struct {
 	service Service
 	auth    AuthService
+	conf    Config
 	log     *logrus.Logger
 }
 
-func NewServer(svc Service, auth AuthService, logger *logrus.Logger) *ServImplemented {
+type Config struct {
+	SigningKey string
+}
+
+func NewServer(conf Config, svc Service, auth AuthService, logger *logrus.Logger) *ServImplemented {
 	return &ServImplemented{
 		service: svc,
 		auth:    auth,
 		log:     logger,
+		conf:    conf,
 	}
 }
 
@@ -124,7 +131,20 @@ func (s *ServImplemented) PostLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.auth.SaveRefreshToken(userID, refreshToken, *exp)
+	token, err := s.auth.GetRefreshToken(userID)
+	if err == models.ErrNoContent {
+		err = nil
+	}
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if token == "" {
+		err = s.auth.SaveRefreshToken(userID, refreshToken, *exp)
+	} else {
+		err = s.auth.UpdateRefreshToken(userID, refreshToken, *exp)
+	}
 	if err != nil {
 		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -140,29 +160,71 @@ func (s *ServImplemented) PostLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *ServImplemented) PostRefresh(w http.ResponseWriter, r *http.Request) {
-	ctx, err := getUserID(r)
+	headAuth, err := getTokenFromHeader(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
-	newAccess, errRefresh, err := s.service.RefreshToken(ctx)
+	userID, err := s.auth.ValidateRefreshToken(headAuth)
+	if err != nil {
+		if err == models.ErrInvalidRefreshToken {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	token, err := s.auth.GetRefreshToken(userID)
+	if err != nil {
+		if err == models.ErrNoContent {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if token != headAuth {
+		err := errors.New(fmt.Sprintf("refresh token not found or expired: %v", models.ErrInvalidRefreshToken))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	accessToken, err := s.auth.GenerateAccessToken(userID)
 	if err != nil {
 		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	refreshToken, exp, err := s.auth.GenerateRefreshToken(userID)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = s.auth.UpdateRefreshToken(userID, refreshToken, *exp)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	response := rest.TokenResponse{
-		AccessToken:  newAccess,
-		RefreshToken: errRefresh,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
 
 func (s *ServImplemented) PostAuto(w http.ResponseWriter, r *http.Request) {
-	ctx, err := getUserID(r)
+	ctx, err := s.getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -203,7 +265,7 @@ func (s *ServImplemented) PostAuto(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *ServImplemented) GetAuto(w http.ResponseWriter, r *http.Request, params rest.GetAutoParams) {
-	ctx, err := getUserID(r)
+	ctx, err := s.getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -221,7 +283,7 @@ func (s *ServImplemented) GetAuto(w http.ResponseWriter, r *http.Request, params
 }
 
 func (s *ServImplemented) GetAutoList(w http.ResponseWriter, r *http.Request, params rest.GetAutoListParams) {
-	ctx, err := getUserID(r)
+	ctx, err := s.getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -245,7 +307,7 @@ func (s *ServImplemented) GetAutoList(w http.ResponseWriter, r *http.Request, pa
 }
 
 func (s *ServImplemented) PutUser(w http.ResponseWriter, r *http.Request) {
-	ctx, err := getUserID(r)
+	ctx, err := s.getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -267,7 +329,7 @@ func (s *ServImplemented) PutUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *ServImplemented) GetUser(w http.ResponseWriter, r *http.Request) {
-	ctx, err := getUserID(r)
+	ctx, err := s.getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -292,7 +354,7 @@ func (s *ServImplemented) GetUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *ServImplemented) PostWheels(w http.ResponseWriter, r *http.Request) {
-	ctx, err := getUserID(r)
+	ctx, err := s.getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -321,7 +383,7 @@ func (s *ServImplemented) PostWheels(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *ServImplemented) PutWheels(w http.ResponseWriter, r *http.Request) {
-	ctx, err := getUserID(r)
+	ctx, err := s.getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -346,7 +408,7 @@ func (s *ServImplemented) PutWheels(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *ServImplemented) GetWheels(w http.ResponseWriter, r *http.Request, params rest.GetWheelsParams) {
-	ctx, err := getUserID(r)
+	ctx, err := s.getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -382,7 +444,7 @@ func (s *ServImplemented) GetWheelsStateNumber(w http.ResponseWriter, r *http.Re
 }
 
 func (s *ServImplemented) GetSensor(w http.ResponseWriter, r *http.Request, params rest.GetSensorParams) {
-	ctx, err := getUserID(r)
+	ctx, err := s.getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -407,7 +469,7 @@ func (s *ServImplemented) GetSensor(w http.ResponseWriter, r *http.Request, para
 // Register a new sensor
 // (POST /sensor)
 func (s *ServImplemented) PostSensor(w http.ResponseWriter, r *http.Request) {
-	ctx, err := getUserID(r)
+	ctx, err := s.getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -445,7 +507,7 @@ func (s *ServImplemented) PostSensor(w http.ResponseWriter, r *http.Request) {
 // Update an existing sensor
 // (PUT /sensor)
 func (s *ServImplemented) PutSensor(w http.ResponseWriter, r *http.Request) {
-	ctx, err := getUserID(r)
+	ctx, err := s.getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -485,7 +547,7 @@ func (s *ServImplemented) PutSensor(w http.ResponseWriter, r *http.Request) {
 
 // TODO: fix mistake
 func (s *ServImplemented) GetBreakages(w http.ResponseWriter, r *http.Request, params rest.GetBreakagesParams) {
-	ctx, err := getUserID(r)
+	ctx, err := s.getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -510,7 +572,7 @@ func (s *ServImplemented) GetBreakages(w http.ResponseWriter, r *http.Request, p
 // Register a new breakage
 // (POST /brackeges)
 func (s *ServImplemented) PostBreakages(w http.ResponseWriter, r *http.Request) {
-	ctx, err := getUserID(r)
+	ctx, err := s.getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -546,7 +608,7 @@ func (s *ServImplemented) PostBreakages(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *ServImplemented) GetReport(w http.ResponseWriter, r *http.Request, params rest.GetReportParams) {
-	ctx, err := getUserID(r)
+	ctx, err := s.getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -760,30 +822,22 @@ func ToBreakageResponse(breakage models.Breakage) rest.BreakageResponse {
 	}
 }
 
-type tokenClaims struct {
-	jwt.StandardClaims
-	Data string `json:"data"`
-}
-
-var jwtSecret = []byte("qrkjk#4#%35FSFJlja#4353KSFjH")
-
-func validateToken(tokenStr string) (*tokenClaims, error) {
-	token, err := jwt.ParseWithClaims(tokenStr, &tokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+func validateToken(tokenStr string, jwtSecret string) (*models.Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenStr, &models.Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method")
 		}
-		return jwtSecret, nil
+		return []byte(jwtSecret), nil
 	})
 
 	if err != nil {
 		return nil, fmt.Errorf("invalid token: %v", err)
 	}
 
-	if claims, ok := token.Claims.(*tokenClaims); ok && token.Valid {
+	if claims, ok := token.Claims.(*models.Claims); ok && token.Valid {
 		return claims, nil
-	} else {
-		return nil, fmt.Errorf("invalid claims")
 	}
+	return nil, fmt.Errorf("invalid claims")
 }
 
 func getTokenFromHeader(r *http.Request) (string, error) {
@@ -800,17 +854,17 @@ func getTokenFromHeader(r *http.Request) (string, error) {
 	return parts[1], nil
 }
 
-func getUserID(r *http.Request) (context.Context, error) {
+func (s *ServImplemented) getUserID(r *http.Request) (context.Context, error) {
 	tokenStr, err := getTokenFromHeader(r)
 	if err != nil {
 		return nil, fmt.Errorf("authorization: %w", err)
 	}
 
-	claims, err := validateToken(tokenStr)
+	claims, err := validateToken(tokenStr, s.conf.SigningKey)
 	if err != nil {
 		return nil, fmt.Errorf("authorization: %w", err)
 	}
 
-	ctx := context.WithValue(r.Context(), "user_id", claims.Data)
+	ctx := context.WithValue(r.Context(), "user_id", claims.UserID)
 	return ctx, nil
 }

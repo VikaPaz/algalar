@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/golang-jwt/jwt/v4"
+)
 
 type User struct {
 	ID       string
@@ -77,4 +81,9 @@ type ReportData struct {
 	Mileage             float32
 	TempOutOfBounds     int
 	PressureOutOfBounds int
+}
+
+type Claims struct {
+	UserID string `json:"user_id"`
+	jwt.RegisteredClaims
 }

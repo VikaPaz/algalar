@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/VikaPaz/algalar/internal/models"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -33,22 +34,30 @@ func (r *Repository) CreateRefreshToken(userID string, refreshToken string, expi
 	return nil
 }
 
-func (r *Repository) SelectRefresToken(refreshToken string) (bool, error) {
-	var storedHash string
+func (r *Repository) GetRefresToken(userID string) (string, error) {
+	var storedToken string
 	var expiration time.Time
 
-	err := r.conn.QueryRow(`
-        SELECT token, expiration
-        FROM refresh_store
-        WHERE token = $1`,
-		refreshToken,
-	).Scan(&storedHash, &expiration)
-
+	parsedUUID, err := uuid.Parse(userID)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 
-	return true, nil
+	err = r.conn.QueryRow(`
+        SELECT token, expiration
+        FROM refresh_store
+        WHERE user_id = $1`,
+		parsedUUID,
+	).Scan(&storedToken, &expiration)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", models.ErrNoContent
+		}
+		return "", err
+	}
+
+	return storedToken, nil
 }
 
 func (r *Repository) UpdateRefreshToken(userID string, token string, expiration time.Time) error {
@@ -58,7 +67,7 @@ func (r *Repository) UpdateRefreshToken(userID string, token string, expiration 
 	where user_id = $3 
 	`
 
-	_, err := r.conn.Exec(query, userID, token, expiration)
+	_, err := r.conn.Exec(query, token, expiration, userID)
 	return err
 }
 

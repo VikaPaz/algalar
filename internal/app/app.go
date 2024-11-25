@@ -54,15 +54,22 @@ func Run() {
 
 	svc := service.NewService(repo, logger)
 
-	confService := authService.Config{
-		SigningKey: os.Getenv("JWT_SIGNING_KEY"),
-		AccessTTL:  10 * time.Minute,
-		RefreshTTL: 1000 * time.Hour,
+	accessSigningKey := os.Getenv("JWT_ACCESS_SIGNING_KEY")
+
+	confAuth := authService.Config{
+		AccessSigningKey:  accessSigningKey,
+		RefreshSigningKey: os.Getenv("JWT_REFRESH_SIGNING_KEY"),
+		AccessTTL:         10 * time.Minute,
+		RefreshTTL:        1000 * time.Hour,
 	}
 
-	auth := authService.NewService(confService, authRepo, logger)
+	auth := authService.NewService(confAuth, authRepo, logger)
 
-	svr := server.NewServer(svc, auth, logger)
+	confServer := server.Config{
+		SigningKey: accessSigningKey,
+	}
+
+	svr := server.NewServer(confServer, svc, auth, logger)
 
 	r := chi.NewRouter()
 
