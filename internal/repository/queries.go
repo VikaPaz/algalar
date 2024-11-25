@@ -240,7 +240,7 @@ func (r *Repository) GetIdCarByStateNumber(stateNumber string) (string, error) {
 
 func (r *Repository) GetCarsList(userID string, offset int, limit int) ([]models.Car, error) {
 	query := `
-        SELECT id, id_company, state_number, brand, id_device, id_unicum, count_axis, datetime
+        SELECT id, id_company, state_number, brand, id_device, id_unicum, count_axis
         FROM cars
         WHERE id_company = $1
         LIMIT $2 OFFSET $3`
