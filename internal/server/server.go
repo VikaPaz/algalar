@@ -512,7 +512,13 @@ func (s *ServImplemented) PostBreakages(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *ServImplemented) GetReport(w http.ResponseWriter, r *http.Request, params rest.GetReportParams) {
-	reportData, err := s.service.GenerateReport(r.Context(), params.UserId)
+	ctx, err := getUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	reportData, err := s.service.GenerateReport(ctx, params.UserId)
 	if err != nil {
 		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
