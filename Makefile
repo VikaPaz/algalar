@@ -5,7 +5,7 @@ POSTGRES_DB ?= algalar
 .PHONY: docker_build docker_stop run_postgres swag run oapi up_migrations down_migrations
 
 up_migrations: ## up migrations from migrations/up.sql
-	docker cp migrations/up.sql build-postgres1:/ 
+	docker cp migrations/up.sql build-postgres-1:/ 
 	docker exec -it build-postgres-1 psql -U user -d algalar -f /up.sql
 
 down_migrations: ## up migrations from migrations/down.sql
