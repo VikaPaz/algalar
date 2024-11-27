@@ -544,8 +544,6 @@ func (s *ServImplemented) PutSensor(w http.ResponseWriter, r *http.Request) {
 
 // Get breakages by car ID
 // (GET /brackeges)
-
-// TODO: fix mistake
 func (s *ServImplemented) GetBreakages(w http.ResponseWriter, r *http.Request, params rest.GetBreakagesParams) {
 	ctx, err := s.getUserID(r)
 	if err != nil {
