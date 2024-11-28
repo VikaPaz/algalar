@@ -28,12 +28,12 @@ func (r *Repository) CreateUser(user models.User) (string, error) {
 	}
 
 	query := `
-        INSERT INTO users (inn, name, surname, gender, login, password, timezone)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO users (inn, name, surname, gender, login, password, timezone, phone)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING id`
 
 	var userID string
-	err := r.conn.QueryRow(query, user.INN, user.Name, user.Surname, user.Gender, user.Login, user.Password, user.Timezone).Scan(&userID)
+	err := r.conn.QueryRow(query, user.INN, user.Name, user.Surname, user.Gender, user.Login, user.Password, user.Timezone, user.Phone).Scan(&userID)
 	if err != nil {
 		return "", err
 	}
@@ -43,12 +43,12 @@ func (r *Repository) CreateUser(user models.User) (string, error) {
 
 func (r *Repository) GetById(userID string) (models.User, error) {
 	query := `
-        SELECT inn, name, surname, gender, login, password, timezone
+        SELECT inn, name, surname, gender, login, password, timezone, phone
         FROM users
         WHERE id = $1`
 
 	user := models.User{}
-	err := r.conn.QueryRow(query, userID).Scan(&user.INN, &user.Name, &user.Surname, &user.Gender, &user.Login, &user.Password, &user.Timezone)
+	err := r.conn.QueryRow(query, userID).Scan(&user.INN, &user.Name, &user.Surname, &user.Gender, &user.Login, &user.Password, &user.Timezone, &user.Phone)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return models.User{}, models.ErrNoContent

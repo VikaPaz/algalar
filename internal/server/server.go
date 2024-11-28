@@ -666,6 +666,7 @@ func ToUser(userDetails rest.UserDetails) models.User {
 		Login:    *userDetails.Email,
 		Password: *userDetails.Password,
 		Timezone: *userDetails.TimeZone,
+		Phone:    *userDetails.Phone,
 	}
 }
 
@@ -677,7 +678,7 @@ func ToUserDetails(user models.User) rest.UserDetails {
 		LastName:  &user.Surname,
 		Gender:    &user.Gender,
 		Password:  &user.Password,
-		Phone:     &user.Password,
+		Phone:     &user.Phone,
 		TimeZone:  &user.Timezone,
 	}
 }
@@ -692,6 +693,7 @@ func ToUserRegistration(userRegistration rest.UserRegistration) models.User {
 		Login:    userRegistration.Email,
 		Password: userRegistration.Password,
 		Timezone: userRegistration.TimeZone,
+		Phone:    userRegistration.Phone,
 	}
 }
 
@@ -703,7 +705,7 @@ func ToUserRegistrationFromUser(user models.User) rest.UserRegistration {
 		LastName:  user.Surname,
 		Gender:    user.Gender,
 		Password:  user.Password,
-		Phone:     "",
+		Phone:     user.Phone,
 		TimeZone:  user.Timezone,
 	}
 }

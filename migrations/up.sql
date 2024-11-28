@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
 	login varchar(100),
 	password varchar(100),
 	post varchar(100),
+	phone varchar(100),
 	timezone text
 );
 

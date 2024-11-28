@@ -15,6 +15,7 @@ type User struct {
 	Login    string
 	Password string
 	Timezone string
+	Phone    string
 }
 
 type Car struct {
