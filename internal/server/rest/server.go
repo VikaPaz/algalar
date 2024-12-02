@@ -137,7 +137,7 @@ type WheelChange struct {
 	TireBrand      string  `json:"tireBrand"`
 	TireCost       float32 `json:"tireCost"`
 	TireModel      string  `json:"tireModel"`
-	TireSize       string  `json:"tireSize"`
+	TireSize       float32 `json:"tireSize"`
 	Tkvh           float32 `json:"tkvh"`
 	WheelPosition  int     `json:"wheelPosition"`
 }
@@ -156,7 +156,7 @@ type WheelRegistration struct {
 	TireBrand      string  `json:"tireBrand"`
 	TireCost       float32 `json:"tireCost"`
 	TireModel      string  `json:"tireModel"`
-	TireSize       string  `json:"tireSize"`
+	TireSize       float32 `json:"tireSize"`
 	Tkvh           float32 `json:"tkvh"`
 	WheelPosition  int     `json:"wheelPosition"`
 }
@@ -176,7 +176,7 @@ type WheelResponse struct {
 	TireBrand      *string  `json:"tireBrand,omitempty"`
 	TireCost       *float32 `json:"tireCost,omitempty"`
 	TireModel      *string  `json:"tireModel,omitempty"`
-	TireSize       *string  `json:"tireSize,omitempty"`
+	TireSize       *float32 `json:"tireSize,omitempty"`
 	Tkvh           *float32 `json:"tkvh,omitempty"`
 	WheelPosition  *int     `json:"wheelPosition,omitempty"`
 }

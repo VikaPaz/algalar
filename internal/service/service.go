@@ -29,6 +29,7 @@ type Repository interface {
 	UpdateSensor(sensor models.Sensor) (models.Sensor, error)
 	GetReportData(userId string) ([]models.ReportData, error)
 	GetWheelsByStateNumber(stateNumber string) ([]models.Wheel, error)
+	GetCarWheelData(carID string) (models.CarWithWheels, error)
 }
 
 type Service struct {
@@ -250,8 +251,13 @@ func (s *Service) GetBreackegeData(ctx context.Context, carID string) ([]models.
 	return list, nil
 }
 
-func (s *Service) GetAutoWheelsData(ctx context.Context, id string) (models.Car, error) {
-	return models.Car{}, fmt.Errorf("not implemented")
+func (s *Service) GetAutoWheelsData(ctx context.Context, id string) (models.CarWithWheels, error) {
+	resp, err := s.repo.GetCarWheelData(id)
+	if err != nil {
+		return models.CarWithWheels{}, err
+	}
+
+	return resp, nil
 }
 
 func NewService(repo Repository, log *logrus.Logger) *Service {

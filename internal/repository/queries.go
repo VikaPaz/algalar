@@ -464,7 +464,7 @@ func (r *Repository) GetReportData(userId string) ([]models.ReportData, error) {
 	return reportData, nil
 }
 
-func (r *Repository) GetCarWheelData(carID uuid.UUID) (models.CarWithWheels, error) {
+func (r *Repository) GetCarWheelData(carID string) (models.CarWithWheels, error) {
 	query := `
         SELECT
             c.id AS car_id,
@@ -494,23 +494,20 @@ func (r *Repository) GetCarWheelData(carID uuid.UUID) (models.CarWithWheels, err
         WHERE
             c.id = $1;`
 
-	// Массив для хранения информации о колёсах
 	var wheels []models.Wheel
 	var car models.CarWithWheels
 
-	// Выполняем запрос
 	rows, err := r.conn.Query(query, carID)
 	if err != nil {
 		return car, fmt.Errorf("error executing query: %w", err)
 	}
 	defer rows.Close()
 
-	// Обрабатываем результат запроса
 	for rows.Next() {
 		var wheel models.Wheel
 		var carID, wheelID uuid.UUID
 		var position, countAxis int
-		var size, cost, ngp, tkvh, mileage, minTemp, minPressure, maxTemp, maxPressure float64
+		var size, cost, ngp, tkvh, mileage, minTemp, minPressure, maxTemp, maxPressure float32
 		var brand, model string
 
 		err := rows.Scan(
@@ -539,32 +536,28 @@ func (r *Repository) GetCarWheelData(carID uuid.UUID) (models.CarWithWheels, err
 			return car, fmt.Errorf("error scanning row: %w", err)
 		}
 
-		// Заполняем информацию о колесе
-		// wheel.ID = wheelID
-		// wheel.CountAxis = countAxis
-		// wheel.Position = position
-		// wheel.Size = size
-		// wheel.Cost = cost
-		// wheel.Brand = brand
-		// wheel.Model = model
-		// wheel.Ngp = ngp
-		// wheel.Tkvh = tkvh
-		// wheel.Mileage = mileage
-		// wheel.MinTemperature = minTemp
-		// wheel.MinPressure = minPressure
-		// wheel.MaxTemperature = maxTemp
-		// wheel.MaxPressure = maxPressure
+		wheel.ID = wheelID.String()
+		wheel.AxisNumber = countAxis
+		wheel.Position = position
+		wheel.Size = size
+		wheel.Cost = cost
+		wheel.Brand = brand
+		wheel.Model = model
+		wheel.Ngp = &ngp
+		wheel.Tkvh = &tkvh
+		wheel.Mileage = mileage
+		wheel.MinTemperature = minTemp
+		wheel.MinPressure = minPressure
+		wheel.MaxTemperature = maxTemp
+		wheel.MaxPressure = maxPressure
 
-		// Добавляем колесо в массив
 		wheels = append(wheels, wheel)
 	}
 
-	// Проверяем на ошибки после цикла
 	if err := rows.Err(); err != nil {
 		return car, fmt.Errorf("error after scanning rows: %w", err)
 	}
 
-	// Заполняем данные о машине
 	car.ID = carID
 	car.Wheels = wheels
 

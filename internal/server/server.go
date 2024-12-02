@@ -30,7 +30,7 @@ type Service interface {
 	GetBreackegeData(ctx context.Context, id string) ([]models.Breakage, error)
 	IsCreatred(table string, key string, val any) (bool, error)
 	GetAutoData(ctx context.Context, id string) (models.Car, error)
-	GetAutoWheelsData(ctx context.Context, id string) (models.Car, error)
+	GetAutoWheelsData(ctx context.Context, id string) (models.CarWithWheels, error)
 	GetAutoList(ctx context.Context, offset int, limit int) ([]models.Car, error)
 	RegisterSensor(ctx context.Context, sensor models.Sensor) (models.Sensor, error)
 	RegisterBeakege(ctx context.Context, breakege models.Breakage) (models.Breakage, error)
@@ -295,10 +295,11 @@ func (s *ServImplemented) GetAutoInfo(w http.ResponseWriter, r *http.Request, pa
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	res := ToAutoResponse(autoData)
+	// res := ToAutoResponse(autoData)
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+	// json.NewEncoder(w).Encode(res)
+	json.NewEncoder(w).Encode(autoData)
 }
 
 func (s *ServImplemented) GetAutoList(w http.ResponseWriter, r *http.Request, params rest.GetAutoListParams) {
@@ -809,7 +810,7 @@ func ToWheelResponse(wheel models.Wheel) rest.WheelResponse {
 		TireBrand:      &wheel.Brand,
 		TireCost:       &wheel.Cost,
 		TireModel:      &wheel.Model,
-		TireSize:       nil,
+		TireSize:       &wheel.Size,
 		AutoId:         &wheel.IDCar,
 		WheelPosition:  &wheel.Position,
 		Ngp:            wheel.Ngp,
