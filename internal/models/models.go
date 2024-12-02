@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 )
 
 type User struct {
@@ -26,6 +27,7 @@ type Car struct {
 	IDDevice    string
 	IDUnicum    string
 	CountAxis   int
+	Type        string
 }
 
 type Wheel struct {
@@ -87,4 +89,14 @@ type ReportData struct {
 type Claims struct {
 	UserID string `json:"user_id"`
 	jwt.RegisteredClaims
+}
+
+type CarWithWheels struct {
+	ID          uuid.UUID `json:"id"`
+	StateNumber string    `json:"state_number"`
+	Brand       string    `json:"brand"`
+	IDDevice    string    `json:"id_device"`
+	IDUnicum    string    `json:"id_unicum"`
+	CountAxis   int       `json:"count_axis"`
+	Wheels      []Wheel   `json:"wheels"`
 }

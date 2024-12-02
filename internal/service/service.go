@@ -250,6 +250,10 @@ func (s *Service) GetBreackegeData(ctx context.Context, carID string) ([]models.
 	return list, nil
 }
 
+func (s *Service) GetAutoWheelsData(ctx context.Context, id string) (models.Car, error) {
+	return models.Car{}, fmt.Errorf("not implemented")
+}
+
 func NewService(repo Repository, log *logrus.Logger) *Service {
 	return &Service{
 		repo: repo,

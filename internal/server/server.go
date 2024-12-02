@@ -30,6 +30,7 @@ type Service interface {
 	GetBreackegeData(ctx context.Context, id string) ([]models.Breakage, error)
 	IsCreatred(table string, key string, val any) (bool, error)
 	GetAutoData(ctx context.Context, id string) (models.Car, error)
+	GetAutoWheelsData(ctx context.Context, id string) (models.Car, error)
 	GetAutoList(ctx context.Context, offset int, limit int) ([]models.Car, error)
 	RegisterSensor(ctx context.Context, sensor models.Sensor) (models.Sensor, error)
 	RegisterBeakege(ctx context.Context, breakege models.Breakage) (models.Breakage, error)
@@ -271,6 +272,24 @@ func (s *ServImplemented) GetAuto(w http.ResponseWriter, r *http.Request, params
 		return
 	}
 	autoData, err := s.service.GetAutoData(ctx, params.CarId)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	res := ToAutoResponse(autoData)
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
+}
+
+func (s *ServImplemented) GetAutoInfo(w http.ResponseWriter, r *http.Request, params rest.GetAutoInfoParams) {
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	autoData, err := s.service.GetAutoWheelsData(ctx, params.CarId)
 	if err != nil {
 		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -712,13 +731,13 @@ func ToUserRegistrationFromUser(user models.User) rest.UserRegistration {
 
 func ToCar(AutoRegistration rest.AutoRegistration) models.Car {
 	return models.Car{
-		ID:          AutoRegistration.UniqueId,
 		IDCompany:   AutoRegistration.CompanyInn,
 		StateNumber: AutoRegistration.StateNumber,
 		Brand:       AutoRegistration.Brand,
 		IDDevice:    AutoRegistration.DeviceId,
 		IDUnicum:    AutoRegistration.UniqueId,
 		CountAxis:   AutoRegistration.AxleCount,
+		Type:        AutoRegistration.AutoType,
 	}
 }
 
@@ -731,7 +750,7 @@ func ToAutoResponse(car models.Car) rest.AutoResponse {
 		Id:          &car.ID,
 		StateNumber: &car.StateNumber,
 		UniqueId:    &car.IDUnicum,
-		AutoType:    nil,
+		AutoType:    &car.Type,
 	}
 }
 

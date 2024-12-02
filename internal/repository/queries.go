@@ -101,24 +101,25 @@ func (r *Repository) GetIDByLoginAndPassword(email, password string) (string, er
 
 func (r *Repository) CreateCar(car models.Car) (models.Car, error) {
 	query := `
-        INSERT INTO cars (id_company, state_number, brand, id_device, id_unicum, count_axis)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO cars (id_company, state_number, brand, id_device, id_unicum, count_axis, car_type)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING *`
 	resp := models.Car{}
-	err := r.conn.QueryRow(query, car.IDCompany, car.StateNumber, car.Brand, car.IDDevice, car.IDUnicum, car.CountAxis).Scan(
+	err := r.conn.QueryRow(query, car.IDCompany, car.StateNumber, car.Brand, car.IDDevice, car.IDUnicum, car.CountAxis, car.Type).Scan(
 		&resp.ID,
 		&resp.IDCompany,
 		&resp.StateNumber,
 		&resp.Brand,
 		&resp.IDDevice,
 		&resp.IDUnicum,
+		&resp.Type,
 		&resp.CountAxis,
 	)
 	if err != nil {
 		return models.Car{}, err
 	}
 
-	return car, nil
+	return resp, nil
 }
 
 func (r *Repository) CreateWheel(wheel models.Wheel) (string, error) {
@@ -461,4 +462,111 @@ func (r *Repository) GetReportData(userId string) ([]models.ReportData, error) {
 	}
 
 	return reportData, nil
+}
+
+func (r *Repository) GetCarWheelData(carID uuid.UUID) (models.CarWithWheels, error) {
+	query := `
+        SELECT
+            c.id AS car_id,
+            c.state_number,
+            c.brand,
+            c.id_device,
+            c.id_unicum,
+            c.count_axis,
+            w.id AS wheel_id,
+            w.count_axis AS wheel_count_axis,
+            w.position AS wheel_position,
+            w.size AS wheel_size,
+            w.cost AS wheel_cost,
+            w.brand AS wheel_brand,
+            w.model AS wheel_model,
+            w.ngp AS wheel_ngp,
+            w.tkvh AS wheel_tkvh,
+            w.mileage AS wheel_mileage,
+            w.min_temperature AS wheel_min_temperature,
+            w.min_pressure AS wheel_min_pressure,
+            w.max_temperature AS wheel_max_temperature,
+            w.max_pressure AS wheel_max_pressure
+        FROM
+            cars c
+        LEFT JOIN
+            wheels w ON c.id = w.id_car
+        WHERE
+            c.id = $1;`
+
+	// Массив для хранения информации о колёсах
+	var wheels []models.Wheel
+	var car models.CarWithWheels
+
+	// Выполняем запрос
+	rows, err := r.conn.Query(query, carID)
+	if err != nil {
+		return car, fmt.Errorf("error executing query: %w", err)
+	}
+	defer rows.Close()
+
+	// Обрабатываем результат запроса
+	for rows.Next() {
+		var wheel models.Wheel
+		var carID, wheelID uuid.UUID
+		var position, countAxis int
+		var size, cost, ngp, tkvh, mileage, minTemp, minPressure, maxTemp, maxPressure float64
+		var brand, model string
+
+		err := rows.Scan(
+			&carID,
+			&car.StateNumber,
+			&car.Brand,
+			&car.IDDevice,
+			&car.IDUnicum,
+			&car.CountAxis,
+			&wheelID,
+			&countAxis,
+			&position,
+			&size,
+			&cost,
+			&brand,
+			&model,
+			&ngp,
+			&tkvh,
+			&mileage,
+			&minTemp,
+			&minPressure,
+			&maxTemp,
+			&maxPressure,
+		)
+		if err != nil {
+			return car, fmt.Errorf("error scanning row: %w", err)
+		}
+
+		// Заполняем информацию о колесе
+		// wheel.ID = wheelID
+		// wheel.CountAxis = countAxis
+		// wheel.Position = position
+		// wheel.Size = size
+		// wheel.Cost = cost
+		// wheel.Brand = brand
+		// wheel.Model = model
+		// wheel.Ngp = ngp
+		// wheel.Tkvh = tkvh
+		// wheel.Mileage = mileage
+		// wheel.MinTemperature = minTemp
+		// wheel.MinPressure = minPressure
+		// wheel.MaxTemperature = maxTemp
+		// wheel.MaxPressure = maxPressure
+
+		// Добавляем колесо в массив
+		wheels = append(wheels, wheel)
+	}
+
+	// Проверяем на ошибки после цикла
+	if err := rows.Err(); err != nil {
+		return car, fmt.Errorf("error after scanning rows: %w", err)
+	}
+
+	// Заполняем данные о машине
+	car.ID = carID
+	car.Wheels = wheels
+
+	return car, nil
 }

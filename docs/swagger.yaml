@@ -189,7 +189,31 @@ paths:
                   type: array
                   items:
                     $ref: '#/components/schemas/AutoResponse'
-                    
+  /auto/info:
+    get:
+      tags:
+        - Auto
+      summary: Get Auto and its wheels by car ID
+      parameters:
+        - name: car_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Auto details and associated wheels
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  auto:
+                    $ref: '#/components/schemas/AutoResponse'
+                  wheels:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WheelResponse'
   /auto:
     get:
       tags:

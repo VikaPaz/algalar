@@ -186,6 +186,11 @@ type GetAutoParams struct {
 	CarId string `form:"car_id" json:"car_id"`
 }
 
+// GetAutoInfoParams defines parameters for GetAutoInfo.
+type GetAutoInfoParams struct {
+	CarId string `form:"car_id" json:"car_id"`
+}
+
 // GetAutoListParams defines parameters for GetAutoList.
 type GetAutoListParams struct {
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
@@ -247,6 +252,9 @@ type ServerInterface interface {
 	// Register a Auto
 	// (POST /auto)
 	PostAuto(w http.ResponseWriter, r *http.Request)
+	// Get Auto and its wheels by car ID
+	// (GET /auto/info)
+	GetAutoInfo(w http.ResponseWriter, r *http.Request, params GetAutoInfoParams)
 	// Get list of Autos
 	// (GET /auto/list)
 	GetAutoList(w http.ResponseWriter, r *http.Request, params GetAutoListParams)
@@ -310,6 +318,12 @@ func (_ Unimplemented) GetAuto(w http.ResponseWriter, r *http.Request, params Ge
 // Register a Auto
 // (POST /auto)
 func (_ Unimplemented) PostAuto(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get Auto and its wheels by car ID
+// (GET /auto/info)
+func (_ Unimplemented) GetAutoInfo(w http.ResponseWriter, r *http.Request, params GetAutoInfoParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -469,6 +483,46 @@ func (siw *ServerInterfaceWrapper) PostAuto(w http.ResponseWriter, r *http.Reque
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostAuto(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAutoInfo operation middleware
+func (siw *ServerInterfaceWrapper) GetAutoInfo(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAutoInfoParams
+
+	// ------------- Required query parameter "car_id" -------------
+
+	if paramValue := r.URL.Query().Get("car_id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "car_id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "car_id", r.URL.Query(), &params.CarId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "car_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAutoInfo(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -994,6 +1048,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/auto", wrapper.PostAuto)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/auto/info", wrapper.GetAutoInfo)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/auto/list", wrapper.GetAutoList)
 	})
 	r.Group(func(r chi.Router) {
@@ -1073,6 +1130,26 @@ type PostAutoResponseObject interface {
 type PostAuto200JSONResponse AutoResponse
 
 func (response PostAuto200JSONResponse) VisitPostAutoResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetAutoInfoRequestObject struct {
+	Params GetAutoInfoParams
+}
+
+type GetAutoInfoResponseObject interface {
+	VisitGetAutoInfoResponse(w http.ResponseWriter) error
+}
+
+type GetAutoInfo200JSONResponse struct {
+	Auto   *AutoResponse    `json:"auto,omitempty"`
+	Wheels *[]WheelResponse `json:"wheels,omitempty"`
+}
+
+func (response GetAutoInfo200JSONResponse) VisitGetAutoInfoResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
@@ -1365,6 +1442,9 @@ type StrictServerInterface interface {
 	// Register a Auto
 	// (POST /auto)
 	PostAuto(ctx context.Context, request PostAutoRequestObject) (PostAutoResponseObject, error)
+	// Get Auto and its wheels by car ID
+	// (GET /auto/info)
+	GetAutoInfo(ctx context.Context, request GetAutoInfoRequestObject) (GetAutoInfoResponseObject, error)
 	// Get list of Autos
 	// (GET /auto/list)
 	GetAutoList(ctx context.Context, request GetAutoListRequestObject) (GetAutoListResponseObject, error)
@@ -1494,6 +1574,32 @@ func (sh *strictHandler) PostAuto(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PostAutoResponseObject); ok {
 		if err := validResponse.VisitPostAutoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAutoInfo operation middleware
+func (sh *strictHandler) GetAutoInfo(w http.ResponseWriter, r *http.Request, params GetAutoInfoParams) {
+	var request GetAutoInfoRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAutoInfo(ctx, request.(GetAutoInfoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAutoInfo")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAutoInfoResponseObject); ok {
+		if err := validResponse.VisitGetAutoInfoResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

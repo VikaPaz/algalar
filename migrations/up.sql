@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS cars (
 	brand varchar(100),
 	id_device varchar(100),
 	id_unicum varchar(100),
+	car_type varchar(100),
 	count_axis int
 );
 
