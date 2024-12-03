@@ -139,12 +139,30 @@ func (r *Repository) CreateWheel(wheel models.Wheel) (string, error) {
 
 func (r *Repository) GetWheelsByStateNumber(stateNumber string) ([]models.Wheel, error) {
 	query := `
-        SELECT w.id, w.id_company, w.id_car, w.count_axis, w.position, w.size, w.cost, w.brand, w.model, 
-               w.ngp, w.tkvh, w.mileage, w.min_temperature, w.min_pressure, w.max_temperature, w.max_pressure, w.ngp, w.tkvh
-        FROM wheels w
-        JOIN cars c ON w.id_car = c.id
-        WHERE c.state_number = $1
-    `
+    SELECT
+        w.id AS wheel_id,
+        w.id_company,
+        w.id_car,
+        w.count_axis AS axis_number,
+        w.position,
+        w.size,
+        w.cost,
+        w.brand,
+        w.model,
+        w.ngp,
+        w.tkvh,
+        w.mileage,
+        w.min_temperature,
+        w.min_pressure,
+        w.max_temperature,
+        w.max_pressure
+    FROM
+        wheels w
+    JOIN
+        cars c ON w.id_car = c.id
+    WHERE
+        c.state_number = $1
+`
 
 	var wheels []models.Wheel
 
@@ -157,13 +175,30 @@ func (r *Repository) GetWheelsByStateNumber(stateNumber string) ([]models.Wheel,
 	for rows.Next() {
 		var wheel models.Wheel
 		err := rows.Scan(
-			&wheel.ID, &wheel.IDCompany, &wheel.IDCar, &wheel.AxisNumber, &wheel.Position, &wheel.Size,
-			&wheel.Cost, &wheel.Brand, &wheel.Model, &wheel.Ngp, &wheel.Tkvh, &wheel.Mileage,
-			&wheel.MinTemperature, &wheel.MinPressure, &wheel.MaxTemperature, &wheel.MaxPressure, &wheel.Ngp, &wheel.Tkvh,
+			&wheel.ID,
+			&wheel.IDCompany,
+			&wheel.IDCar,
+			&wheel.AxisNumber,
+			&wheel.Position,
+			&wheel.Size,
+			&wheel.Cost,
+			&wheel.Brand,
+			&wheel.Model,
+			&wheel.Ngp,
+			&wheel.Tkvh,
+			&wheel.Mileage,
+			&wheel.MinTemperature,
+			&wheel.MinPressure,
+			&wheel.MaxTemperature,
+			&wheel.MaxPressure,
 		)
+
 		if err != nil {
+			r.log.Errorf("scan faild: %v", err)
 			return nil, err
 		}
+
+		r.log.Debugf("wheel: %v", wheel)
 
 		wheels = append(wheels, wheel)
 	}
@@ -171,6 +206,12 @@ func (r *Repository) GetWheelsByStateNumber(stateNumber string) ([]models.Wheel,
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
+	if len(wheels) == 0 {
+		return nil, models.ErrNoContent
+	}
+
+	r.log.Debugf("query resp: %v", wheels)
 
 	return wheels, nil
 }
