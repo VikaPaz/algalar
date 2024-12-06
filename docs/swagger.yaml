@@ -462,7 +462,7 @@ components:
       - deviceId
       - stateNumber
       - uniqueId
-      - AutoType
+      - autoType
       type: object
       properties:
         companyInn:
@@ -471,7 +471,7 @@ components:
           type: string
         uniqueId:
           type: string
-        AutoType:
+        autoType:
           type: string
         stateNumber:
           type: string
@@ -490,7 +490,7 @@ components:
           type: string
         uniqueId:
           type: string
-        AutoType:
+        autoType:
           type: string
         stateNumber:
           type: string
@@ -506,7 +506,7 @@ components:
         deviceId: deviceId
         brand: brand
         uniqueId: uniqueId
-        AutoType: AutoType
+        autoType: autoType
     WheelRegistration:
       required:
       - axleNumber
@@ -520,13 +520,13 @@ components:
       - tireCost
       - tireModel
       - tireSize
-      - AutoId
+      - autoId
       - wheelPosition
       - ngp
       - tkvh
       type: object
       properties:
-        AutoId:
+        autoId:
           type: string
         axleNumber:
           type: integer
@@ -570,7 +570,7 @@ components:
       - tireCost
       - tireModel
       - tireSize
-      - AutoId
+      - autoId
       - wheelPosition
       - ngp
       - tkvh
@@ -578,7 +578,7 @@ components:
       properties:
         id:
           type: string
-        AutoId:
+        autoId:
           type: string
         axleNumber:
           type: integer
@@ -613,7 +613,7 @@ components:
       properties:
         id:
           type: string
-        AutoId:
+        autoId:
           type: string
         axleNumber:
           type: integer
@@ -654,7 +654,7 @@ components:
         sensorNumber: sensorNumber
         maxPressure: 2.3021358869347654518833223846741020679473876953125
         id: id
-        AutoId: AutoId
+        autoId: autoId
         tireCost: 1.46581298050294517310021547018550336360931396484375
         tireSize: tireSize
         mileage: 5.6373766566333287642009963747113943099975585937

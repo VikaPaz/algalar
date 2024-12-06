@@ -23,7 +23,7 @@ const (
 
 // AutoRegistration defines model for AutoRegistration.
 type AutoRegistration struct {
-	AutoType    string `json:"AutoType"`
+	AutoType    string `json:"autoType"`
 	AxleCount   int    `json:"axleCount"`
 	Brand       string `json:"brand"`
 	CompanyInn  string `json:"companyInn"`
@@ -34,7 +34,7 @@ type AutoRegistration struct {
 
 // AutoResponse defines model for AutoResponse.
 type AutoResponse struct {
-	AutoType    *string `json:"AutoType,omitempty"`
+	AutoType    *string `json:"autoType,omitempty"`
 	AxleCount   *int    `json:"axleCount,omitempty"`
 	Brand       *string `json:"brand,omitempty"`
 	CompanyInn  *string `json:"companyInn,omitempty"`
@@ -124,7 +124,7 @@ type UserRegistration struct {
 
 // WheelChange defines model for WheelChange.
 type WheelChange struct {
-	AutoId         string  `json:"AutoId"`
+	AutoId         string  `json:"autoId"`
 	AxleNumber     int     `json:"axleNumber"`
 	Id             string  `json:"id"`
 	MaxPressure    float32 `json:"maxPressure"`
@@ -144,7 +144,7 @@ type WheelChange struct {
 
 // WheelRegistration defines model for WheelRegistration.
 type WheelRegistration struct {
-	AutoId         string  `json:"AutoId"`
+	AutoId         string  `json:"autoId"`
 	AxleNumber     int     `json:"axleNumber"`
 	MaxPressure    float32 `json:"maxPressure"`
 	MaxTemperature float32 `json:"maxTemperature"`
@@ -163,7 +163,7 @@ type WheelRegistration struct {
 
 // WheelResponse defines model for WheelResponse.
 type WheelResponse struct {
-	AutoId         *string  `json:"AutoId,omitempty"`
+	AutoId         *string  `json:"autoId,omitempty"`
 	AxleNumber     *int     `json:"axleNumber,omitempty"`
 	Id             *string  `json:"id,omitempty"`
 	MaxPressure    *float32 `json:"maxPressure,omitempty"`

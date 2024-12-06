@@ -97,5 +97,6 @@ type CarWithWheels struct {
 	IDDevice    string  `json:"id_device"`
 	IDUnicum    string  `json:"id_unicum"`
 	CountAxis   int     `json:"count_axis"`
+	AutoType    string  `json:"AutoType"`
 	Wheels      []Wheel `json:"wheels"`
 }

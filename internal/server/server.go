@@ -289,17 +289,32 @@ func (s *ServImplemented) GetAutoInfo(w http.ResponseWriter, r *http.Request, pa
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
-	autoData, err := s.service.GetAutoWheelsData(ctx, params.CarId)
+	autoWheelsData, err := s.service.GetAutoWheelsData(ctx, params.CarId)
 	if err != nil {
 		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// res := ToAutoResponse(autoData)
+	autoData := rest.AutoResponse{
+		AxleCount:   &autoWheelsData.CountAxis,
+		Brand:       &autoWheelsData.Brand,
+		DeviceId:    &autoWheelsData.IDDevice,
+		Id:          &autoWheelsData.ID,
+		StateNumber: &autoWheelsData.StateNumber,
+		UniqueId:    &autoWheelsData.IDUnicum,
+		AutoType:    &autoWheelsData.AutoType,
+	}
+	resp := make(map[string]any)
+	resp["auto"] = autoData
+	countWheels := len(autoWheelsData.Wheels)
+	wheels := make([]rest.WheelResponse, countWheels)
+	for i := 0; i < countWheels; i++ {
+		wheels[i] = ToWheelResponse(autoWheelsData.Wheels[i])
+	}
+	resp["wheels"] = wheels
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	// json.NewEncoder(w).Encode(res)
-	json.NewEncoder(w).Encode(autoData)
+	json.NewEncoder(w).Encode(resp)
 }
 
 func (s *ServImplemented) GetAutoList(w http.ResponseWriter, r *http.Request, params rest.GetAutoListParams) {
