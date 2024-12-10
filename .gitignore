@@ -8,3 +8,4 @@ main.go
 server.crt
 server.csr
 server.key
+Makefile

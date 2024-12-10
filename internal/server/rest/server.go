@@ -80,11 +80,11 @@ type SensorData struct {
 
 // SensorRegistration defines model for SensorRegistration.
 type SensorRegistration struct {
-	CountAxis   *int     `json:"countAxis,omitempty"`
-	Position    *int     `json:"position,omitempty"`
-	Pressure    *float32 `json:"pressure,omitempty"`
-	StateNumber *string  `json:"stateNumber,omitempty"`
-	Temperature *float32 `json:"temperature,omitempty"`
+	IdDevice     *string  `json:"id_device,omitempty"`
+	Pressure     *float32 `json:"pressure,omitempty"`
+	SensorNumber *int     `json:"sensor_number,omitempty"`
+	Temperature  *float32 `json:"temperature,omitempty"`
+	Time         *string  `json:"time,omitempty"`
 }
 
 // TokenResponse defines model for TokenResponse.
@@ -1292,13 +1292,12 @@ type PostSensorResponseObject interface {
 	VisitPostSensorResponse(w http.ResponseWriter) error
 }
 
-type PostSensor201JSONResponse SensorData
+type PostSensor201Response struct {
+}
 
-func (response PostSensor201JSONResponse) VisitPostSensorResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
+func (response PostSensor201Response) VisitPostSensorResponse(w http.ResponseWriter) error {
 	w.WriteHeader(201)
-
-	return json.NewEncoder(w).Encode(response)
+	return nil
 }
 
 type PutSensorRequestObject struct {
@@ -1309,13 +1308,12 @@ type PutSensorResponseObject interface {
 	VisitPutSensorResponse(w http.ResponseWriter) error
 }
 
-type PutSensor200JSONResponse SensorData
+type PutSensor200Response struct {
+}
 
-func (response PutSensor200JSONResponse) VisitPutSensorResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
+func (response PutSensor200Response) VisitPutSensorResponse(w http.ResponseWriter) error {
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	return nil
 }
 
 type GetUserRequestObject struct {

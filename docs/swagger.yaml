@@ -121,10 +121,6 @@ paths:
       responses:
         "201":
           description: Successful sensor registration
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SensorData'
       security: []
     put:
       tags:
@@ -139,10 +135,6 @@ paths:
       responses:
         "200":
           description: Successful sensor update
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SensorData'
       security: []
   /report:
     get:
@@ -700,16 +692,17 @@ components:
     SensorRegistration:
       type: object
       properties:
-        stateNumber:
+        id_device:
           type: string
-        countAxis:
-          type: integer
-        position:
+        sensor_number:
           type: integer
         pressure:
           type: number
         temperature:
           type: number
+        time:
+          type: string
+          format: date-tim
   securitySchemes:
     Authorization:
       type: http
