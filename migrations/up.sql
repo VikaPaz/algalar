@@ -66,15 +66,15 @@ CREATE TABLE IF NOT EXISTS breakages (
 	description varchar(100),
 	datetime timestamp
 );
--- TODO: add time
+
 CREATE TABLE IF NOT EXISTS sensors (
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
 	car_id uuid REFERENCES cars,
-	state_number varchar(100),
-	count_axis int,
+	id_device varchar(100),
 	position int,
 	pressure float,
 	temperature float,
+	sensor_number varchar(100),
 	datetime timestamp
 );
 
