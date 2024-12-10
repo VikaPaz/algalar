@@ -49,14 +49,18 @@ type Wheel struct {
 }
 
 type Sensor struct {
+	ID           string
+	IDDevice     string
+	SensorNumber string
+	Position     int
+}
+
+type SensorData struct {
 	ID          string
-	CarID       string
-	StateNumber string
-	CountAxis   int
-	Position    int
+	IDSensor    string
 	Pressure    float32
 	Temperature float32
-	Datetime    time.Time
+	Time        time.Time
 }
 
 type Breakage struct {

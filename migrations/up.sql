@@ -69,13 +69,17 @@ CREATE TABLE IF NOT EXISTS breakages (
 
 CREATE TABLE IF NOT EXISTS sensors (
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-	car_id uuid REFERENCES cars,
 	id_device varchar(100),
-	position int,
+	sensor_number varchar(100),
+	position int
+);
+
+CREATE TABLE IF NOT EXISTS sensors_data (
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+	id_sensor uuid REFERENCES sensors,
 	pressure float,
 	temperature float,
-	sensor_number varchar(100),
-	datetime timestamp
+	created_at timestamp
 );
 
 CREATE TABLE IF NOT EXISTS notifications (

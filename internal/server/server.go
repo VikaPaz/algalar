@@ -35,7 +35,6 @@ type Service interface {
 	RegisterSensor(ctx context.Context, sensor models.Sensor) (models.Sensor, error)
 	RegisterBeakege(ctx context.Context, breakege models.Breakage) (models.Breakage, error)
 	GetCarId(stateNumber string) (string, error)
-	UpdateSensor(ctx context.Context, sensor models.Sensor) (models.Sensor, error)
 	GetWheelsData(ctx context.Context, stateNumber string) ([]models.Wheel, error)
 }
 
@@ -478,38 +477,35 @@ func (s *ServImplemented) GetWheelsStateNumber(w http.ResponseWriter, r *http.Re
 	json.NewEncoder(w).Encode(res)
 }
 
+// TODO
 func (s *ServImplemented) GetSensor(w http.ResponseWriter, r *http.Request, params rest.GetSensorParams) {
-	ctx, err := s.getUserID(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-	dataList, err := s.service.GetSensorData(ctx, params.CarId)
-	if err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	// ctx, err := s.getUserID(r)
+	// if err != nil {
+	// 	http.Error(w, err.Error(), http.StatusUnauthorized)
+	// 	return
+	// }
+	// dataList, err := s.service.GetSensorData(ctx, params.CarId)
+	// if err != nil {
+	// 	s.log.Error(err)
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
 
-	res := make([]rest.SensorData, len(dataList))
-	for i, val := range dataList {
-		res[i] = ToSensorData(val, val.Datetime.String())
-	}
+	// res := make([]rest.SensorData, len(dataList))
+	// for i, val := range dataList {
+	// 	res[i] = ToSensorData(val, val.Datetime.String())
+	// }
 
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+	// w.WriteHeader(http.StatusOK)
+	// w.Header().Set("Content-Type", "application/json")
+	// json.NewEncoder(w).Encode(res)
+
+	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Register a new sensor
 // (POST /sensor)
 func (s *ServImplemented) PostSensor(w http.ResponseWriter, r *http.Request) {
-	ctx, err := s.getUserID(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-
 	var req rest.SensorRegistration
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		s.log.Error(err)
@@ -517,65 +513,62 @@ func (s *ServImplemented) PostSensor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := s.service.GetCarId(*req.StateNumber)
-	if err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	sensor := ToSensor(req)
 
-	sensor := ToSensor(req, id)
-
-	new_sensor, err := s.service.RegisterSensor(ctx, sensor)
+	_, err := s.service.RegisterSensor(r.Context(), sensor)
 	if err != nil {
 		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	res := ToSensorData(new_sensor, new_sensor.Datetime.String())
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+	w.WriteHeader(http.StatusCreated)
 }
 
 // Update an existing sensor
-// (PUT /sensor)
-func (s *ServImplemented) PutSensor(w http.ResponseWriter, r *http.Request) {
-	ctx, err := s.getUserID(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-
-	var req rest.SensorRegistration
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	id, err := s.service.GetCarId(*req.StateNumber)
-	if err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	sensor := ToSensor(req, id)
-
-	data, err := s.service.UpdateSensor(ctx, sensor)
-	if err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	res := ToSensorData(data, data.Datetime.String())
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+// (POST /sensordata)
+func (_ ServImplemented) PostSensordata(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
 }
+
+// TODO: DELETE
+// Update an existing sensor
+// (PUT /sensor)
+// func (s *ServImplemented) PutSensor(w http.ResponseWriter, r *http.Request) {
+// 	ctx, err := s.getUserID(r)
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusUnauthorized)
+// 		return
+// 	}
+
+// 	var req rest.SensorRegistration
+// 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+// 		s.log.Error(err)
+// 		http.Error(w, err.Error(), http.StatusBadRequest)
+// 		return
+// 	}
+
+// 	id, err := s.service.GetCarId(*req.StateNumber)
+// 	if err != nil {
+// 		s.log.Error(err)
+// 		http.Error(w, err.Error(), http.StatusBadRequest)
+// 		return
+// 	}
+
+// 	sensor := ToSensor(req, id)
+
+// 	data, err := s.service.UpdateSensor(ctx, sensor)
+// 	if err != nil {
+// 		s.log.Error(err)
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	res := ToSensorData(data, data.Datetime.String())
+// 	w.WriteHeader(http.StatusOK)
+// 	w.Header().Set("Content-Type", "application/json")
+// 	json.NewEncoder(w).Encode(res)
+// }
 
 // Get breakages by car ID
 // (GET /brackeges)
@@ -770,14 +763,11 @@ func ToAutoResponse(car models.Car) rest.AutoResponse {
 	}
 }
 
-func ToSensor(sensorReg rest.SensorRegistration, carID string) models.Sensor {
+func ToSensor(sensorReg rest.SensorRegistration) models.Sensor {
 	return models.Sensor{
-		CarID:       carID,
-		StateNumber: *sensorReg.StateNumber,
-		CountAxis:   *sensorReg.CountAxis,
-		Position:    *sensorReg.Position,
-		Pressure:    *sensorReg.Pressure,
-		Temperature: *sensorReg.Temperature,
+		IDDevice:     *sensorReg.IdDevice,
+		SensorNumber: *sensorReg.SensorNumber,
+		Position:     *sensorReg.Position,
 	}
 }
 
@@ -834,12 +824,7 @@ func ToWheelResponse(wheel models.Wheel) rest.WheelResponse {
 }
 
 func ToSensorData(sensor models.Sensor, time string) rest.SensorData {
-	return rest.SensorData{
-		Position:    &sensor.Position,
-		Pressure:    &sensor.Pressure,
-		Temperature: &sensor.Temperature,
-		Time:        &time,
-	}
+	return rest.SensorData{}
 }
 
 func ToBreakageResponse(breakage models.Breakage) rest.BreakageResponse {

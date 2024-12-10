@@ -72,19 +72,18 @@ type ReportResponse = []byte
 
 // SensorData defines model for SensorData.
 type SensorData struct {
-	Position    *int     `json:"position,omitempty"`
-	Pressure    *float32 `json:"pressure,omitempty"`
-	Temperature *float32 `json:"temperature,omitempty"`
-	Time        *string  `json:"time,omitempty"`
+	IdDevice     *string    `json:"id_device,omitempty"`
+	Pressure     *float32   `json:"pressure,omitempty"`
+	SensorNumber *int       `json:"sensor_number,omitempty"`
+	Temperature  *float32   `json:"temperature,omitempty"`
+	Time         *time.Time `json:"time,omitempty"`
 }
 
 // SensorRegistration defines model for SensorRegistration.
 type SensorRegistration struct {
-	IdDevice     *string  `json:"id_device,omitempty"`
-	Pressure     *float32 `json:"pressure,omitempty"`
-	SensorNumber *int     `json:"sensor_number,omitempty"`
-	Temperature  *float32 `json:"temperature,omitempty"`
-	Time         *string  `json:"time,omitempty"`
+	IdDevice     *string `json:"id_device,omitempty"`
+	Position     *int    `json:"position,omitempty"`
+	SensorNumber *string `json:"sensor_number,omitempty"`
 }
 
 // TokenResponse defines model for TokenResponse.
@@ -229,8 +228,8 @@ type PostLoginJSONRequestBody = LoginRequest
 // PostSensorJSONRequestBody defines body for PostSensor for application/json ContentType.
 type PostSensorJSONRequestBody = SensorRegistration
 
-// PutSensorJSONRequestBody defines body for PutSensor for application/json ContentType.
-type PutSensorJSONRequestBody = SensorRegistration
+// PostSensordataJSONRequestBody defines body for PostSensordata for application/json ContentType.
+type PostSensordataJSONRequestBody = SensorData
 
 // PostUserJSONRequestBody defines body for PostUser for application/json ContentType.
 type PostUserJSONRequestBody = UserRegistration
@@ -280,8 +279,8 @@ type ServerInterface interface {
 	// (POST /sensor)
 	PostSensor(w http.ResponseWriter, r *http.Request)
 	// Update an existing sensor
-	// (PUT /sensor)
-	PutSensor(w http.ResponseWriter, r *http.Request)
+	// (POST /sensordata)
+	PostSensordata(w http.ResponseWriter, r *http.Request)
 	// Get user details
 	// (GET /user)
 	GetUser(w http.ResponseWriter, r *http.Request)
@@ -376,8 +375,8 @@ func (_ Unimplemented) PostSensor(w http.ResponseWriter, r *http.Request) {
 }
 
 // Update an existing sensor
-// (PUT /sensor)
-func (_ Unimplemented) PutSensor(w http.ResponseWriter, r *http.Request) {
+// (POST /sensordata)
+func (_ Unimplemented) PostSensordata(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -755,11 +754,11 @@ func (siw *ServerInterfaceWrapper) PostSensor(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
-// PutSensor operation middleware
-func (siw *ServerInterfaceWrapper) PutSensor(w http.ResponseWriter, r *http.Request) {
+// PostSensordata operation middleware
+func (siw *ServerInterfaceWrapper) PostSensordata(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PutSensor(w, r)
+		siw.Handler.PostSensordata(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1075,7 +1074,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/sensor", wrapper.PostSensor)
 	})
 	r.Group(func(r chi.Router) {
-		r.Put(options.BaseURL+"/sensor", wrapper.PutSensor)
+		r.Post(options.BaseURL+"/sensordata", wrapper.PostSensordata)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/user", wrapper.GetUser)
@@ -1300,19 +1299,19 @@ func (response PostSensor201Response) VisitPostSensorResponse(w http.ResponseWri
 	return nil
 }
 
-type PutSensorRequestObject struct {
-	Body *PutSensorJSONRequestBody
+type PostSensordataRequestObject struct {
+	Body *PostSensordataJSONRequestBody
 }
 
-type PutSensorResponseObject interface {
-	VisitPutSensorResponse(w http.ResponseWriter) error
+type PostSensordataResponseObject interface {
+	VisitPostSensordataResponse(w http.ResponseWriter) error
 }
 
-type PutSensor200Response struct {
+type PostSensordata201Response struct {
 }
 
-func (response PutSensor200Response) VisitPutSensorResponse(w http.ResponseWriter) error {
-	w.WriteHeader(200)
+func (response PostSensordata201Response) VisitPostSensordataResponse(w http.ResponseWriter) error {
+	w.WriteHeader(201)
 	return nil
 }
 
@@ -1468,8 +1467,8 @@ type StrictServerInterface interface {
 	// (POST /sensor)
 	PostSensor(ctx context.Context, request PostSensorRequestObject) (PostSensorResponseObject, error)
 	// Update an existing sensor
-	// (PUT /sensor)
-	PutSensor(ctx context.Context, request PutSensorRequestObject) (PutSensorResponseObject, error)
+	// (POST /sensordata)
+	PostSensordata(ctx context.Context, request PostSensordataRequestObject) (PostSensordataResponseObject, error)
 	// Get user details
 	// (GET /user)
 	GetUser(ctx context.Context, request GetUserRequestObject) (GetUserResponseObject, error)
@@ -1826,11 +1825,11 @@ func (sh *strictHandler) PostSensor(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// PutSensor operation middleware
-func (sh *strictHandler) PutSensor(w http.ResponseWriter, r *http.Request) {
-	var request PutSensorRequestObject
+// PostSensordata operation middleware
+func (sh *strictHandler) PostSensordata(w http.ResponseWriter, r *http.Request) {
+	var request PostSensordataRequestObject
 
-	var body PutSensorJSONRequestBody
+	var body PostSensordataJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -1838,18 +1837,18 @@ func (sh *strictHandler) PutSensor(w http.ResponseWriter, r *http.Request) {
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PutSensor(ctx, request.(PutSensorRequestObject))
+		return sh.ssi.PostSensordata(ctx, request.(PostSensordataRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PutSensor")
+		handler = middleware(handler, "PostSensordata")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PutSensorResponseObject); ok {
-		if err := validResponse.VisitPutSensorResponse(w); err != nil {
+	} else if validResponse, ok := response.(PostSensordataResponseObject); ok {
+		if err := validResponse.VisitPostSensordataResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -122,7 +122,8 @@ paths:
         "201":
           description: Successful sensor registration
       security: []
-    put:
+  /sensordata:
+    post:
       tags:
         - Sensor
       summary: Update an existing sensor
@@ -130,10 +131,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SensorRegistration'
+              $ref: '#/components/schemas/SensorData'
         required: true
       responses:
-        "200":
+        "201":
           description: Successful sensor update
       security: []
   /report:
@@ -652,17 +653,6 @@ components:
         mileage: 5.6373766566333287642009963747113943099975585937
         ngp: 0.1
         tkvh: 0.3
-    SensorData:
-      type: object
-      properties:
-        position:
-          type: integer
-        pressure:
-          type: number
-        temperature:
-          type: number
-        time:
-          type: string
     BreakageResponse:
       type: object
       properties:
@@ -695,6 +685,15 @@ components:
         id_device:
           type: string
         sensor_number:
+          type: string
+        position:
+          type: integer
+    SensorData:
+      type: object
+      properties:
+        id_device:
+          type: string
+        sensor_number:
           type: integer
         pressure:
           type: number
@@ -702,7 +701,7 @@ components:
           type: number
         time:
           type: string
-          format: date-tim
+          format: date-time
   securitySchemes:
     Authorization:
       type: http

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/VikaPaz/algalar/internal/models"
 	"github.com/sirupsen/logrus"
@@ -118,19 +117,14 @@ func (s *Service) RegisterWheel(ctx context.Context, wheel models.Wheel) (models
 }
 
 func (s *Service) RegisterSensor(ctx context.Context, sensor models.Sensor) (models.Sensor, error) {
-	sensor.Datetime = time.Now()
-	id, ok := ctx.Value("user_id").(string)
-	if !ok {
-		return models.Sensor{}, fmt.Errorf("wrong context: %v", ctx)
-	}
-	id_wheel, err := s.repo.CreateSensor(sensor)
+	sensorID, err := s.repo.CreateSensor(sensor)
 	if err != nil {
-		s.log.Debugf("Error registering sensor: %v", id)
+		s.log.Debugf("Error registering sensor: %v", sensorID)
 		return models.Sensor{}, err
 	}
-	sensor.ID = id_wheel
+	sensor.ID = sensorID
 
-	s.log.Debugf("Sensor registered successfully: %v", id)
+	s.log.Debugf("Sensor registered successfully: %v", sensorID)
 	return sensor, nil
 }
 
@@ -216,15 +210,6 @@ func (s *Service) GetCarId(stateNumber string) (string, error) {
 		return "", err
 	}
 	return id, nil
-}
-
-func (s *Service) UpdateSensor(ctx context.Context, sensor models.Sensor) (models.Sensor, error) {
-	sensor.Datetime = time.Now()
-	data, err := s.repo.UpdateSensor(sensor)
-	if err != nil {
-		return models.Sensor{}, err
-	}
-	return data, nil
 }
 
 func (s *Service) GenerateReport(ctx context.Context, userId string) ([]models.ReportData, error) {
