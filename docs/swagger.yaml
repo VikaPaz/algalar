@@ -8,7 +8,7 @@ tags:
 - name: Auth
   description: Operations related to user authentication
 - name: User
-  description: "Operations related to user management"
+  description: Operations related to user management
 - name: Sensor
   description: Operations related to sensor data
 - name: Report
@@ -17,6 +17,8 @@ tags:
   description: Operations related to Auto management
 - name: Wheel
   description: Operations related to wheel management
+- name: Data
+  description: Operations related to Sensor Data 
 paths:
   /login:
     post:
@@ -88,11 +90,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserDetails'
-  /sensor:
+  /sensors:
     get:
       tags:
         - Sensor
-      summary: Get sensors by car ID
+      summary: Provides actual data by car ID
       parameters:
         - name: car_id
           in: query
@@ -107,21 +109,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SensorData'
-    post:
-      tags:
-        - Sensor
-      summary: Register a new sensor
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SensorRegistration'
-        required: true
-      responses:
-        "201":
-          description: Successful sensor registration
-      security: []
+                  $ref: '#/components/schemas/SensorsData'
   /sensordata:
     post:
       tags:
@@ -131,12 +119,75 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SensorData'
+              $ref: '#/components/schemas/NewSensorData'
         required: true
       responses:
         "201":
           description: Successful sensor update
-      security: []
+  /pressuredata:
+    get:
+      tags:
+        - Data
+      summary: Get data by wheel ID
+      parameters:
+        - name: wheel_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Sensor data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PressureData'
+  /temperaturedata:
+    get:
+      tags:
+        - Data
+      summary: Get data by wheel ID
+      parameters:
+        - name: wheel_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Sensor data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TemperatureData'
   /report:
     get:
       tags:
@@ -277,8 +328,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WheelResponse'
-      security:
-      - Authorization: []
     get:
       tags:
       - Wheel
@@ -315,8 +364,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/WheelResponse'
-      security: []
+                  $ref: '#/components/schemas/WheelsDataForDevice'
   /breakages:
     get:
       tags:
@@ -354,7 +402,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BreakageResponse'
-      security: []
 components:
   schemas:
     LoginRequest:
@@ -378,9 +425,6 @@ components:
           type: string
         refreshToken:
           type: string
-      example:
-        accessToken: accessToken
-        refreshToken: refreshToken
     UserRegistration:
       required:
       - inn
@@ -405,6 +449,7 @@ components:
           type: string
         timeZone:
           type: string
+          format: date-time
         inn:
           type: string
         password:
@@ -424,19 +469,11 @@ components:
           type: string
         timeZone:
           type: string
+          format: date-time
         inn:
           type: string
         password:
           type: string
-      example:
-        firstName: firstName
-        lastName: lastName
-        password: password
-        phone: phone
-        inn: inn
-        timeZone: timeZone
-        gender: gender
-        email: email
     UpdatePassword:
       required:
       - newPassword
@@ -452,7 +489,7 @@ components:
       - axleCount
       - brand
       - companyInn
-      - deviceId
+      - deviceNumber
       - stateNumber
       - uniqueId
       - autoType
@@ -460,7 +497,7 @@ components:
       properties:
         companyInn:
           type: string
-        deviceId:
+        deviceNumber:
           type: string
         uniqueId:
           type: string
@@ -479,7 +516,7 @@ components:
           type: string
         companyInn:
           type: string
-        deviceId:
+        deviceNumber:
           type: string
         uniqueId:
           type: string
@@ -491,15 +528,6 @@ components:
           type: string
         axleCount:
           type: integer
-      example:
-        stateNumber: stateNumber
-        companyInn: companyInn
-        axleCount: 0
-        id: id
-        deviceId: deviceId
-        brand: brand
-        uniqueId: uniqueId
-        autoType: autoType
     WheelRegistration:
       required:
       - axleNumber
@@ -601,6 +629,28 @@ components:
           type: number
         tkvh:
           type: number
+    WheelsDataForDevice:
+      type: object
+      properties:
+        wheel_position:
+          type: integer
+        sensor_number:
+          type: string
+        min_pressure:
+          type: number
+        min_temperature:
+          type: number
+        max_pressure:
+          type: number
+        max_temperature:
+          type: number
+      example:
+        wheel_position: 1
+        sensor_number: "1a23b"
+        min_pressure: 12.34
+        min_temperature: 12.34
+        max_pressure: 56.78
+        max_temperature: 56.78
     WheelResponse:
       type: object
       properties:
@@ -638,19 +688,19 @@ components:
           type: number
       example:
         axleNumber: 0
-        maxTemperature: 9.301444243932575517419536481611430644989013671875
+        maxTemperature: 9.30
         tireBrand: tireBrand
         tireModel: tireModel
-        minTemperature: 7.061401241503109105224211816675961017608642578125
+        minTemperature: 7.06
         wheelPosition: 6
-        minPressure: 5.962133916683182377482808078639209270477294921875
+        minPressure: 5.96
         sensorNumber: sensorNumber
-        maxPressure: 2.3021358869347654518833223846741020679473876953125
+        maxPressure: 2.30
         id: id
         autoId: autoId
-        tireCost: 1.46581298050294517310021547018550336360931396484375
+        tireCost: 1.46
         tireSize: tireSize
-        mileage: 5.6373766566333287642009963747113943099975585937
+        mileage: 5.63
         ngp: 0.1
         tkvh: 0.3
     BreakageResponse:
@@ -679,24 +729,40 @@ components:
         datetime:
           type: string
           format: date-time
-    SensorRegistration:
+    SensorsData:
       type: object
       properties:
-        id_device:
-          type: string
-        sensor_number:
-          type: string
-        position:
-          type: integer
-    SensorData:
-      type: object
-      properties:
-        id_device:
-          type: string
-        sensor_number:
+        wheel_position:
           type: integer
         pressure:
           type: number
+        temperature:
+          type: number
+    NewSensorData:
+      type: object
+      properties:
+        device_number:
+          type: string
+        sensor_number:
+          type: string
+        pressure:
+          type: number
+        temperature:
+          type: number
+        time:
+          type: string
+          format: date-time
+    PressureData:
+      type: object
+      properties:
+        pressure:
+          type: number
+        time:
+          type: string
+          format: date-time
+    TemperatureData:
+      type: object
+      properties:
         temperature:
           type: number
         time:
