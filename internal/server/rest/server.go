@@ -54,11 +54,11 @@ type BreakageRegistration struct {
 
 // BreakageResponse defines model for BreakageResponse.
 type BreakageResponse struct {
-	Datetime    *string `json:"datetime,omitempty"`
-	Description *string `json:"description,omitempty"`
-	Id          *string `json:"id,omitempty"`
-	StateNumber *string `json:"stateNumber,omitempty"`
-	Type        *string `json:"type,omitempty"`
+	Datetime    *time.Time `json:"datetime,omitempty"`
+	Description *string    `json:"description,omitempty"`
+	Id          *string    `json:"id,omitempty"`
+	StateNumber *string    `json:"stateNumber,omitempty"`
+	Type        *string    `json:"type,omitempty"`
 }
 
 // LoginRequest defines model for LoginRequest.
@@ -111,26 +111,26 @@ type UpdatePassword struct {
 
 // UserDetails defines model for UserDetails.
 type UserDetails struct {
-	Email     *string    `json:"email,omitempty"`
-	FirstName *string    `json:"firstName,omitempty"`
-	Gender    *string    `json:"gender,omitempty"`
-	Inn       *string    `json:"inn,omitempty"`
-	LastName  *string    `json:"lastName,omitempty"`
-	Password  *string    `json:"password,omitempty"`
-	Phone     *string    `json:"phone,omitempty"`
-	TimeZone  *time.Time `json:"timeZone,omitempty"`
+	Email     *string `json:"email,omitempty"`
+	FirstName *string `json:"firstName,omitempty"`
+	Gender    *string `json:"gender,omitempty"`
+	Inn       *string `json:"inn,omitempty"`
+	LastName  *string `json:"lastName,omitempty"`
+	Password  *string `json:"password,omitempty"`
+	Phone     *string `json:"phone,omitempty"`
+	TimeZone  *int    `json:"timeZone,omitempty"`
 }
 
 // UserRegistration defines model for UserRegistration.
 type UserRegistration struct {
-	Email     string    `json:"email"`
-	FirstName string    `json:"firstName"`
-	Gender    string    `json:"gender"`
-	Inn       string    `json:"inn"`
-	LastName  string    `json:"lastName"`
-	Password  string    `json:"password"`
-	Phone     string    `json:"phone"`
-	TimeZone  time.Time `json:"timeZone"`
+	Email     string `json:"email"`
+	FirstName string `json:"firstName"`
+	Gender    string `json:"gender"`
+	Inn       string `json:"inn"`
+	LastName  string `json:"lastName"`
+	Password  string `json:"password"`
+	Phone     string `json:"phone"`
+	TimeZone  int    `json:"timeZone"`
 }
 
 // WheelChange defines model for WheelChange.
@@ -214,13 +214,15 @@ type GetAutoInfoParams struct {
 
 // GetAutoListParams defines parameters for GetAutoList.
 type GetAutoListParams struct {
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
-	Limit  *int `form:"limit,omitempty" json:"limit,omitempty"`
+	Offset int `form:"offset" json:"offset"`
+	Limit  int `form:"limit" json:"limit"`
 }
 
 // GetBreakagesParams defines parameters for GetBreakages.
 type GetBreakagesParams struct {
-	CarId string `form:"car_id" json:"car_id"`
+	CarId  string `form:"car_id" json:"car_id"`
+	Offset int    `form:"offset" json:"offset"`
+	Limit  int    `form:"limit" json:"limit"`
 }
 
 // GetPressuredataParams defines parameters for GetPressuredata.
@@ -582,17 +584,31 @@ func (siw *ServerInterfaceWrapper) GetAutoList(w http.ResponseWriter, r *http.Re
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetAutoListParams
 
-	// ------------- Optional query parameter "offset" -------------
+	// ------------- Required query parameter "offset" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "offset", r.URL.Query(), &params.Offset)
+	if paramValue := r.URL.Query().Get("offset"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "offset", r.URL.Query(), &params.Offset)
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
 		return
 	}
 
-	// ------------- Optional query parameter "limit" -------------
+	// ------------- Required query parameter "limit" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if paramValue := r.URL.Query().Get("limit"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "limit", r.URL.Query(), &params.Limit)
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
 		return
@@ -635,6 +651,36 @@ func (siw *ServerInterfaceWrapper) GetBreakages(w http.ResponseWriter, r *http.R
 	err = runtime.BindQueryParameter("form", true, true, "car_id", r.URL.Query(), &params.CarId)
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "car_id", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "offset" -------------
+
+	if paramValue := r.URL.Query().Get("offset"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "offset", r.URL.Query(), &params.Offset)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "limit" -------------
+
+	if paramValue := r.URL.Query().Get("limit"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
 		return
 	}
 
@@ -1290,11 +1336,11 @@ type PostAutoResponseObject interface {
 	VisitPostAutoResponse(w http.ResponseWriter) error
 }
 
-type PostAuto200JSONResponse AutoResponse
+type PostAuto201JSONResponse AutoResponse
 
-func (response PostAuto200JSONResponse) VisitPostAutoResponse(w http.ResponseWriter) error {
+func (response PostAuto201JSONResponse) VisitPostAutoResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -1361,13 +1407,12 @@ type PostBreakagesResponseObject interface {
 	VisitPostBreakagesResponse(w http.ResponseWriter) error
 }
 
-type PostBreakages201JSONResponse BreakageResponse
+type PostBreakages201Response struct {
+}
 
-func (response PostBreakages201JSONResponse) VisitPostBreakagesResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
+func (response PostBreakages201Response) VisitPostBreakagesResponse(w http.ResponseWriter) error {
 	w.WriteHeader(201)
-
-	return json.NewEncoder(w).Encode(response)
+	return nil
 }
 
 type PostLoginRequestObject struct {
@@ -1378,11 +1423,11 @@ type PostLoginResponseObject interface {
 	VisitPostLoginResponse(w http.ResponseWriter) error
 }
 
-type PostLogin200JSONResponse TokenResponse
+type PostLogin201JSONResponse TokenResponse
 
-func (response PostLogin200JSONResponse) VisitPostLoginResponse(w http.ResponseWriter) error {
+func (response PostLogin201JSONResponse) VisitPostLoginResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -1411,11 +1456,11 @@ type PostRefreshResponseObject interface {
 	VisitPostRefreshResponse(w http.ResponseWriter) error
 }
 
-type PostRefresh200JSONResponse TokenResponse
+type PostRefresh201JSONResponse TokenResponse
 
-func (response PostRefresh200JSONResponse) VisitPostRefreshResponse(w http.ResponseWriter) error {
+func (response PostRefresh201JSONResponse) VisitPostRefreshResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -1520,11 +1565,11 @@ type PostUserResponseObject interface {
 	VisitPostUserResponse(w http.ResponseWriter) error
 }
 
-type PostUser200Response struct {
+type PostUser201Response struct {
 }
 
-func (response PostUser200Response) VisitPostUserResponse(w http.ResponseWriter) error {
-	w.WriteHeader(200)
+func (response PostUser201Response) VisitPostUserResponse(w http.ResponseWriter) error {
+	w.WriteHeader(201)
 	return nil
 }
 
@@ -1569,11 +1614,11 @@ type PostWheelsResponseObject interface {
 	VisitPostWheelsResponse(w http.ResponseWriter) error
 }
 
-type PostWheels200JSONResponse WheelResponse
+type PostWheels201JSONResponse WheelResponse
 
-func (response PostWheels200JSONResponse) VisitPostWheelsResponse(w http.ResponseWriter) error {
+func (response PostWheels201JSONResponse) VisitPostWheelsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 
 	return json.NewEncoder(w).Encode(response)
 }
