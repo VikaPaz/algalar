@@ -471,9 +471,9 @@ func (s *ServImplemented) GetWheelsStateNumber(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	res := make([]rest.WheelResponse, len(dataList))
+	res := make([]rest.WheelsDataForDevice, len(dataList))
 	for i, val := range dataList {
-		res[i] = ToWheelResponse(val)
+		res[i] = ToWheelData(val)
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -754,6 +754,17 @@ func ToWheelResponse(wheel models.Wheel) rest.WheelResponse {
 		WheelPosition:  &wheel.Position,
 		Ngp:            wheel.Ngp,
 		Tkvh:           wheel.Tkvh,
+	}
+}
+
+func ToWheelData(wheel models.Wheel) rest.WheelsDataForDevice {
+	return rest.WheelsDataForDevice{
+		MaxPressure:    &wheel.MaxPressure,
+		MaxTemperature: &wheel.MaxTemperature,
+		MinPressure:    &wheel.MinPressure,
+		MinTemperature: &wheel.MinTemperature,
+		SensorNumber:   &wheel.SensorNumber,
+		WheelPosition:  &wheel.Position,
 	}
 }
 
