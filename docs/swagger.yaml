@@ -9,16 +9,16 @@ tags:
   description: Operations related to user authentication
 - name: User
   description: Operations related to user management
-- name: Sensor
-  description: Operations related to sensor data
-- name: Report
-  description: Operations for generating reports
 - name: Auto
   description: Operations related to Auto management
 - name: Wheel
   description: Operations related to wheel management
+- name: Sensor
+  description: Operations related to sensor data
 - name: Data
   description: Operations related to Sensor Data 
+- name: Report
+  description: Operations for generating reports
 paths:
   /login:
     post:
@@ -193,14 +193,6 @@ paths:
       tags:
       - Report
       summary: Generate report
-      parameters:
-      - name: userId
-        in: query
-        required: true
-        style: form
-        explode: true
-        schema:
-          type: string
       responses:
         "200":
           description: Report in XLSX format
