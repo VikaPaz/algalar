@@ -212,8 +212,8 @@ func (s *Service) GetCarId(stateNumber string) (string, error) {
 	return id, nil
 }
 
-func (s *Service) GenerateReport(ctx context.Context, userId string) ([]models.ReportData, error) {
-	repost, err := s.repo.GetReportData(userId)
+func (s *Service) GenerateReport(ctx context.Context) ([]models.ReportData, error) {
+	repost, err := s.repo.GetReportData(ctx.Value("user_id").(string))
 	if err != nil {
 		return []models.ReportData{}, err
 	}

@@ -14,19 +14,19 @@ type User struct {
 	Gender   string
 	Login    string
 	Password string
-	Timezone string
+	Timezone time.Time
 	Phone    string
 }
 
 type Car struct {
-	ID          string
-	IDCompany   string
-	StateNumber string
-	Brand       string
-	IDDevice    string
-	IDUnicum    string
-	CountAxis   int
-	Type        string
+	ID           string
+	IDCompany    string
+	StateNumber  string
+	Brand        string
+	DeviceNumber string
+	IDUnicum     string
+	CountAxis    int
+	Type         string
 }
 
 type Wheel struct {
@@ -34,6 +34,7 @@ type Wheel struct {
 	IDCompany      string
 	IDCar          string
 	AxisNumber     int
+	SensorNumber   string
 	Position       int
 	Size           float32
 	Cost           float32
@@ -95,12 +96,12 @@ type Claims struct {
 }
 
 type CarWithWheels struct {
-	ID          string  `json:"id"`
-	StateNumber string  `json:"state_number"`
-	Brand       string  `json:"brand"`
-	IDDevice    string  `json:"id_device"`
-	IDUnicum    string  `json:"id_unicum"`
-	CountAxis   int     `json:"count_axis"`
-	AutoType    string  `json:"AutoType"`
-	Wheels      []Wheel `json:"wheels"`
+	ID           string  `json:"id"`
+	StateNumber  string  `json:"state_number"`
+	Brand        string  `json:"brand"`
+	DeviceNumber string  `json:"id_device"`
+	IDUnicum     string  `json:"id_unicum"`
+	CountAxis    int     `json:"count_axis"`
+	AutoType     string  `json:"AutoType"`
+	Wheels       []Wheel `json:"wheels"`
 }

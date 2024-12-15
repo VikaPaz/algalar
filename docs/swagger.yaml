@@ -16,7 +16,9 @@ tags:
 - name: Sensor
   description: Operations related to sensor data
 - name: Data
-  description: Operations related to Sensor Data 
+  description: Operations related to data 
+- name: Breakage
+  description: Operations related to breakage  management
 - name: Report
   description: Operations for generating reports
 paths:

@@ -105,12 +105,12 @@ func (r *Repository) CreateCar(car models.Car) (models.Car, error) {
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING *`
 	resp := models.Car{}
-	err := r.conn.QueryRow(query, car.IDCompany, car.StateNumber, car.Brand, car.IDDevice, car.IDUnicum, car.CountAxis, car.Type).Scan(
+	err := r.conn.QueryRow(query, car.IDCompany, car.StateNumber, car.Brand, car.DeviceNumber, car.IDUnicum, car.CountAxis, car.Type).Scan(
 		&resp.ID,
 		&resp.IDCompany,
 		&resp.StateNumber,
 		&resp.Brand,
-		&resp.IDDevice,
+		&resp.DeviceNumber,
 		&resp.IDUnicum,
 		&resp.Type,
 		&resp.CountAxis,
@@ -246,7 +246,7 @@ func (r *Repository) GetCarById(carID string) (models.Car, error) {
 		&car.IDCompany,
 		&car.StateNumber,
 		&car.Brand,
-		&car.IDDevice,
+		&car.DeviceNumber,
 		&car.IDUnicum,
 		&car.CountAxis,
 	)
@@ -297,7 +297,7 @@ func (r *Repository) GetCarsList(userID string, offset int, limit int) ([]models
 
 	for rows.Next() {
 		var car models.Car
-		if err := rows.Scan(&car.ID, &car.IDCompany, &car.StateNumber, &car.Brand, &car.IDDevice, &car.IDUnicum, &car.CountAxis); err != nil {
+		if err := rows.Scan(&car.ID, &car.IDCompany, &car.StateNumber, &car.Brand, &car.DeviceNumber, &car.IDUnicum, &car.CountAxis); err != nil {
 			return nil, err
 		}
 		cars = append(cars, car)
@@ -577,7 +577,7 @@ func (r *Repository) GetCarWheelData(carID string) (models.CarWithWheels, error)
 			&carID,
 			&car.StateNumber,
 			&car.Brand,
-			&car.IDDevice,
+			&car.DeviceNumber,
 			&car.IDUnicum,
 			&car.CountAxis,
 			&car.AutoType,

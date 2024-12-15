@@ -25,7 +25,7 @@ type Service interface {
 	RegisterWheel(ctx context.Context, wheel models.Wheel) (models.Wheel, error)
 	UpdateWheelData(ctx context.Context, wheel models.Wheel) error
 	GetWheelData(ctx context.Context, id string) (models.Wheel, error)
-	GenerateReport(ctx context.Context, userId string) ([]models.ReportData, error)
+	GenerateReport(ctx context.Context) ([]models.ReportData, error)
 	GetSensorData(ctx context.Context, id string) ([]models.Sensor, error)
 	GetBreackegeData(ctx context.Context, id string) ([]models.Breakage, error)
 	IsCreatred(table string, key string, val any) (bool, error)
@@ -68,37 +68,7 @@ func NewServer(conf Config, svc Service, auth AuthService, logger *logrus.Logger
 	}
 }
 
-func (s *ServImplemented) PostUser(w http.ResponseWriter, r *http.Request) {
-	var userInfo rest.UserRegistration
-	if err := json.NewDecoder(r.Body).Decode(&userInfo); err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	user := ToUserRegistration(userInfo)
-
-	ok, err := s.service.IsCreatred("users", "login", user.Login)
-	if ok {
-		err := models.ErrAlreadyExists
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	if err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if err := s.service.RegisterUser(user); err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusCreated)
-}
-
+// Auth
 func (s *ServImplemented) PostLogin(w http.ResponseWriter, r *http.Request) {
 	var loginDetails rest.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&loginDetails); err != nil {
@@ -223,6 +193,86 @@ func (s *ServImplemented) PostRefresh(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// User
+func (s *ServImplemented) PostUser(w http.ResponseWriter, r *http.Request) {
+	var userInfo rest.UserRegistration
+	if err := json.NewDecoder(r.Body).Decode(&userInfo); err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	user := ToUserRegistration(userInfo)
+
+	ok, err := s.service.IsCreatred("users", "login", user.Login)
+	if ok {
+		err := models.ErrAlreadyExists
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := s.service.RegisterUser(user); err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (s *ServImplemented) PutUser(w http.ResponseWriter, r *http.Request) {
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	var req rest.UpdatePassword
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := s.service.UpdateUserPassword(ctx, req.NewPassword); err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *ServImplemented) GetUser(w http.ResponseWriter, r *http.Request) {
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	user, err := s.service.GetUserDetails(ctx)
+	if err != nil {
+		s.log.Error(err)
+		if err == models.ErrNoContent {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	userDetails := ToUserDetails(user)
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(userDetails)
+}
+
+// Auto
 func (s *ServImplemented) PostAuto(w http.ResponseWriter, r *http.Request) {
 	ctx, err := s.getUserID(r)
 	if err != nil {
@@ -295,13 +345,13 @@ func (s *ServImplemented) GetAutoInfo(w http.ResponseWriter, r *http.Request, pa
 		return
 	}
 	autoData := rest.AutoResponse{
-		AxleCount:   &autoWheelsData.CountAxis,
-		Brand:       &autoWheelsData.Brand,
-		DeviceId:    &autoWheelsData.IDDevice,
-		Id:          &autoWheelsData.ID,
-		StateNumber: &autoWheelsData.StateNumber,
-		UniqueId:    &autoWheelsData.IDUnicum,
-		AutoType:    &autoWheelsData.AutoType,
+		AxleCount:    &autoWheelsData.CountAxis,
+		Brand:        &autoWheelsData.Brand,
+		DeviceNumber: &autoWheelsData.DeviceNumber,
+		Id:           &autoWheelsData.ID,
+		StateNumber:  &autoWheelsData.StateNumber,
+		UniqueId:     &autoWheelsData.IDUnicum,
+		AutoType:     &autoWheelsData.AutoType,
 	}
 	resp := make(map[string]any)
 	resp["auto"] = autoData
@@ -340,53 +390,7 @@ func (s *ServImplemented) GetAutoList(w http.ResponseWriter, r *http.Request, pa
 	json.NewEncoder(w).Encode(res)
 }
 
-func (s *ServImplemented) PutUser(w http.ResponseWriter, r *http.Request) {
-	ctx, err := s.getUserID(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-
-	var req rest.UpdatePassword
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if err := s.service.UpdateUserPassword(ctx, req.NewPassword); err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-}
-
-func (s *ServImplemented) GetUser(w http.ResponseWriter, r *http.Request) {
-	ctx, err := s.getUserID(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-
-	user, err := s.service.GetUserDetails(ctx)
-	if err != nil {
-		s.log.Error(err)
-		if err == models.ErrNoContent {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	userDetails := ToUserDetails(user)
-
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(userDetails)
-}
-
+// Wheel
 func (s *ServImplemented) PostWheels(w http.ResponseWriter, r *http.Request) {
 	ctx, err := s.getUserID(r)
 	if err != nil {
@@ -477,99 +481,35 @@ func (s *ServImplemented) GetWheelsStateNumber(w http.ResponseWriter, r *http.Re
 	json.NewEncoder(w).Encode(res)
 }
 
-// TODO
-func (s *ServImplemented) GetSensor(w http.ResponseWriter, r *http.Request, params rest.GetSensorParams) {
-	// ctx, err := s.getUserID(r)
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusUnauthorized)
-	// 	return
-	// }
-	// dataList, err := s.service.GetSensorData(ctx, params.CarId)
-	// if err != nil {
-	// 	s.log.Error(err)
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
-
-	// res := make([]rest.SensorData, len(dataList))
-	// for i, val := range dataList {
-	// 	res[i] = ToSensorData(val, val.Datetime.String())
-	// }
-
-	// w.WriteHeader(http.StatusOK)
-	// w.Header().Set("Content-Type", "application/json")
-	// json.NewEncoder(w).Encode(res)
-
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Register a new sensor
-// (POST /sensor)
-func (s *ServImplemented) PostSensor(w http.ResponseWriter, r *http.Request) {
-	var req rest.SensorRegistration
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	sensor := ToSensor(req)
-
-	_, err := s.service.RegisterSensor(r.Context(), sensor)
-	if err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusCreated)
-}
-
+// TODO:
+// Sensor
 // Update an existing sensor
 // (POST /sensordata)
-func (_ ServImplemented) PostSensordata(w http.ResponseWriter, r *http.Request) {
+func (s *ServImplemented) PostSensordata(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// TODO: DELETE
-// Update an existing sensor
-// (PUT /sensor)
-// func (s *ServImplemented) PutSensor(w http.ResponseWriter, r *http.Request) {
-// 	ctx, err := s.getUserID(r)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusUnauthorized)
-// 		return
-// 	}
+// Provides actual data by car ID
+// (GET /sensors)
+func (s *ServImplemented) GetSensors(w http.ResponseWriter, r *http.Request, params rest.GetSensorsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
-// 	var req rest.SensorRegistration
-// 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-// 		s.log.Error(err)
-// 		http.Error(w, err.Error(), http.StatusBadRequest)
-// 		return
-// 	}
+// TODO:
+// Data
+// Get data by wheel ID
+// (GET /temperaturedata)
+func (s *ServImplemented) GetTemperaturedata(w http.ResponseWriter, r *http.Request, params rest.GetTemperaturedataParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
-// 	id, err := s.service.GetCarId(*req.StateNumber)
-// 	if err != nil {
-// 		s.log.Error(err)
-// 		http.Error(w, err.Error(), http.StatusBadRequest)
-// 		return
-// 	}
+// Get data by wheel ID
+// (GET /pressuredata)
+func (s *ServImplemented) GetPressuredata(w http.ResponseWriter, r *http.Request, params rest.GetPressuredataParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
-// 	sensor := ToSensor(req, id)
-
-// 	data, err := s.service.UpdateSensor(ctx, sensor)
-// 	if err != nil {
-// 		s.log.Error(err)
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	res := ToSensorData(data, data.Datetime.String())
-// 	w.WriteHeader(http.StatusOK)
-// 	w.Header().Set("Content-Type", "application/json")
-// 	json.NewEncoder(w).Encode(res)
-// }
-
+// Breakage
 // Get breakages by car ID
 // (GET /brackeges)
 func (s *ServImplemented) GetBreakages(w http.ResponseWriter, r *http.Request, params rest.GetBreakagesParams) {
@@ -633,14 +573,15 @@ func (s *ServImplemented) PostBreakages(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(res)
 }
 
-func (s *ServImplemented) GetReport(w http.ResponseWriter, r *http.Request, params rest.GetReportParams) {
+// Report
+func (s *ServImplemented) GetReport(w http.ResponseWriter, r *http.Request) {
 	ctx, err := s.getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
-	reportData, err := s.service.GenerateReport(ctx, params.UserId)
+	reportData, err := s.service.GenerateReport(ctx)
 	if err != nil {
 		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -684,7 +625,7 @@ func (s *ServImplemented) GetReport(w http.ResponseWriter, r *http.Request, para
 	}
 }
 
-func ToUser(userDetails rest.UserDetails) models.User {
+func ToUserReg(userDetails rest.UserDetails) models.User {
 	return models.User{
 		ID:       "",
 		INN:      *userDetails.Inn,
@@ -740,34 +681,26 @@ func ToUserRegistrationFromUser(user models.User) rest.UserRegistration {
 
 func ToCar(AutoRegistration rest.AutoRegistration) models.Car {
 	return models.Car{
-		IDCompany:   AutoRegistration.CompanyInn,
-		StateNumber: AutoRegistration.StateNumber,
-		Brand:       AutoRegistration.Brand,
-		IDDevice:    AutoRegistration.DeviceId,
-		IDUnicum:    AutoRegistration.UniqueId,
-		CountAxis:   AutoRegistration.AxleCount,
-		Type:        AutoRegistration.AutoType,
+		IDCompany:    AutoRegistration.CompanyInn,
+		StateNumber:  AutoRegistration.StateNumber,
+		Brand:        AutoRegistration.Brand,
+		DeviceNumber: AutoRegistration.DeviceNumber,
+		IDUnicum:     AutoRegistration.UniqueId,
+		CountAxis:    AutoRegistration.AxleCount,
+		Type:         AutoRegistration.AutoType,
 	}
 }
 
 func ToAutoResponse(car models.Car) rest.AutoResponse {
 	return rest.AutoResponse{
-		AxleCount:   &car.CountAxis,
-		Brand:       &car.Brand,
-		CompanyInn:  &car.IDCompany,
-		DeviceId:    &car.IDDevice,
-		Id:          &car.ID,
-		StateNumber: &car.StateNumber,
-		UniqueId:    &car.IDUnicum,
-		AutoType:    &car.Type,
-	}
-}
-
-func ToSensor(sensorReg rest.SensorRegistration) models.Sensor {
-	return models.Sensor{
-		IDDevice:     *sensorReg.IdDevice,
-		SensorNumber: *sensorReg.SensorNumber,
-		Position:     *sensorReg.Position,
+		AxleCount:    &car.CountAxis,
+		Brand:        &car.Brand,
+		CompanyInn:   &car.IDCompany,
+		DeviceNumber: &car.DeviceNumber,
+		Id:           &car.ID,
+		StateNumber:  &car.StateNumber,
+		UniqueId:     &car.IDUnicum,
+		AutoType:     &car.Type,
 	}
 }
 
@@ -788,6 +721,7 @@ func ToWheel(wheelRegistration rest.WheelRegistration) models.Wheel {
 		IDCar:          wheelRegistration.AutoId,
 		AxisNumber:     wheelRegistration.AxleNumber,
 		Position:       wheelRegistration.WheelPosition,
+		SensorNumber:   wheelRegistration.SensorNumber,
 		Size:           0,
 		Cost:           wheelRegistration.TireCost,
 		Brand:          wheelRegistration.TireBrand,
@@ -821,10 +755,6 @@ func ToWheelResponse(wheel models.Wheel) rest.WheelResponse {
 		Ngp:            wheel.Ngp,
 		Tkvh:           wheel.Tkvh,
 	}
-}
-
-func ToSensorData(sensor models.Sensor, time string) rest.SensorData {
-	return rest.SensorData{}
 }
 
 func ToBreakageResponse(breakage models.Breakage) rest.BreakageResponse {

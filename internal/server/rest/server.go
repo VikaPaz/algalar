@@ -23,25 +23,25 @@ const (
 
 // AutoRegistration defines model for AutoRegistration.
 type AutoRegistration struct {
-	AutoType    string `json:"autoType"`
-	AxleCount   int    `json:"axleCount"`
-	Brand       string `json:"brand"`
-	CompanyInn  string `json:"companyInn"`
-	DeviceId    string `json:"deviceId"`
-	StateNumber string `json:"stateNumber"`
-	UniqueId    string `json:"uniqueId"`
+	AutoType     string `json:"autoType"`
+	AxleCount    int    `json:"axleCount"`
+	Brand        string `json:"brand"`
+	CompanyInn   string `json:"companyInn"`
+	DeviceNumber string `json:"deviceNumber"`
+	StateNumber  string `json:"stateNumber"`
+	UniqueId     string `json:"uniqueId"`
 }
 
 // AutoResponse defines model for AutoResponse.
 type AutoResponse struct {
-	AutoType    *string `json:"autoType,omitempty"`
-	AxleCount   *int    `json:"axleCount,omitempty"`
-	Brand       *string `json:"brand,omitempty"`
-	CompanyInn  *string `json:"companyInn,omitempty"`
-	DeviceId    *string `json:"deviceId,omitempty"`
-	Id          *string `json:"id,omitempty"`
-	StateNumber *string `json:"stateNumber,omitempty"`
-	UniqueId    *string `json:"uniqueId,omitempty"`
+	AutoType     *string `json:"autoType,omitempty"`
+	AxleCount    *int    `json:"axleCount,omitempty"`
+	Brand        *string `json:"brand,omitempty"`
+	CompanyInn   *string `json:"companyInn,omitempty"`
+	DeviceNumber *string `json:"deviceNumber,omitempty"`
+	Id           *string `json:"id,omitempty"`
+	StateNumber  *string `json:"stateNumber,omitempty"`
+	UniqueId     *string `json:"uniqueId,omitempty"`
 }
 
 // BreakageRegistration defines model for BreakageRegistration.
@@ -67,23 +67,35 @@ type LoginRequest struct {
 	Password string              `json:"password"`
 }
 
-// ReportResponse defines model for ReportResponse.
-type ReportResponse = []byte
-
-// SensorData defines model for SensorData.
-type SensorData struct {
-	IdDevice     *string    `json:"id_device,omitempty"`
+// NewSensorData defines model for NewSensorData.
+type NewSensorData struct {
+	DeviceNumber *string    `json:"device_number,omitempty"`
 	Pressure     *float32   `json:"pressure,omitempty"`
-	SensorNumber *int       `json:"sensor_number,omitempty"`
+	SensorNumber *string    `json:"sensor_number,omitempty"`
 	Temperature  *float32   `json:"temperature,omitempty"`
 	Time         *time.Time `json:"time,omitempty"`
 }
 
-// SensorRegistration defines model for SensorRegistration.
-type SensorRegistration struct {
-	IdDevice     *string `json:"id_device,omitempty"`
-	Position     *int    `json:"position,omitempty"`
-	SensorNumber *string `json:"sensor_number,omitempty"`
+// PressureData defines model for PressureData.
+type PressureData struct {
+	Pressure *float32   `json:"pressure,omitempty"`
+	Time     *time.Time `json:"time,omitempty"`
+}
+
+// ReportResponse defines model for ReportResponse.
+type ReportResponse = []byte
+
+// SensorsData defines model for SensorsData.
+type SensorsData struct {
+	Pressure      *float32 `json:"pressure,omitempty"`
+	Temperature   *float32 `json:"temperature,omitempty"`
+	WheelPosition *int     `json:"wheel_position,omitempty"`
+}
+
+// TemperatureData defines model for TemperatureData.
+type TemperatureData struct {
+	Temperature *float32   `json:"temperature,omitempty"`
+	Time        *time.Time `json:"time,omitempty"`
 }
 
 // TokenResponse defines model for TokenResponse.
@@ -99,26 +111,26 @@ type UpdatePassword struct {
 
 // UserDetails defines model for UserDetails.
 type UserDetails struct {
-	Email     *string `json:"email,omitempty"`
-	FirstName *string `json:"firstName,omitempty"`
-	Gender    *string `json:"gender,omitempty"`
-	Inn       *string `json:"inn,omitempty"`
-	LastName  *string `json:"lastName,omitempty"`
-	Password  *string `json:"password,omitempty"`
-	Phone     *string `json:"phone,omitempty"`
-	TimeZone  *string `json:"timeZone,omitempty"`
+	Email     *string    `json:"email,omitempty"`
+	FirstName *string    `json:"firstName,omitempty"`
+	Gender    *string    `json:"gender,omitempty"`
+	Inn       *string    `json:"inn,omitempty"`
+	LastName  *string    `json:"lastName,omitempty"`
+	Password  *string    `json:"password,omitempty"`
+	Phone     *string    `json:"phone,omitempty"`
+	TimeZone  *time.Time `json:"timeZone,omitempty"`
 }
 
 // UserRegistration defines model for UserRegistration.
 type UserRegistration struct {
-	Email     string `json:"email"`
-	FirstName string `json:"firstName"`
-	Gender    string `json:"gender"`
-	Inn       string `json:"inn"`
-	LastName  string `json:"lastName"`
-	Password  string `json:"password"`
-	Phone     string `json:"phone"`
-	TimeZone  string `json:"timeZone"`
+	Email     string    `json:"email"`
+	FirstName string    `json:"firstName"`
+	Gender    string    `json:"gender"`
+	Inn       string    `json:"inn"`
+	LastName  string    `json:"lastName"`
+	Password  string    `json:"password"`
+	Phone     string    `json:"phone"`
+	TimeZone  time.Time `json:"timeZone"`
 }
 
 // WheelChange defines model for WheelChange.
@@ -180,6 +192,16 @@ type WheelResponse struct {
 	WheelPosition  *int     `json:"wheelPosition,omitempty"`
 }
 
+// WheelsDataForDevice defines model for WheelsDataForDevice.
+type WheelsDataForDevice struct {
+	MaxPressure    *float32 `json:"max_pressure,omitempty"`
+	MaxTemperature *float32 `json:"max_temperature,omitempty"`
+	MinPressure    *float32 `json:"min_pressure,omitempty"`
+	MinTemperature *float32 `json:"min_temperature,omitempty"`
+	SensorNumber   *string  `json:"sensor_number,omitempty"`
+	WheelPosition  *int     `json:"wheel_position,omitempty"`
+}
+
 // GetAutoParams defines parameters for GetAuto.
 type GetAutoParams struct {
 	CarId string `form:"car_id" json:"car_id"`
@@ -201,14 +223,23 @@ type GetBreakagesParams struct {
 	CarId string `form:"car_id" json:"car_id"`
 }
 
-// GetReportParams defines parameters for GetReport.
-type GetReportParams struct {
-	UserId string `form:"userId" json:"userId"`
+// GetPressuredataParams defines parameters for GetPressuredata.
+type GetPressuredataParams struct {
+	WheelId string    `form:"wheel_id" json:"wheel_id"`
+	From    time.Time `form:"from" json:"from"`
+	To      time.Time `form:"to" json:"to"`
 }
 
-// GetSensorParams defines parameters for GetSensor.
-type GetSensorParams struct {
+// GetSensorsParams defines parameters for GetSensors.
+type GetSensorsParams struct {
 	CarId string `form:"car_id" json:"car_id"`
+}
+
+// GetTemperaturedataParams defines parameters for GetTemperaturedata.
+type GetTemperaturedataParams struct {
+	WheelId string    `form:"wheel_id" json:"wheel_id"`
+	From    time.Time `form:"from" json:"from"`
+	To      time.Time `form:"to" json:"to"`
 }
 
 // GetWheelsParams defines parameters for GetWheels.
@@ -225,11 +256,8 @@ type PostBreakagesJSONRequestBody = BreakageRegistration
 // PostLoginJSONRequestBody defines body for PostLogin for application/json ContentType.
 type PostLoginJSONRequestBody = LoginRequest
 
-// PostSensorJSONRequestBody defines body for PostSensor for application/json ContentType.
-type PostSensorJSONRequestBody = SensorRegistration
-
 // PostSensordataJSONRequestBody defines body for PostSensordata for application/json ContentType.
-type PostSensordataJSONRequestBody = SensorData
+type PostSensordataJSONRequestBody = NewSensorData
 
 // PostUserJSONRequestBody defines body for PostUser for application/json ContentType.
 type PostUserJSONRequestBody = UserRegistration
@@ -266,21 +294,24 @@ type ServerInterface interface {
 	// User login
 	// (POST /login)
 	PostLogin(w http.ResponseWriter, r *http.Request)
+	// Get data by wheel ID
+	// (GET /pressuredata)
+	GetPressuredata(w http.ResponseWriter, r *http.Request, params GetPressuredataParams)
 	// Refresh access token
 	// (POST /refresh)
 	PostRefresh(w http.ResponseWriter, r *http.Request)
 	// Generate report
 	// (GET /report)
-	GetReport(w http.ResponseWriter, r *http.Request, params GetReportParams)
-	// Get sensors by car ID
-	// (GET /sensor)
-	GetSensor(w http.ResponseWriter, r *http.Request, params GetSensorParams)
-	// Register a new sensor
-	// (POST /sensor)
-	PostSensor(w http.ResponseWriter, r *http.Request)
+	GetReport(w http.ResponseWriter, r *http.Request)
 	// Update an existing sensor
 	// (POST /sensordata)
 	PostSensordata(w http.ResponseWriter, r *http.Request)
+	// Provides actual data by car ID
+	// (GET /sensors)
+	GetSensors(w http.ResponseWriter, r *http.Request, params GetSensorsParams)
+	// Get data by wheel ID
+	// (GET /temperaturedata)
+	GetTemperaturedata(w http.ResponseWriter, r *http.Request, params GetTemperaturedataParams)
 	// Get user details
 	// (GET /user)
 	GetUser(w http.ResponseWriter, r *http.Request)
@@ -350,6 +381,12 @@ func (_ Unimplemented) PostLogin(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// Get data by wheel ID
+// (GET /pressuredata)
+func (_ Unimplemented) GetPressuredata(w http.ResponseWriter, r *http.Request, params GetPressuredataParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // Refresh access token
 // (POST /refresh)
 func (_ Unimplemented) PostRefresh(w http.ResponseWriter, r *http.Request) {
@@ -358,25 +395,25 @@ func (_ Unimplemented) PostRefresh(w http.ResponseWriter, r *http.Request) {
 
 // Generate report
 // (GET /report)
-func (_ Unimplemented) GetReport(w http.ResponseWriter, r *http.Request, params GetReportParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Get sensors by car ID
-// (GET /sensor)
-func (_ Unimplemented) GetSensor(w http.ResponseWriter, r *http.Request, params GetSensorParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Register a new sensor
-// (POST /sensor)
-func (_ Unimplemented) PostSensor(w http.ResponseWriter, r *http.Request) {
+func (_ Unimplemented) GetReport(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Update an existing sensor
 // (POST /sensordata)
 func (_ Unimplemented) PostSensordata(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Provides actual data by car ID
+// (GET /sensors)
+func (_ Unimplemented) GetSensors(w http.ResponseWriter, r *http.Request, params GetSensorsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get data by wheel ID
+// (GET /temperaturedata)
+func (_ Unimplemented) GetTemperaturedata(w http.ResponseWriter, r *http.Request, params GetTemperaturedataParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -615,6 +652,12 @@ func (siw *ServerInterfaceWrapper) GetBreakages(w http.ResponseWriter, r *http.R
 // PostBreakages operation middleware
 func (siw *ServerInterfaceWrapper) PostBreakages(w http.ResponseWriter, r *http.Request) {
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostBreakages(w, r)
 	}))
@@ -631,6 +674,76 @@ func (siw *ServerInterfaceWrapper) PostLogin(w http.ResponseWriter, r *http.Requ
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostLogin(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetPressuredata operation middleware
+func (siw *ServerInterfaceWrapper) GetPressuredata(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetPressuredataParams
+
+	// ------------- Required query parameter "wheel_id" -------------
+
+	if paramValue := r.URL.Query().Get("wheel_id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "wheel_id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "wheel_id", r.URL.Query(), &params.WheelId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "wheel_id", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "from" -------------
+
+	if paramValue := r.URL.Query().Get("from"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "from", r.URL.Query(), &params.From)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "to" -------------
+
+	if paramValue := r.URL.Query().Get("to"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "to", r.URL.Query(), &params.To)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPressuredata(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -663,34 +776,14 @@ func (siw *ServerInterfaceWrapper) PostRefresh(w http.ResponseWriter, r *http.Re
 // GetReport operation middleware
 func (siw *ServerInterfaceWrapper) GetReport(w http.ResponseWriter, r *http.Request) {
 
-	var err error
-
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
 
 	r = r.WithContext(ctx)
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetReportParams
-
-	// ------------- Required query parameter "userId" -------------
-
-	if paramValue := r.URL.Query().Get("userId"); paramValue != "" {
-
-	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "userId"})
-		return
-	}
-
-	err = runtime.BindQueryParameter("form", true, true, "userId", r.URL.Query(), &params.UserId)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userId", Err: err})
-		return
-	}
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetReport(w, r, params)
+		siw.Handler.GetReport(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -700,8 +793,28 @@ func (siw *ServerInterfaceWrapper) GetReport(w http.ResponseWriter, r *http.Requ
 	handler.ServeHTTP(w, r)
 }
 
-// GetSensor operation middleware
-func (siw *ServerInterfaceWrapper) GetSensor(w http.ResponseWriter, r *http.Request) {
+// PostSensordata operation middleware
+func (siw *ServerInterfaceWrapper) PostSensordata(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostSensordata(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetSensors operation middleware
+func (siw *ServerInterfaceWrapper) GetSensors(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -712,7 +825,7 @@ func (siw *ServerInterfaceWrapper) GetSensor(w http.ResponseWriter, r *http.Requ
 	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params GetSensorParams
+	var params GetSensorsParams
 
 	// ------------- Required query parameter "car_id" -------------
 
@@ -730,7 +843,7 @@ func (siw *ServerInterfaceWrapper) GetSensor(w http.ResponseWriter, r *http.Requ
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSensor(w, r, params)
+		siw.Handler.GetSensors(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -740,25 +853,67 @@ func (siw *ServerInterfaceWrapper) GetSensor(w http.ResponseWriter, r *http.Requ
 	handler.ServeHTTP(w, r)
 }
 
-// PostSensor operation middleware
-func (siw *ServerInterfaceWrapper) PostSensor(w http.ResponseWriter, r *http.Request) {
+// GetTemperaturedata operation middleware
+func (siw *ServerInterfaceWrapper) GetTemperaturedata(w http.ResponseWriter, r *http.Request) {
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostSensor(w, r)
-	}))
+	var err error
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetTemperaturedataParams
+
+	// ------------- Required query parameter "wheel_id" -------------
+
+	if paramValue := r.URL.Query().Get("wheel_id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "wheel_id"})
+		return
 	}
 
-	handler.ServeHTTP(w, r)
-}
+	err = runtime.BindQueryParameter("form", true, true, "wheel_id", r.URL.Query(), &params.WheelId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "wheel_id", Err: err})
+		return
+	}
 
-// PostSensordata operation middleware
-func (siw *ServerInterfaceWrapper) PostSensordata(w http.ResponseWriter, r *http.Request) {
+	// ------------- Required query parameter "from" -------------
+
+	if paramValue := r.URL.Query().Get("from"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "from", r.URL.Query(), &params.From)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "to" -------------
+
+	if paramValue := r.URL.Query().Get("to"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "to", r.URL.Query(), &params.To)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		return
+	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostSensordata(w, r)
+		siw.Handler.GetTemperaturedata(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -916,6 +1071,12 @@ func (siw *ServerInterfaceWrapper) GetWheelsStateNumber(w http.ResponseWriter, r
 		return
 	}
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetWheelsStateNumber(w, r, stateNumber)
 	}))
@@ -1062,19 +1223,22 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/login", wrapper.PostLogin)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/pressuredata", wrapper.GetPressuredata)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/refresh", wrapper.PostRefresh)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/report", wrapper.GetReport)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/sensor", wrapper.GetSensor)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/sensor", wrapper.PostSensor)
-	})
-	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/sensordata", wrapper.PostSensordata)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/sensors", wrapper.GetSensors)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/temperaturedata", wrapper.GetTemperaturedata)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/user", wrapper.GetUser)
@@ -1223,6 +1387,23 @@ func (response PostLogin200JSONResponse) VisitPostLoginResponse(w http.ResponseW
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetPressuredataRequestObject struct {
+	Params GetPressuredataParams
+}
+
+type GetPressuredataResponseObject interface {
+	VisitGetPressuredataResponse(w http.ResponseWriter) error
+}
+
+type GetPressuredata200JSONResponse []PressureData
+
+func (response GetPressuredata200JSONResponse) VisitGetPressuredataResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type PostRefreshRequestObject struct {
 }
 
@@ -1240,7 +1421,6 @@ func (response PostRefresh200JSONResponse) VisitPostRefreshResponse(w http.Respo
 }
 
 type GetReportRequestObject struct {
-	Params GetReportParams
 }
 
 type GetReportResponseObject interface {
@@ -1266,39 +1446,6 @@ func (response GetReport200ApplicationvndOpenxmlformatsOfficedocumentSpreadsheet
 	return err
 }
 
-type GetSensorRequestObject struct {
-	Params GetSensorParams
-}
-
-type GetSensorResponseObject interface {
-	VisitGetSensorResponse(w http.ResponseWriter) error
-}
-
-type GetSensor200JSONResponse []SensorData
-
-func (response GetSensor200JSONResponse) VisitGetSensorResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PostSensorRequestObject struct {
-	Body *PostSensorJSONRequestBody
-}
-
-type PostSensorResponseObject interface {
-	VisitPostSensorResponse(w http.ResponseWriter) error
-}
-
-type PostSensor201Response struct {
-}
-
-func (response PostSensor201Response) VisitPostSensorResponse(w http.ResponseWriter) error {
-	w.WriteHeader(201)
-	return nil
-}
-
 type PostSensordataRequestObject struct {
 	Body *PostSensordataJSONRequestBody
 }
@@ -1313,6 +1460,40 @@ type PostSensordata201Response struct {
 func (response PostSensordata201Response) VisitPostSensordataResponse(w http.ResponseWriter) error {
 	w.WriteHeader(201)
 	return nil
+}
+
+type GetSensorsRequestObject struct {
+	Params GetSensorsParams
+}
+
+type GetSensorsResponseObject interface {
+	VisitGetSensorsResponse(w http.ResponseWriter) error
+}
+
+type GetSensors200JSONResponse []SensorsData
+
+func (response GetSensors200JSONResponse) VisitGetSensorsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetTemperaturedataRequestObject struct {
+	Params GetTemperaturedataParams
+}
+
+type GetTemperaturedataResponseObject interface {
+	VisitGetTemperaturedataResponse(w http.ResponseWriter) error
+}
+
+type GetTemperaturedata200JSONResponse []TemperatureData
+
+func (response GetTemperaturedata200JSONResponse) VisitGetTemperaturedataResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
 }
 
 type GetUserRequestObject struct {
@@ -1422,7 +1603,7 @@ type GetWheelsStateNumberResponseObject interface {
 	VisitGetWheelsStateNumberResponse(w http.ResponseWriter) error
 }
 
-type GetWheelsStateNumber200JSONResponse []WheelResponse
+type GetWheelsStateNumber200JSONResponse []WheelsDataForDevice
 
 func (response GetWheelsStateNumber200JSONResponse) VisitGetWheelsStateNumberResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -1454,21 +1635,24 @@ type StrictServerInterface interface {
 	// User login
 	// (POST /login)
 	PostLogin(ctx context.Context, request PostLoginRequestObject) (PostLoginResponseObject, error)
+	// Get data by wheel ID
+	// (GET /pressuredata)
+	GetPressuredata(ctx context.Context, request GetPressuredataRequestObject) (GetPressuredataResponseObject, error)
 	// Refresh access token
 	// (POST /refresh)
 	PostRefresh(ctx context.Context, request PostRefreshRequestObject) (PostRefreshResponseObject, error)
 	// Generate report
 	// (GET /report)
 	GetReport(ctx context.Context, request GetReportRequestObject) (GetReportResponseObject, error)
-	// Get sensors by car ID
-	// (GET /sensor)
-	GetSensor(ctx context.Context, request GetSensorRequestObject) (GetSensorResponseObject, error)
-	// Register a new sensor
-	// (POST /sensor)
-	PostSensor(ctx context.Context, request PostSensorRequestObject) (PostSensorResponseObject, error)
 	// Update an existing sensor
 	// (POST /sensordata)
 	PostSensordata(ctx context.Context, request PostSensordataRequestObject) (PostSensordataResponseObject, error)
+	// Provides actual data by car ID
+	// (GET /sensors)
+	GetSensors(ctx context.Context, request GetSensorsRequestObject) (GetSensorsResponseObject, error)
+	// Get data by wheel ID
+	// (GET /temperaturedata)
+	GetTemperaturedata(ctx context.Context, request GetTemperaturedataRequestObject) (GetTemperaturedataResponseObject, error)
 	// Get user details
 	// (GET /user)
 	GetUser(ctx context.Context, request GetUserRequestObject) (GetUserResponseObject, error)
@@ -1718,6 +1902,32 @@ func (sh *strictHandler) PostLogin(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetPressuredata operation middleware
+func (sh *strictHandler) GetPressuredata(w http.ResponseWriter, r *http.Request, params GetPressuredataParams) {
+	var request GetPressuredataRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetPressuredata(ctx, request.(GetPressuredataRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetPressuredata")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetPressuredataResponseObject); ok {
+		if err := validResponse.VisitGetPressuredataResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // PostRefresh operation middleware
 func (sh *strictHandler) PostRefresh(w http.ResponseWriter, r *http.Request) {
 	var request PostRefreshRequestObject
@@ -1743,10 +1953,8 @@ func (sh *strictHandler) PostRefresh(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetReport operation middleware
-func (sh *strictHandler) GetReport(w http.ResponseWriter, r *http.Request, params GetReportParams) {
+func (sh *strictHandler) GetReport(w http.ResponseWriter, r *http.Request) {
 	var request GetReportRequestObject
-
-	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GetReport(ctx, request.(GetReportRequestObject))
@@ -1761,63 +1969,6 @@ func (sh *strictHandler) GetReport(w http.ResponseWriter, r *http.Request, param
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetReportResponseObject); ok {
 		if err := validResponse.VisitGetReportResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// GetSensor operation middleware
-func (sh *strictHandler) GetSensor(w http.ResponseWriter, r *http.Request, params GetSensorParams) {
-	var request GetSensorRequestObject
-
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetSensor(ctx, request.(GetSensorRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetSensor")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetSensorResponseObject); ok {
-		if err := validResponse.VisitGetSensorResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// PostSensor operation middleware
-func (sh *strictHandler) PostSensor(w http.ResponseWriter, r *http.Request) {
-	var request PostSensorRequestObject
-
-	var body PostSensorJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PostSensor(ctx, request.(PostSensorRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostSensor")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PostSensorResponseObject); ok {
-		if err := validResponse.VisitPostSensorResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1849,6 +2000,58 @@ func (sh *strictHandler) PostSensordata(w http.ResponseWriter, r *http.Request) 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PostSensordataResponseObject); ok {
 		if err := validResponse.VisitPostSensordataResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSensors operation middleware
+func (sh *strictHandler) GetSensors(w http.ResponseWriter, r *http.Request, params GetSensorsParams) {
+	var request GetSensorsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetSensors(ctx, request.(GetSensorsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSensors")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSensorsResponseObject); ok {
+		if err := validResponse.VisitGetSensorsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetTemperaturedata operation middleware
+func (sh *strictHandler) GetTemperaturedata(w http.ResponseWriter, r *http.Request, params GetTemperaturedataParams) {
+	var request GetTemperaturedataRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetTemperaturedata(ctx, request.(GetTemperaturedataRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetTemperaturedata")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetTemperaturedataResponseObject); ok {
+		if err := validResponse.VisitGetTemperaturedataResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

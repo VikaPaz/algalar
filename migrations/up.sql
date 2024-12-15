@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS wheels (
 	id_car uuid REFERENCES cars,
 	count_axis int,
 	position int,
+	sensor_number varchar(100),
 	size float,
 	cost float,
 	brand varchar(100),
