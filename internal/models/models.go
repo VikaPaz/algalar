@@ -14,7 +14,7 @@ type User struct {
 	Gender   string
 	Login    string
 	Password string
-	Timezone time.Time
+	Timezone int
 	Phone    string
 }
 
@@ -49,19 +49,41 @@ type Wheel struct {
 	Tkvh           *float32
 }
 
-type Sensor struct {
+type SensorData struct {
 	ID           string
-	IDDevice     string
 	SensorNumber string
-	Position     int
+	DeviceNumber string
+	Pressure     float32
+	Temperature  float32
+	Time         time.Time
 }
 
-type SensorData struct {
-	ID          string
-	IDSensor    string
-	Pressure    float32
+type SensorsData struct {
+	WheelPosition int
+	Pressure      float32
+	Temperature   float32
+}
+
+type TemperatureData struct {
 	Temperature float32
-	Time        time.Time
+	Datetime    time.Time
+}
+
+type PressureData struct {
+	Pressure float32
+	Datetime time.Time
+}
+
+type TemperatureDataByWheelIDFilter struct {
+	IDWheel string
+	From    time.Time
+	To      time.Time
+}
+
+type PressureDataByWheelIDFilter struct {
+	IDWheel string
+	From    time.Time
+	To      time.Time
 }
 
 type Breakage struct {

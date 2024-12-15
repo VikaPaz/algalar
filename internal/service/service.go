@@ -18,17 +18,18 @@ type Repository interface {
 	GetWheelById(wheelID string) (models.Wheel, error)
 	ChangeWheel(wheel models.Wheel) error
 	SelectAny(table string, key string, val any) (bool, error)
-	CreateSensor(sensor models.Sensor) (string, error)
 	CreateBreakage(breakage models.Breakage) (string, error)
 	GetCarById(carID string) (models.Car, error)
 	GetCarsList(user_id string, offset int, limit int) ([]models.Car, error)
 	GetIdCarByStateNumber(stateNumber string) (string, error)
-	GetSensorsByCarId(carID string) ([]models.Sensor, error)
 	GetBreakagesByCarId(carID string) ([]models.Breakage, error)
-	UpdateSensor(sensor models.Sensor) (models.Sensor, error)
 	GetReportData(userId string) ([]models.ReportData, error)
 	GetWheelsByStateNumber(stateNumber string) ([]models.Wheel, error)
 	GetCarWheelData(carID string) (models.CarWithWheels, error)
+	CreateData(newData models.SensorData) (models.SensorData, error)
+	SensorsDataByCarID(carID string) ([]models.SensorsData, error)
+	Temperaturedata(filter models.TemperatureDataByWheelIDFilter) ([]models.TemperatureData, error)
+	Pressuredata(filter models.PressureDataByWheelIDFilter) ([]models.PressureData, error)
 }
 
 type Service struct {
@@ -44,7 +45,7 @@ func (s *Service) IsCreatred(table string, key string, val any) (bool, error) {
 	return ok, nil
 }
 
-func (s *Service) RegisterUser(user models.User) error {
+func (s *Service) RegisterUser(ctx context.Context, user models.User) error {
 	_, err := s.repo.CreateUser(user)
 	if err != nil {
 		s.log.Debugf("Error creating user: %s", user.Login)
@@ -114,18 +115,6 @@ func (s *Service) RegisterWheel(ctx context.Context, wheel models.Wheel) (models
 
 	s.log.Debugf("Wheel registered successfully: %v", wheel)
 	return wheel, nil
-}
-
-func (s *Service) RegisterSensor(ctx context.Context, sensor models.Sensor) (models.Sensor, error) {
-	sensorID, err := s.repo.CreateSensor(sensor)
-	if err != nil {
-		s.log.Debugf("Error registering sensor: %v", sensorID)
-		return models.Sensor{}, err
-	}
-	sensor.ID = sensorID
-
-	s.log.Debugf("Sensor registered successfully: %v", sensorID)
-	return sensor, nil
 }
 
 func (s *Service) RegisterBeakege(ctx context.Context, breakege models.Breakage) (models.Breakage, error) {
@@ -204,7 +193,7 @@ func (s *Service) GetAutoList(ctx context.Context, offset int, limit int) ([]mod
 	return list, nil
 }
 
-func (s *Service) GetCarId(stateNumber string) (string, error) {
+func (s *Service) GetCarId(ctx context.Context, stateNumber string) (string, error) {
 	id, err := s.repo.GetIdCarByStateNumber(stateNumber)
 	if err != nil {
 		return "", err
@@ -218,14 +207,6 @@ func (s *Service) GenerateReport(ctx context.Context) ([]models.ReportData, erro
 		return []models.ReportData{}, err
 	}
 	return repost, nil
-}
-
-func (s *Service) GetSensorData(ctx context.Context, carID string) ([]models.Sensor, error) {
-	list, err := s.repo.GetSensorsByCarId(carID)
-	if err != nil {
-		return nil, err
-	}
-	return list, nil
 }
 
 func (s *Service) GetBreackegeData(ctx context.Context, carID string) ([]models.Breakage, error) {
@@ -245,6 +226,37 @@ func (s *Service) GetAutoWheelsData(ctx context.Context, id string) (models.CarW
 	return resp, nil
 }
 
+func (s *Service) NewSensorData(ctx context.Context, newData models.SensorData) (models.SensorData, error) {
+	res, err := s.repo.CreateData(newData)
+	if err != nil {
+		return models.SensorData{}, err
+	}
+	return res, nil
+}
+
+func (s *Service) SensorsDataByCarID(ctx context.Context, carID string) ([]models.SensorsData, error) {
+	res, err := s.repo.SensorsDataByCarID(carID)
+	if err != nil {
+		return []models.SensorsData{}, err
+	}
+	return res, nil
+}
+
+func (s *Service) Temperaturedata(ctx context.Context, filter models.TemperatureDataByWheelIDFilter) ([]models.TemperatureData, error) {
+	res, err := s.repo.Temperaturedata(filter)
+	if err != nil {
+		return []models.TemperatureData{}, err
+	}
+	return res, nil
+}
+
+func (s *Service) Pressuredata(ctx context.Context, filter models.PressureDataByWheelIDFilter) ([]models.PressureData, error) {
+	res, err := s.repo.Pressuredata(filter)
+	if err != nil {
+		return []models.PressureData{}, err
+	}
+	return res, nil
+}
 func NewService(repo Repository, log *logrus.Logger) *Service {
 	return &Service{
 		repo: repo,

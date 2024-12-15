@@ -19,23 +19,25 @@ import (
 
 type Service interface {
 	RegisterAuto(ctx context.Context, car models.Car) (models.Car, error)
-	RegisterUser(user models.User) error
+	RegisterUser(ctx context.Context, user models.User) error
 	UpdateUserPassword(ctx context.Context, newPassword string) error
 	GetUserDetails(ctx context.Context) (models.User, error)
 	RegisterWheel(ctx context.Context, wheel models.Wheel) (models.Wheel, error)
 	UpdateWheelData(ctx context.Context, wheel models.Wheel) error
 	GetWheelData(ctx context.Context, id string) (models.Wheel, error)
 	GenerateReport(ctx context.Context) ([]models.ReportData, error)
-	GetSensorData(ctx context.Context, id string) ([]models.Sensor, error)
 	GetBreackegeData(ctx context.Context, id string) ([]models.Breakage, error)
 	IsCreatred(table string, key string, val any) (bool, error)
 	GetAutoData(ctx context.Context, id string) (models.Car, error)
 	GetAutoWheelsData(ctx context.Context, id string) (models.CarWithWheels, error)
 	GetAutoList(ctx context.Context, offset int, limit int) ([]models.Car, error)
-	RegisterSensor(ctx context.Context, sensor models.Sensor) (models.Sensor, error)
 	RegisterBeakege(ctx context.Context, breakege models.Breakage) (models.Breakage, error)
-	GetCarId(stateNumber string) (string, error)
+	GetCarId(ctx context.Context, stateNumber string) (string, error)
 	GetWheelsData(ctx context.Context, stateNumber string) ([]models.Wheel, error)
+	NewSensorData(ctx context.Context, newData models.SensorData) (models.SensorData, error)
+	SensorsDataByCarID(ctx context.Context, carID string) ([]models.SensorsData, error)
+	Temperaturedata(ctx context.Context, filter models.TemperatureDataByWheelIDFilter) ([]models.TemperatureData, error)
+	Pressuredata(ctx context.Context, filter models.PressureDataByWheelIDFilter) ([]models.PressureData, error)
 }
 
 type AuthService interface {
@@ -127,6 +129,7 @@ func (s *ServImplemented) PostLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (s *ServImplemented) PostRefresh(w http.ResponseWriter, r *http.Request) {
@@ -191,6 +194,7 @@ func (s *ServImplemented) PostRefresh(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+	w.WriteHeader(http.StatusCreated)
 }
 
 // User
@@ -202,7 +206,7 @@ func (s *ServImplemented) PostUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := ToUserRegistration(userInfo)
+	var user models.User = ToNewUser(userInfo)
 
 	ok, err := s.service.IsCreatred("users", "login", user.Login)
 	if ok {
@@ -217,7 +221,7 @@ func (s *ServImplemented) PostUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.service.RegisterUser(user); err != nil {
+	if err := s.service.RegisterUser(r.Context(), user); err != nil {
 		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -310,6 +314,7 @@ func (s *ServImplemented) PostAuto(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := ToAutoResponse(car)
+	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
@@ -373,7 +378,7 @@ func (s *ServImplemented) GetAutoList(w http.ResponseWriter, r *http.Request, pa
 		return
 	}
 
-	autoList, err := s.service.GetAutoList(ctx, *params.Offset, *params.Limit)
+	autoList, err := s.service.GetAutoList(ctx, params.Offset, params.Limit)
 	if err != nil {
 		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -405,7 +410,7 @@ func (s *ServImplemented) PostWheels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	wheel := ToWheel(req)
+	var wheel models.Wheel = ToNewWheel(req)
 	new, err := s.service.RegisterWheel(ctx, wheel)
 	if err != nil {
 		s.log.Error(err)
@@ -415,7 +420,7 @@ func (s *ServImplemented) PostWheels(w http.ResponseWriter, r *http.Request) {
 
 	res := ToWheelResponse(new)
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)
 }
@@ -427,22 +432,24 @@ func (s *ServImplemented) PutWheels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req rest.WheelRegistration
+	var req rest.WheelChange
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	wheel := ToWheel(req)
+	var wheel models.Wheel = ToWheel(req)
 	if err := s.service.UpdateWheelData(ctx, wheel); err != nil {
 		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	var res rest.WheelResponse = ToWheelResponse(wheel)
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(wheel)
+	json.NewEncoder(w).Encode(res)
 }
 
 func (s *ServImplemented) GetWheels(w http.ResponseWriter, r *http.Request, params rest.GetWheelsParams) {
@@ -464,7 +471,13 @@ func (s *ServImplemented) GetWheels(w http.ResponseWriter, r *http.Request, para
 }
 
 func (s *ServImplemented) GetWheelsStateNumber(w http.ResponseWriter, r *http.Request, stateNumber string) {
-	dataList, err := s.service.GetWheelsData(r.Context(), stateNumber)
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	dataList, err := s.service.GetWheelsData(ctx, stateNumber)
 	if err != nil {
 		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -486,13 +499,55 @@ func (s *ServImplemented) GetWheelsStateNumber(w http.ResponseWriter, r *http.Re
 // Update an existing sensor
 // (POST /sensordata)
 func (s *ServImplemented) PostSensordata(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	var req rest.NewSensorData
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var newData models.SensorData = ToNewData(req)
+
+	_, err = s.service.NewSensorData(ctx, newData)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }
 
 // Provides actual data by car ID
 // (GET /sensors)
 func (s *ServImplemented) GetSensors(w http.ResponseWriter, r *http.Request, params rest.GetSensorsParams) {
-	w.WriteHeader(http.StatusNotImplemented)
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	sensors, err := s.service.SensorsDataByCarID(ctx, params.CarId)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	res := make([]rest.SensorsData, len(sensors))
+	for i, val := range sensors {
+		res[i] = ToRestSensorsData(val)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
 }
 
 // TODO:
@@ -500,13 +555,71 @@ func (s *ServImplemented) GetSensors(w http.ResponseWriter, r *http.Request, par
 // Get data by wheel ID
 // (GET /temperaturedata)
 func (s *ServImplemented) GetTemperaturedata(w http.ResponseWriter, r *http.Request, params rest.GetTemperaturedataParams) {
-	w.WriteHeader(http.StatusNotImplemented)
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	filter := models.TemperatureDataByWheelIDFilter{
+		IDWheel: params.WheelId,
+		From:    params.From,
+		To:      params.To,
+	}
+
+	data, err := s.service.Temperaturedata(ctx, filter)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	res := make([]rest.TemperatureData, len(data))
+	for i, val := range data {
+		res[i] = rest.TemperatureData{
+			Temperature: &val.Temperature,
+			Time:        &val.Datetime,
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
 }
 
 // Get data by wheel ID
 // (GET /pressuredata)
 func (s *ServImplemented) GetPressuredata(w http.ResponseWriter, r *http.Request, params rest.GetPressuredataParams) {
-	w.WriteHeader(http.StatusNotImplemented)
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	filter := models.PressureDataByWheelIDFilter{
+		IDWheel: params.WheelId,
+		From:    params.From,
+		To:      params.To,
+	}
+
+	data, err := s.service.Pressuredata(ctx, filter)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	res := make([]rest.PressureData, len(data))
+	for i, val := range data {
+		res[i] = rest.PressureData{
+			Pressure: &val.Pressure,
+			Time:     &val.Datetime,
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
 }
 
 // Breakage
@@ -551,14 +664,14 @@ func (s *ServImplemented) PostBreakages(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	id, err := s.service.GetCarId(*req.StateNumber)
+	id, err := s.service.GetCarId(ctx, *req.StateNumber)
 	if err != nil {
 		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	breakege := ToBreakage(req, id)
+	breakege := ToNewBreakage(req, id)
 
 	new_breackege, err := s.service.RegisterBeakege(ctx, breakege)
 	if err != nil {
@@ -625,17 +738,17 @@ func (s *ServImplemented) GetReport(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func ToUserReg(userDetails rest.UserDetails) models.User {
+// User
+func ToNewUser(userRegistration rest.UserRegistration) models.User {
 	return models.User{
-		ID:       "",
-		INN:      *userDetails.Inn,
-		Name:     *userDetails.FirstName,
-		Surname:  *userDetails.LastName,
-		Gender:   *userDetails.Gender,
-		Login:    *userDetails.Email,
-		Password: *userDetails.Password,
-		Timezone: *userDetails.TimeZone,
-		Phone:    *userDetails.Phone,
+		INN:      userRegistration.Inn,
+		Name:     userRegistration.FirstName,
+		Surname:  userRegistration.LastName,
+		Gender:   userRegistration.Gender,
+		Login:    userRegistration.Email,
+		Password: userRegistration.Password,
+		Timezone: userRegistration.TimeZone,
+		Phone:    userRegistration.Phone,
 	}
 }
 
@@ -652,33 +765,7 @@ func ToUserDetails(user models.User) rest.UserDetails {
 	}
 }
 
-func ToUserRegistration(userRegistration rest.UserRegistration) models.User {
-	return models.User{
-		ID:       "",
-		INN:      string(userRegistration.Inn),
-		Name:     userRegistration.FirstName,
-		Surname:  userRegistration.LastName,
-		Gender:   userRegistration.Gender,
-		Login:    userRegistration.Email,
-		Password: userRegistration.Password,
-		Timezone: userRegistration.TimeZone,
-		Phone:    userRegistration.Phone,
-	}
-}
-
-func ToUserRegistrationFromUser(user models.User) rest.UserRegistration {
-	return rest.UserRegistration{
-		Email:     user.Login,
-		FirstName: user.Name,
-		Inn:       string(user.INN),
-		LastName:  user.Surname,
-		Gender:    user.Gender,
-		Password:  user.Password,
-		Phone:     user.Phone,
-		TimeZone:  user.Timezone,
-	}
-}
-
+// Car
 func ToCar(AutoRegistration rest.AutoRegistration) models.Car {
 	return models.Car{
 		IDCompany:    AutoRegistration.CompanyInn,
@@ -704,35 +791,45 @@ func ToAutoResponse(car models.Car) rest.AutoResponse {
 	}
 }
 
-func ToBreakage(breakageResponse rest.BreakageRegistration, id string) models.Breakage {
-	return models.Breakage{
-		ID:          "",
-		CarID:       id,
-		StateNumber: *breakageResponse.StateNumber,
-		Type:        *breakageResponse.Type,
-		Description: *breakageResponse.Description,
-		Datetime:    *breakageResponse.Datetime,
+// Wheel
+func ToNewWheel(new rest.WheelRegistration) models.Wheel {
+	return models.Wheel{
+		IDCar:          new.AutoId,
+		AxisNumber:     new.AxleNumber,
+		Position:       new.WheelPosition,
+		SensorNumber:   new.SensorNumber,
+		Size:           new.TireSize,
+		Cost:           new.TireCost,
+		Brand:          new.TireBrand,
+		Model:          new.TireModel,
+		Mileage:        new.Mileage,
+		MinTemperature: new.MinTemperature,
+		MinPressure:    new.MinPressure,
+		MaxTemperature: new.MaxTemperature,
+		MaxPressure:    new.MaxPressure,
+		Ngp:            &new.Ngp,
+		Tkvh:           &new.Tkvh,
 	}
 }
 
-func ToWheel(wheelRegistration rest.WheelRegistration) models.Wheel {
+func ToWheel(wheel rest.WheelChange) models.Wheel {
 	return models.Wheel{
-		ID:             wheelRegistration.SensorNumber,
-		IDCar:          wheelRegistration.AutoId,
-		AxisNumber:     wheelRegistration.AxleNumber,
-		Position:       wheelRegistration.WheelPosition,
-		SensorNumber:   wheelRegistration.SensorNumber,
-		Size:           0,
-		Cost:           wheelRegistration.TireCost,
-		Brand:          wheelRegistration.TireBrand,
-		Model:          wheelRegistration.TireModel,
-		Mileage:        wheelRegistration.Mileage,
-		MinTemperature: wheelRegistration.MinTemperature,
-		MinPressure:    wheelRegistration.MinPressure,
-		MaxTemperature: wheelRegistration.MaxTemperature,
-		MaxPressure:    wheelRegistration.MaxPressure,
-		Ngp:            &wheelRegistration.Ngp,
-		Tkvh:           &wheelRegistration.Tkvh,
+		ID:             wheel.Id,
+		IDCar:          wheel.AutoId,
+		AxisNumber:     wheel.AxleNumber,
+		Position:       wheel.WheelPosition,
+		SensorNumber:   wheel.SensorNumber,
+		Size:           wheel.TireSize,
+		Cost:           wheel.TireCost,
+		Brand:          wheel.TireBrand,
+		Model:          wheel.TireModel,
+		Mileage:        wheel.Mileage,
+		MinTemperature: wheel.MinTemperature,
+		MinPressure:    wheel.MinPressure,
+		MaxTemperature: wheel.MaxTemperature,
+		MaxPressure:    wheel.MaxPressure,
+		Ngp:            &wheel.Ngp,
+		Tkvh:           &wheel.Tkvh,
 	}
 }
 
@@ -768,18 +865,43 @@ func ToWheelData(wheel models.Wheel) rest.WheelsDataForDevice {
 	}
 }
 
-func ToBreakageResponse(breakage models.Breakage) rest.BreakageResponse {
-	datetimeStr := ""
-	if !breakage.Datetime.IsZero() {
-		datetimeStr = breakage.Datetime.Format(time.RFC3339)
+// Sensor
+func ToRestSensorsData(data models.SensorsData) rest.SensorsData {
+	return rest.SensorsData{
+		WheelPosition: &data.WheelPosition,
+		Pressure:      &data.Pressure,
+		Temperature:   &data.Temperature,
 	}
+}
 
+// Data
+func ToNewData(data rest.NewSensorData) models.SensorData {
+	return models.SensorData{
+		SensorNumber: *data.DeviceNumber,
+		Pressure:     *data.Pressure,
+		Temperature:  *data.Temperature,
+		Time:         *data.Time,
+	}
+}
+
+// Breakage
+func ToNewBreakage(breakageResponse rest.BreakageRegistration, id string) models.Breakage {
+	return models.Breakage{
+		CarID:       id,
+		StateNumber: *breakageResponse.StateNumber,
+		Type:        *breakageResponse.Type,
+		Description: *breakageResponse.Description,
+		Datetime:    *breakageResponse.Datetime,
+	}
+}
+
+func ToBreakageResponse(breakage models.Breakage) rest.BreakageResponse {
 	return rest.BreakageResponse{
 		Id:          &breakage.ID,
 		StateNumber: &breakage.StateNumber,
 		Type:        &breakage.Type,
 		Description: &breakage.Description,
-		Datetime:    &datetimeStr,
+		Datetime:    &breakage.Datetime,
 	}
 }
 
