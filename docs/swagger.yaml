@@ -34,7 +34,7 @@ paths:
               $ref: '#/components/schemas/LoginRequest'
         required: true
       responses:
-        "200":
+        "201":
           description: Successful login
           content:
             application/json:
@@ -47,7 +47,7 @@ paths:
       - Auth
       summary: Refresh access token
       responses:
-        "200":
+        "201":
           description: Successful token refresh
           content:
             application/json:
@@ -78,7 +78,7 @@ paths:
               $ref: '#/components/schemas/UserRegistration'
         required: true
       responses:
-        "200":
+        "201":
           description: Successful registration
       security: []
     get:
@@ -210,12 +210,12 @@ paths:
       parameters:
         - name: offset
           in: query
-          required: false
+          required: true
           schema:
             type: integer
         - name: limit
           in: query
-          required: false
+          required: true
           schema:
             type: integer
       responses:
@@ -281,7 +281,7 @@ paths:
               $ref: '#/components/schemas/AutoRegistration'
         required: true
       responses:
-        "200":
+        "201":
           description: Successful Auto registration
           content:
             application/json:
@@ -316,7 +316,7 @@ paths:
               $ref: '#/components/schemas/WheelRegistration'
         required: true
       responses:
-        "200":
+        "201":
           description: Successful wheel registration
           content:
             application/json:
@@ -370,6 +370,16 @@ paths:
           required: true
           schema:
             type: string
+        - name: offset
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: true
+          schema:
+            type: integer
       responses:
         "200":
           description: Breakage data
@@ -392,10 +402,6 @@ paths:
       responses:
         "201":
           description: Successful breakage registration
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BreakageResponse'
 components:
   schemas:
     LoginRequest:
@@ -710,7 +716,7 @@ components:
           type: string
         datetime:
           type: string
-          format: date-tim
+          format: date-time
     BreakageRegistration:
       type: object
       properties:
