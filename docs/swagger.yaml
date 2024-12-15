@@ -448,8 +448,7 @@ components:
         email:
           type: string
         timeZone:
-          type: string
-          format: date-time
+          type: integer
         inn:
           type: string
         password:
@@ -468,8 +467,7 @@ components:
         email:
           type: string
         timeZone:
-          type: string
-          format: date-time
+          type: integer
         inn:
           type: string
         password:
