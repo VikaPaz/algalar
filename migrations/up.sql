@@ -8,9 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
 	gender varchar(100),
 	login varchar(100),
 	password varchar(100),
-	post varchar(100),
 	phone varchar(100),
-	timezone text
+	utc_timezone int
 );
 
 CREATE TABLE IF NOT EXISTS cars (
