@@ -17,10 +17,17 @@ tags:
   description: Operations related to sensor data
 - name: Data
   description: Operations related to data 
+- name: Driver
+  description: Operations related to driver management 
+- name: Position
+  description: Operations related to position management 
+- name: Notifications
+  description: Operations related to notifications management 
 - name: Breakage
   description: Operations related to breakage  management
 - name: Report
   description: Operations for generating reports
+  
 paths:
   /login:
     post:
@@ -359,51 +366,637 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/WheelsDataForDevice'
-  /breakages:
-    get:
-      tags:
-        - Breakage
-      summary: Get breakages by car ID
-      parameters:
-        - name: car_id
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: offset
-          in: query
-          required: true
-          schema:
-            type: integer
-        - name: limit
-          in: query
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Breakage data
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/BreakageResponse'
+  /driver:
     post:
       tags:
-        - Breakage
-      summary: Register a new breakage
+        - Driver
+      summary: Add a driver
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BreakageRegistration'
+              $ref: '#/components/schemas/DriverRegistration'
         required: true
       responses:
         "201":
-          description: Successful breakage registration
+          description: Driver successfully added
+       
+
+  /driver/list:
+    get:
+      tags:
+        - Driver
+      summary: Driver statistics
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          description: Unique company identifier
+          schema:
+            type: string
+            format: uuid
+        - name: offset
+          in: query
+          required: true
+          description: Pagination offset
+          schema:
+            type: integer
+            default: 0
+        - name: limit
+          in: query
+          required: true
+          description: Pagination limit
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: List of drivers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverStatisticsResponse'
+       
+
+  /driver/info:
+    get:
+      tags:
+        - Driver
+      summary: Driver information
+      parameters:
+        - name: driver_id
+          in: query
+          required: true
+          description: Unique driver identifier
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Driver information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverInfoResponse'
+       
+
+  /driver/worktime:
+    put:
+      tags:
+        - Driver
+      summary: Update the driver's worked hours
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkTimeUpdateRequest'
+        required: true
+      responses:
+        "200":
+          description: Worked minutes successfully updated
+
+  /position:
+    post:
+      tags:
+        - Position
+      summary: Add car position from MQTT
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PositionRequest'
+        required: true
+      responses:
+        "201":
+          description: Car position successfully updated
+
+  /position/listcurrent:
+    get:
+      tags:
+        - Position
+      summary: Get current car positions
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          description: Unique identifier for the user (company)
+          schema:
+            type: string
+            format: uuid
+        - name: whatshere[pointA]
+          in: query
+          required: true
+          description: Point A 
+          schema:
+            $ref: '#/components/schemas/Point'
+        - name: whatshere[pointB]
+          in: query
+          required: true
+          description: Point B 
+          schema:
+            $ref: '#/components/schemas/Point'
+      responses:
+        "200":
+          description: List of current car positions within the defined region
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PositionCurrentListResponse'
+
+  /positions/listcars:
+    get:
+      tags:
+        - Position
+      summary: Get list of cars
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          description: Unique identifier for the user (company)
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          required: true
+          description: Limit for pagination
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: true
+          description: Offset for pagination
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of cars for the user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PositionCarListResponse'
+
+  /position/carroute:
+    get:
+      tags:
+        - Position
+      summary: Get the route of a car
+      parameters:
+        - name: car_id
+          in: query
+          required: true
+          description: Unique identifier for the car
+          schema:
+            type: string
+            format: uuid
+        - name: time_from
+          in: query
+          required: true
+          description: Start time for the route data
+          schema:
+            type: string
+            format: date-time
+        - name: time_to
+          in: query
+          required: true
+          description: End time for the route data
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: List of route points for the specified time period
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PositionCarRouteResponse'
+  /notification/list:
+    get:
+      tags:
+        - Notifications
+      summary: Get list of notifications based on status
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          description: Unique identifier of the user
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          required: true
+          description: Status of notifications 
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: true
+          description: Limit for pagination
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: true
+          description: Offset for pagination
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of notifications with the requested status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationListResponse'
+
+  /notification/info:
+    get:
+      tags:
+        - Notifications
+      summary: Get detailed information about a specific notification
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Unique identifier of the notification
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Detailed information about the notification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationInfoResponse'
+
+  /notification/status:
+    put:
+      tags:
+        - Notifications
+      summary: Change the status of a specific notification
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeNotificationStatusRequest'
+        required: true
+      responses:
+        "200":
+          description: Status of the notification updated successfully
+
+  /notification/allstatus:
+    put:
+      tags:
+        - Notifications
+      summary: Change the status of all notifications for a specific user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeAllNotificationsStatusRequest'
+        required: true
+      responses:
+        "200":
+          description: Status of all notifications updated successfully
+
+  /mileage:
+    put:
+      tags:
+        - Auto
+      summary: Update car mileage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMileageRequest'
+        required: true
+      responses:
+        "200":
+          description: Mileage successfully updated
+
+  /breakage:
+    post:
+      tags:
+        - Breakage
+      summary: Add a new breakage from MQTT data
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BreakageFromMqttRequest'
+        required: true
+      responses:
+        "201":
+          description: Breakage successfully created
+
+  /breakage/list:
+    get:
+      tags:
+        - Breakage
+      summary: Get a list of breakages for a specific car
+      parameters:
+        - name: car_id
+          in: query
+          required: true
+          description: Unique identifier for the car
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of breakages for the car
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BreakageListResponse'
+
 components:
   schemas:
+    BreakageFromMqttRequest:
+      type: object
+      required:
+        - device_num
+        - type
+        - description
+        - datetime
+        - latitude
+        - longitude
+      properties:
+        device_num:
+          type: string
+          description: The device number of the car
+        type:
+          type: string
+          description: Type of the breakage (e.g., "Engine failure", "Tire puncture")
+        description:
+          type: string
+          description: Detailed description of the breakage
+        datetime:
+          type: string
+          format: date-time
+          description: The date and time when the breakage occurred
+        latitude:
+          type: number
+          format: float
+          description: Latitude of the breakage location
+        longitude:
+          type: number
+          format: float
+          description: Longitude of the breakage location
+      example:
+        device_num: "123ABC"
+        type: "Tire puncture"
+        description: "Flat tire on the front left side"
+        datetime: "2024-12-20T12:00:00Z"
+        latitude: 56.905609
+        longitude: 61.591456
+
+    BreakageListResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+            description: Unique identifier for the breakage
+          stateNumber:
+            type: string
+            description: State number of the car
+          type:
+            type: string
+            description: Type of the breakage (e.g., "Engine failure", "Tire puncture")
+          description:
+            type: string
+            description: Detailed description of the breakage
+          datetime:
+            type: string
+            format: date-time
+            description: Date and time when the breakage occurred
+          driver_name:
+            type: string
+            description: Full name of the driver associated with the breakage
+      example:
+        - id: "f47c8fc0-efb0-4df0-8e4f-319b3f2d447d"
+          stateNumber: "A123BC"
+          type: "Tire puncture"
+          description: "Flat tire on the front left side"
+          datetime: "2024-12-20T12:00:00Z"
+          driver_name: "John Doe"
+        - id: "e8f9f3f0-b3e1-4db9-a734-4264a0df574f"
+          stateNumber: "B456DF"
+          type: "Engine failure"
+          description: "Overheated engine, requires repair"
+          datetime: "2024-12-21T14:30:00Z"
+          driver_name: "Jane Smith"
+
+    UpdateMileageRequest:
+      type: object
+      required:
+        - device_num
+        - new_mileage
+      properties:
+        device_num:
+          type: string
+          description: The device number of the car to update mileage for
+        new_mileage:
+          type: number
+          format: float
+          description: The new mileage to set for the car
+
+    NotificationListResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          state_number:
+            type: string
+            description: State number of the car
+          brand:
+            type: string
+            description: Brand of the car
+          breakage_type:
+            type: string
+            description: Type of the breakage
+          timestamp:
+            type: string
+            format: date-time
+            description: Date and time when the notification was created
+          id:
+            type: string
+            format: uuid
+            description: Unique identifier for the notification
+      example:
+        - state_number: "A123BC"
+          brand: "Toyota"
+          breakage_type: "Engine failure"
+          timestamp: "2024-12-20T12:00:00Z"
+          id: "f47c8fc0-efb0-4df0-8e4f-319b3f2d447d"
+        - state_number: "B456DF"
+          brand: "Volkswagen"
+          breakage_type: "Tire puncture"
+          timestamp: "2024-12-20T12:30:00Z"
+          id: "e8f9f3f0-b3e1-4db9-a734-4264a0df574f"
+
+    NotificationInfoResponse:
+      type: object
+      properties:
+        description:
+          type: string
+          description: Detailed description of the breakage
+        driver_name:
+          type: string
+          description: Full name of the driver associated with the breakage
+        location:
+          type: array
+          items:
+            type: number
+            format: float
+          minItems: 2
+          maxItems: 2
+          description: Latitude and longitude of the breakage location
+      example:
+        description: "Flat tire on the front left side"
+        driver_name: "John Doe"
+        location: [61.591456, 56.905609]
+
+    ChangeNotificationStatusRequest:
+      type: object
+      required:
+        - id
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier of the notification
+        status:
+          type: string
+          description: The new status
+      example:
+        id: "f47c8fc0-efb0-4df0-8e4f-319b3f2d447d"
+        status: "new"
+
+    ChangeAllNotificationsStatusRequest:
+      type: object
+      required:
+        - user_id
+        - status
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: Unique identifier of the user
+        status:
+          type: string
+          description: The new status
+      example:
+        user_id: "e9c8ff60-6d65-4fb4-bf8b-5b7ec2d09713"
+        status: "new"
+    PositionRequest:
+      type: object
+      required:
+        - device_number
+        - point
+        - timestamp
+      properties:
+        device_number:
+          type: string
+          description: The device number of the car
+        point:
+          type: array
+          items:
+            type: number
+            format: float
+            minItems: 2
+            maxItems: 2
+        timestamp:
+          type: string
+          format: date-time
+          description: The timestamp when the position was recorded
+      example:
+        device_number: "123ABC"
+        point: [40.7128, -74.0060] 
+        timestamp: "2024-12-20T12:34:56Z"
+
+    PositionCurrentListResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          point:
+            type: array
+            items:
+              type: number
+              format: float
+              minItems: 2
+              maxItems: 2
+          unique_id:
+            type: string
+            description: Unique identifier of the car
+          car_id:
+            type: string
+            format: uuid
+            description: Car's unique identifier
+
+    PositionCarListResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          state_number:
+            type: string
+            description: State number of the car
+          unique_id:
+            type: string
+            description: Unique identifier of the car
+          brand:
+            type: string
+            description: Brand of the car
+          car_id:
+            type: string
+            format: uuid
+            description: Unique identifier of the car
+
+    PositionCarRouteResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          point:
+            type: array
+            items:
+              type: number
+              format: float
+              minItems: 2
+              maxItems: 2
+          timestamp:
+            type: string
+            format: date-time
+            description: The timestamp when the position was recorded
+      example:
+        - point: [61.591456, 56.905609]
+          timestamp: "2024-12-20T12:00:00Z"
+        - point: [61.591500, 56.905800]
+          timestamp: "2024-12-20T12:05:00Z"
+        - point: [61.591550, 56.906000]
+          timestamp: "2024-12-20T12:10:00Z"
+
+    Point:
+      type: array
+      items:
+        type: number
+        format: float
+      minItems: 2
+      maxItems: 2
+      description: A point in the format "latitude,longitude" representing the geographical coordinates.
+      example: [61.591456, 56.905609]
+
     LoginRequest:
       required:
       - email
@@ -701,32 +1294,7 @@ components:
         mileage: 5.63
         ngp: 0.1
         tkvh: 0.3
-    BreakageResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        stateNumber:
-          type: string
-        type:
-          type: string
-        description:
-          type: string
-        datetime:
-          type: string
-          format: date-time
-    BreakageRegistration:
-      type: object
-      properties:
-        stateNumber:
-          type: string
-        type:
-          type: string
-        description:
-          type: string
-        datetime:
-          type: string
-          format: date-time
+
     SensorsData:
       type: object
       properties:
@@ -766,6 +1334,83 @@ components:
         time:
           type: string
           format: date-time
+    DriverRegistration:
+      type: object
+      required:
+        - name
+        - surname
+        - middle_name
+        - phone
+        - birthday
+        - state_number
+      properties:
+        name:
+          type: string
+          description: Driver's first name
+        surname:
+          type: string
+          description: Driver's last name
+        middle_name:
+          type: string
+          description: Driver's middle name
+        phone:
+          type: string
+          description: Driver's phone number
+        birthday:
+          type: string
+          format: date
+          description: Driver's birth date
+        state_number:
+          type: string
+          description: Vehicle's state number
+
+    DriverStatisticsResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          full_name:
+            type: string
+          worked_time:
+            type: integer
+          experience:
+            type: number
+            format: float
+          rating:
+            type: number
+            format: float
+          breakages_count:
+            type: integer
+          driver_id:
+            type: string
+            format: uuid
+
+    DriverInfoResponse:
+      type: object
+      properties:
+        name:
+          type: string
+        surname:
+          type: string
+        middle_name:
+          type: string
+        phone:
+          type: string
+        birthday:
+          type: string
+          format: date
+
+    WorkTimeUpdateRequest:
+      type: object
+      required:
+        - device_num
+        - worked_time
+      properties:
+        device_num:
+          type: string
+        worked_time:
+          type: integer
+
   securitySchemes:
     Authorization:
       type: http
