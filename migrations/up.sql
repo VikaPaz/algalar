@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 	id_user uuid REFERENCES users,
 	id_breakages uuid REFERENCES breakages,
 	note varchar(100),
-	status varchar(100).
+	status varchar(100),
 	created_at timestamp
 );
 
