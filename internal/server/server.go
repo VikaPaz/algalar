@@ -395,6 +395,12 @@ func (s *ServImplemented) GetAutoList(w http.ResponseWriter, r *http.Request, pa
 	json.NewEncoder(w).Encode(res)
 }
 
+// Update car mileage
+// (PUT /mileage)
+func (s *ServImplemented) PutMileage(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // Wheel
 func (s *ServImplemented) PostWheels(w http.ResponseWriter, r *http.Request) {
 	ctx, err := s.getUserID(r)
@@ -622,68 +628,93 @@ func (s *ServImplemented) GetPressuredata(w http.ResponseWriter, r *http.Request
 	json.NewEncoder(w).Encode(res)
 }
 
-// Breakage
-// Get breakages by car ID
-// (GET /brackeges)
-func (s *ServImplemented) GetBreakages(w http.ResponseWriter, r *http.Request, params rest.GetBreakagesParams) {
-	ctx, err := s.getUserID(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-	dateList, err := s.service.GetBreackegeData(ctx, params.CarId)
-	if err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	res := make([]rest.BreakageResponse, len(dateList))
-	for i, val := range dateList {
-		res[i] = ToBreakageResponse(val)
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+// Driver
+// Add a driver
+// (POST /driver)
+func (s *ServImplemented) PostDriver(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Register a new breakage
-// (POST /brackeges)
-func (s *ServImplemented) PostBreakages(w http.ResponseWriter, r *http.Request) {
-	ctx, err := s.getUserID(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
+// Driver information
+// (GET /driver/info)
+func (s *ServImplemented) GetDriverInfo(w http.ResponseWriter, r *http.Request, params rest.GetDriverInfoParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
-	var req rest.BreakageRegistration
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+// Driver statistics
+// (GET /driver/list)
+func (s *ServImplemented) GetDriverList(w http.ResponseWriter, r *http.Request, params rest.GetDriverListParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
-	id, err := s.service.GetCarId(ctx, *req.StateNumber)
-	if err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+// Update the driver's worked hours
+// (PUT /driver/worktime)
+func (s *ServImplemented) PutDriverWorktime(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
-	breakege := ToNewBreakage(req, id)
+// Position
+// Add car position from MQTT
+// (POST /position)
+func (s *ServImplemented) PostPosition(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
-	new_breackege, err := s.service.RegisterBeakege(ctx, breakege)
-	if err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+// Get the route of a car
+// (GET /position/carroute)
+func (s *ServImplemented) GetPositionCarroute(w http.ResponseWriter, r *http.Request, params rest.GetPositionCarrouteParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
-	res := ToBreakageResponse(new_breackege)
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+// Get current car positions
+// (GET /position/listcurrent)
+func (s *ServImplemented) GetPositionListcurrent(w http.ResponseWriter, r *http.Request, params rest.GetPositionListcurrentParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get list of cars
+// (GET /positions/listcars)
+func (s *ServImplemented) GetPositionsListcars(w http.ResponseWriter, r *http.Request, params rest.GetPositionsListcarsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+//Notifications
+
+// Change the status of all notifications for a specific user
+// (PUT /notification/allstatus)
+func (s *ServImplemented) PutNotificationAllstatus(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get detailed information about a specific notification
+// (GET /notification/info)
+func (s *ServImplemented) GetNotificationInfo(w http.ResponseWriter, r *http.Request, params rest.GetNotificationInfoParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get list of notifications based on status
+// (GET /notification/list)
+func (s *ServImplemented) GetNotificationList(w http.ResponseWriter, r *http.Request, params rest.GetNotificationListParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Change the status of a specific notification
+// (PUT /notification/status)
+func (s *ServImplemented) PutNotificationStatus(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Breakages
+// Add a new breakage from MQTT data
+// (POST /breakage)
+func (s *ServImplemented) PostBreakage(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get a list of breakages for a specific car
+// (GET /breakage/list)
+func (s *ServImplemented) GetBreakageList(w http.ResponseWriter, r *http.Request, params rest.GetBreakageListParams) {
+	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Report
@@ -881,27 +912,6 @@ func ToNewData(data rest.NewSensorData) models.SensorData {
 		Pressure:     *data.Pressure,
 		Temperature:  *data.Temperature,
 		Time:         *data.Time,
-	}
-}
-
-// Breakage
-func ToNewBreakage(breakageResponse rest.BreakageRegistration, id string) models.Breakage {
-	return models.Breakage{
-		CarID:       id,
-		StateNumber: *breakageResponse.StateNumber,
-		Type:        *breakageResponse.Type,
-		Description: *breakageResponse.Description,
-		Datetime:    *breakageResponse.Datetime,
-	}
-}
-
-func ToBreakageResponse(breakage models.Breakage) rest.BreakageResponse {
-	return rest.BreakageResponse{
-		Id:          &breakage.ID,
-		StateNumber: &breakage.StateNumber,
-		Type:        &breakage.Type,
-		Description: &breakage.Description,
-		Datetime:    &breakage.Datetime,
 	}
 }
 

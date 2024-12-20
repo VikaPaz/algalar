@@ -44,21 +44,104 @@ type AutoResponse struct {
 	UniqueId     *string `json:"uniqueId,omitempty"`
 }
 
-// BreakageRegistration defines model for BreakageRegistration.
-type BreakageRegistration struct {
-	Datetime    *time.Time `json:"datetime,omitempty"`
-	Description *string    `json:"description,omitempty"`
-	StateNumber *string    `json:"stateNumber,omitempty"`
-	Type        *string    `json:"type,omitempty"`
+// BreakageFromMqttRequest defines model for BreakageFromMqttRequest.
+type BreakageFromMqttRequest struct {
+	// Datetime The date and time when the breakage occurred
+	Datetime time.Time `json:"datetime"`
+
+	// Description Detailed description of the breakage
+	Description string `json:"description"`
+
+	// DeviceNum The device number of the car
+	DeviceNum string `json:"device_num"`
+
+	// Latitude Latitude of the breakage location
+	Latitude float32 `json:"latitude"`
+
+	// Longitude Longitude of the breakage location
+	Longitude float32 `json:"longitude"`
+
+	// Type Type of the breakage (e.g., "Engine failure", "Tire puncture")
+	Type string `json:"type"`
 }
 
-// BreakageResponse defines model for BreakageResponse.
-type BreakageResponse struct {
-	Datetime    *time.Time `json:"datetime,omitempty"`
-	Description *string    `json:"description,omitempty"`
-	Id          *string    `json:"id,omitempty"`
-	StateNumber *string    `json:"stateNumber,omitempty"`
-	Type        *string    `json:"type,omitempty"`
+// BreakageListResponse defines model for BreakageListResponse.
+type BreakageListResponse = []struct {
+	// Datetime Date and time when the breakage occurred
+	Datetime *time.Time `json:"datetime,omitempty"`
+
+	// Description Detailed description of the breakage
+	Description *string `json:"description,omitempty"`
+
+	// DriverName Full name of the driver associated with the breakage
+	DriverName *string `json:"driver_name,omitempty"`
+
+	// Id Unique identifier for the breakage
+	Id *openapi_types.UUID `json:"id,omitempty"`
+
+	// StateNumber State number of the car
+	StateNumber *string `json:"stateNumber,omitempty"`
+
+	// Type Type of the breakage (e.g., "Engine failure", "Tire puncture")
+	Type *string `json:"type,omitempty"`
+}
+
+// ChangeAllNotificationsStatusRequest defines model for ChangeAllNotificationsStatusRequest.
+type ChangeAllNotificationsStatusRequest struct {
+	// Status The new status
+	Status string `json:"status"`
+
+	// UserId Unique identifier of the user
+	UserId openapi_types.UUID `json:"user_id"`
+}
+
+// ChangeNotificationStatusRequest defines model for ChangeNotificationStatusRequest.
+type ChangeNotificationStatusRequest struct {
+	// Id Unique identifier of the notification
+	Id openapi_types.UUID `json:"id"`
+
+	// Status The new status
+	Status string `json:"status"`
+}
+
+// DriverInfoResponse defines model for DriverInfoResponse.
+type DriverInfoResponse struct {
+	Birthday   *openapi_types.Date `json:"birthday,omitempty"`
+	MiddleName *string             `json:"middle_name,omitempty"`
+	Name       *string             `json:"name,omitempty"`
+	Phone      *string             `json:"phone,omitempty"`
+	Surname    *string             `json:"surname,omitempty"`
+}
+
+// DriverRegistration defines model for DriverRegistration.
+type DriverRegistration struct {
+	// Birthday Driver's birth date
+	Birthday openapi_types.Date `json:"birthday"`
+
+	// MiddleName Driver's middle name
+	MiddleName string `json:"middle_name"`
+
+	// Name Driver's first name
+	Name string `json:"name"`
+
+	// Phone Driver's phone number
+	Phone string `json:"phone"`
+
+	// StateNumber Vehicle's state number
+	StateNumber string `json:"state_number"`
+
+	// Surname Driver's last name
+	Surname string `json:"surname"`
+}
+
+// DriverStatisticsResponse defines model for DriverStatisticsResponse.
+type DriverStatisticsResponse = []struct {
+	BreakagesCount *int                `json:"breakages_count,omitempty"`
+	DriverId       *openapi_types.UUID `json:"driver_id,omitempty"`
+	Experience     *float32            `json:"experience,omitempty"`
+	FullName       *string             `json:"full_name,omitempty"`
+	Rating         *float32            `json:"rating,omitempty"`
+	WorkedTime     *int                `json:"worked_time,omitempty"`
 }
 
 // LoginRequest defines model for LoginRequest.
@@ -74,6 +157,82 @@ type NewSensorData struct {
 	SensorNumber *string    `json:"sensor_number,omitempty"`
 	Temperature  *float32   `json:"temperature,omitempty"`
 	Time         *time.Time `json:"time,omitempty"`
+}
+
+// NotificationInfoResponse defines model for NotificationInfoResponse.
+type NotificationInfoResponse struct {
+	// Description Detailed description of the breakage
+	Description *string `json:"description,omitempty"`
+
+	// DriverName Full name of the driver associated with the breakage
+	DriverName *string `json:"driver_name,omitempty"`
+
+	// Location Latitude and longitude of the breakage location
+	Location *[]float32 `json:"location,omitempty"`
+}
+
+// NotificationListResponse defines model for NotificationListResponse.
+type NotificationListResponse = []struct {
+	// Brand Brand of the car
+	Brand *string `json:"brand,omitempty"`
+
+	// BreakageType Type of the breakage
+	BreakageType *string `json:"breakage_type,omitempty"`
+
+	// Id Unique identifier for the notification
+	Id *openapi_types.UUID `json:"id,omitempty"`
+
+	// StateNumber State number of the car
+	StateNumber *string `json:"state_number,omitempty"`
+
+	// Timestamp Date and time when the notification was created
+	Timestamp *time.Time `json:"timestamp,omitempty"`
+}
+
+// Point A point in the format "latitude,longitude" representing the geographical coordinates.
+type Point = []float32
+
+// PositionCarListResponse defines model for PositionCarListResponse.
+type PositionCarListResponse = []struct {
+	// Brand Brand of the car
+	Brand *string `json:"brand,omitempty"`
+
+	// CarId Unique identifier of the car
+	CarId *openapi_types.UUID `json:"car_id,omitempty"`
+
+	// StateNumber State number of the car
+	StateNumber *string `json:"state_number,omitempty"`
+
+	// UniqueId Unique identifier of the car
+	UniqueId *string `json:"unique_id,omitempty"`
+}
+
+// PositionCarRouteResponse defines model for PositionCarRouteResponse.
+type PositionCarRouteResponse = []struct {
+	Point *[]float32 `json:"point,omitempty"`
+
+	// Timestamp The timestamp when the position was recorded
+	Timestamp *time.Time `json:"timestamp,omitempty"`
+}
+
+// PositionCurrentListResponse defines model for PositionCurrentListResponse.
+type PositionCurrentListResponse = []struct {
+	// CarId Car's unique identifier
+	CarId *openapi_types.UUID `json:"car_id,omitempty"`
+	Point *[]float32          `json:"point,omitempty"`
+
+	// UniqueId Unique identifier of the car
+	UniqueId *string `json:"unique_id,omitempty"`
+}
+
+// PositionRequest defines model for PositionRequest.
+type PositionRequest struct {
+	// DeviceNumber The device number of the car
+	DeviceNumber string    `json:"device_number"`
+	Point        []float32 `json:"point"`
+
+	// Timestamp The timestamp when the position was recorded
+	Timestamp time.Time `json:"timestamp"`
 }
 
 // PressureData defines model for PressureData.
@@ -102,6 +261,15 @@ type TemperatureData struct {
 type TokenResponse struct {
 	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
+}
+
+// UpdateMileageRequest defines model for UpdateMileageRequest.
+type UpdateMileageRequest struct {
+	// DeviceNum The device number of the car to update mileage for
+	DeviceNum string `json:"device_num"`
+
+	// NewMileage The new mileage to set for the car
+	NewMileage float32 `json:"new_mileage"`
 }
 
 // UpdatePassword defines model for UpdatePassword.
@@ -202,6 +370,12 @@ type WheelsDataForDevice struct {
 	WheelPosition  *int     `json:"wheel_position,omitempty"`
 }
 
+// WorkTimeUpdateRequest defines model for WorkTimeUpdateRequest.
+type WorkTimeUpdateRequest struct {
+	DeviceNum  string `json:"device_num"`
+	WorkedTime int    `json:"worked_time"`
+}
+
 // GetAutoParams defines parameters for GetAuto.
 type GetAutoParams struct {
 	CarId string `form:"car_id" json:"car_id"`
@@ -218,11 +392,85 @@ type GetAutoListParams struct {
 	Limit  int `form:"limit" json:"limit"`
 }
 
-// GetBreakagesParams defines parameters for GetBreakages.
-type GetBreakagesParams struct {
-	CarId  string `form:"car_id" json:"car_id"`
-	Offset int    `form:"offset" json:"offset"`
-	Limit  int    `form:"limit" json:"limit"`
+// GetBreakageListParams defines parameters for GetBreakageList.
+type GetBreakageListParams struct {
+	// CarId Unique identifier for the car
+	CarId openapi_types.UUID `form:"car_id" json:"car_id"`
+}
+
+// GetDriverInfoParams defines parameters for GetDriverInfo.
+type GetDriverInfoParams struct {
+	// DriverId Unique driver identifier
+	DriverId openapi_types.UUID `form:"driver_id" json:"driver_id"`
+}
+
+// GetDriverListParams defines parameters for GetDriverList.
+type GetDriverListParams struct {
+	// UserId Unique company identifier
+	UserId openapi_types.UUID `form:"user_id" json:"user_id"`
+
+	// Offset Pagination offset
+	Offset int `form:"offset" json:"offset"`
+
+	// Limit Pagination limit
+	Limit int `form:"limit" json:"limit"`
+}
+
+// GetNotificationInfoParams defines parameters for GetNotificationInfo.
+type GetNotificationInfoParams struct {
+	// Id Unique identifier of the notification
+	Id openapi_types.UUID `form:"id" json:"id"`
+}
+
+// GetNotificationListParams defines parameters for GetNotificationList.
+type GetNotificationListParams struct {
+	// UserId Unique identifier of the user
+	UserId openapi_types.UUID `form:"user_id" json:"user_id"`
+
+	// Status Status of notifications
+	Status string `form:"status" json:"status"`
+
+	// Limit Limit for pagination
+	Limit int `form:"limit" json:"limit"`
+
+	// Offset Offset for pagination
+	Offset int `form:"offset" json:"offset"`
+}
+
+// GetPositionCarrouteParams defines parameters for GetPositionCarroute.
+type GetPositionCarrouteParams struct {
+	// CarId Unique identifier for the car
+	CarId openapi_types.UUID `form:"car_id" json:"car_id"`
+
+	// TimeFrom Start time for the route data
+	TimeFrom time.Time `form:"time_from" json:"time_from"`
+
+	// TimeTo End time for the route data
+	TimeTo time.Time `form:"time_to" json:"time_to"`
+}
+
+// GetPositionListcurrentParams defines parameters for GetPositionListcurrent.
+type GetPositionListcurrentParams struct {
+	// UserId Unique identifier for the user (company)
+	UserId openapi_types.UUID `form:"user_id" json:"user_id"`
+
+	// WhatsherePointA Point A
+	WhatsherePointA Point `form:"whatshere[pointA]" json:"whatshere[pointA]"`
+
+	// WhatsherePointB Point B
+	WhatsherePointB Point `form:"whatshere[pointB]" json:"whatshere[pointB]"`
+}
+
+// GetPositionsListcarsParams defines parameters for GetPositionsListcars.
+type GetPositionsListcarsParams struct {
+	// UserId Unique identifier for the user (company)
+	UserId openapi_types.UUID `form:"user_id" json:"user_id"`
+
+	// Limit Limit for pagination
+	Limit int `form:"limit" json:"limit"`
+
+	// Offset Offset for pagination
+	Offset int `form:"offset" json:"offset"`
 }
 
 // GetPressuredataParams defines parameters for GetPressuredata.
@@ -252,11 +500,29 @@ type GetWheelsParams struct {
 // PostAutoJSONRequestBody defines body for PostAuto for application/json ContentType.
 type PostAutoJSONRequestBody = AutoRegistration
 
-// PostBreakagesJSONRequestBody defines body for PostBreakages for application/json ContentType.
-type PostBreakagesJSONRequestBody = BreakageRegistration
+// PostBreakageJSONRequestBody defines body for PostBreakage for application/json ContentType.
+type PostBreakageJSONRequestBody = BreakageFromMqttRequest
+
+// PostDriverJSONRequestBody defines body for PostDriver for application/json ContentType.
+type PostDriverJSONRequestBody = DriverRegistration
+
+// PutDriverWorktimeJSONRequestBody defines body for PutDriverWorktime for application/json ContentType.
+type PutDriverWorktimeJSONRequestBody = WorkTimeUpdateRequest
 
 // PostLoginJSONRequestBody defines body for PostLogin for application/json ContentType.
 type PostLoginJSONRequestBody = LoginRequest
+
+// PutMileageJSONRequestBody defines body for PutMileage for application/json ContentType.
+type PutMileageJSONRequestBody = UpdateMileageRequest
+
+// PutNotificationAllstatusJSONRequestBody defines body for PutNotificationAllstatus for application/json ContentType.
+type PutNotificationAllstatusJSONRequestBody = ChangeAllNotificationsStatusRequest
+
+// PutNotificationStatusJSONRequestBody defines body for PutNotificationStatus for application/json ContentType.
+type PutNotificationStatusJSONRequestBody = ChangeNotificationStatusRequest
+
+// PostPositionJSONRequestBody defines body for PostPosition for application/json ContentType.
+type PostPositionJSONRequestBody = PositionRequest
 
 // PostSensordataJSONRequestBody defines body for PostSensordata for application/json ContentType.
 type PostSensordataJSONRequestBody = NewSensorData
@@ -287,15 +553,54 @@ type ServerInterface interface {
 	// Get list of Autos
 	// (GET /auto/list)
 	GetAutoList(w http.ResponseWriter, r *http.Request, params GetAutoListParams)
-	// Get breakages by car ID
-	// (GET /breakages)
-	GetBreakages(w http.ResponseWriter, r *http.Request, params GetBreakagesParams)
-	// Register a new breakage
-	// (POST /breakages)
-	PostBreakages(w http.ResponseWriter, r *http.Request)
+	// Add a new breakage from MQTT data
+	// (POST /breakage)
+	PostBreakage(w http.ResponseWriter, r *http.Request)
+	// Get a list of breakages for a specific car
+	// (GET /breakage/list)
+	GetBreakageList(w http.ResponseWriter, r *http.Request, params GetBreakageListParams)
+	// Add a driver
+	// (POST /driver)
+	PostDriver(w http.ResponseWriter, r *http.Request)
+	// Driver information
+	// (GET /driver/info)
+	GetDriverInfo(w http.ResponseWriter, r *http.Request, params GetDriverInfoParams)
+	// Driver statistics
+	// (GET /driver/list)
+	GetDriverList(w http.ResponseWriter, r *http.Request, params GetDriverListParams)
+	// Update the driver's worked hours
+	// (PUT /driver/worktime)
+	PutDriverWorktime(w http.ResponseWriter, r *http.Request)
 	// User login
 	// (POST /login)
 	PostLogin(w http.ResponseWriter, r *http.Request)
+	// Update car mileage
+	// (PUT /mileage)
+	PutMileage(w http.ResponseWriter, r *http.Request)
+	// Change the status of all notifications for a specific user
+	// (PUT /notification/allstatus)
+	PutNotificationAllstatus(w http.ResponseWriter, r *http.Request)
+	// Get detailed information about a specific notification
+	// (GET /notification/info)
+	GetNotificationInfo(w http.ResponseWriter, r *http.Request, params GetNotificationInfoParams)
+	// Get list of notifications based on status
+	// (GET /notification/list)
+	GetNotificationList(w http.ResponseWriter, r *http.Request, params GetNotificationListParams)
+	// Change the status of a specific notification
+	// (PUT /notification/status)
+	PutNotificationStatus(w http.ResponseWriter, r *http.Request)
+	// Add car position from MQTT
+	// (POST /position)
+	PostPosition(w http.ResponseWriter, r *http.Request)
+	// Get the route of a car
+	// (GET /position/carroute)
+	GetPositionCarroute(w http.ResponseWriter, r *http.Request, params GetPositionCarrouteParams)
+	// Get current car positions
+	// (GET /position/listcurrent)
+	GetPositionListcurrent(w http.ResponseWriter, r *http.Request, params GetPositionListcurrentParams)
+	// Get list of cars
+	// (GET /positions/listcars)
+	GetPositionsListcars(w http.ResponseWriter, r *http.Request, params GetPositionsListcarsParams)
 	// Get data by wheel ID
 	// (GET /pressuredata)
 	GetPressuredata(w http.ResponseWriter, r *http.Request, params GetPressuredataParams)
@@ -365,21 +670,99 @@ func (_ Unimplemented) GetAutoList(w http.ResponseWriter, r *http.Request, param
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Get breakages by car ID
-// (GET /breakages)
-func (_ Unimplemented) GetBreakages(w http.ResponseWriter, r *http.Request, params GetBreakagesParams) {
+// Add a new breakage from MQTT data
+// (POST /breakage)
+func (_ Unimplemented) PostBreakage(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Register a new breakage
-// (POST /breakages)
-func (_ Unimplemented) PostBreakages(w http.ResponseWriter, r *http.Request) {
+// Get a list of breakages for a specific car
+// (GET /breakage/list)
+func (_ Unimplemented) GetBreakageList(w http.ResponseWriter, r *http.Request, params GetBreakageListParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Add a driver
+// (POST /driver)
+func (_ Unimplemented) PostDriver(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Driver information
+// (GET /driver/info)
+func (_ Unimplemented) GetDriverInfo(w http.ResponseWriter, r *http.Request, params GetDriverInfoParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Driver statistics
+// (GET /driver/list)
+func (_ Unimplemented) GetDriverList(w http.ResponseWriter, r *http.Request, params GetDriverListParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Update the driver's worked hours
+// (PUT /driver/worktime)
+func (_ Unimplemented) PutDriverWorktime(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // User login
 // (POST /login)
 func (_ Unimplemented) PostLogin(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Update car mileage
+// (PUT /mileage)
+func (_ Unimplemented) PutMileage(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Change the status of all notifications for a specific user
+// (PUT /notification/allstatus)
+func (_ Unimplemented) PutNotificationAllstatus(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get detailed information about a specific notification
+// (GET /notification/info)
+func (_ Unimplemented) GetNotificationInfo(w http.ResponseWriter, r *http.Request, params GetNotificationInfoParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get list of notifications based on status
+// (GET /notification/list)
+func (_ Unimplemented) GetNotificationList(w http.ResponseWriter, r *http.Request, params GetNotificationListParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Change the status of a specific notification
+// (PUT /notification/status)
+func (_ Unimplemented) PutNotificationStatus(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Add car position from MQTT
+// (POST /position)
+func (_ Unimplemented) PostPosition(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get the route of a car
+// (GET /position/carroute)
+func (_ Unimplemented) GetPositionCarroute(w http.ResponseWriter, r *http.Request, params GetPositionCarrouteParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get current car positions
+// (GET /position/listcurrent)
+func (_ Unimplemented) GetPositionListcurrent(w http.ResponseWriter, r *http.Request, params GetPositionListcurrentParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get list of cars
+// (GET /positions/listcars)
+func (_ Unimplemented) GetPositionsListcars(w http.ResponseWriter, r *http.Request, params GetPositionsListcarsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -625,8 +1008,28 @@ func (siw *ServerInterfaceWrapper) GetAutoList(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
-// GetBreakages operation middleware
-func (siw *ServerInterfaceWrapper) GetBreakages(w http.ResponseWriter, r *http.Request) {
+// PostBreakage operation middleware
+func (siw *ServerInterfaceWrapper) PostBreakage(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostBreakage(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetBreakageList operation middleware
+func (siw *ServerInterfaceWrapper) GetBreakageList(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -637,7 +1040,7 @@ func (siw *ServerInterfaceWrapper) GetBreakages(w http.ResponseWriter, r *http.R
 	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params GetBreakagesParams
+	var params GetBreakageListParams
 
 	// ------------- Required query parameter "car_id" -------------
 
@@ -651,6 +1054,106 @@ func (siw *ServerInterfaceWrapper) GetBreakages(w http.ResponseWriter, r *http.R
 	err = runtime.BindQueryParameter("form", true, true, "car_id", r.URL.Query(), &params.CarId)
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "car_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetBreakageList(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostDriver operation middleware
+func (siw *ServerInterfaceWrapper) PostDriver(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostDriver(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDriverInfo operation middleware
+func (siw *ServerInterfaceWrapper) GetDriverInfo(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetDriverInfoParams
+
+	// ------------- Required query parameter "driver_id" -------------
+
+	if paramValue := r.URL.Query().Get("driver_id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "driver_id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "driver_id", r.URL.Query(), &params.DriverId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "driver_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDriverInfo(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDriverList operation middleware
+func (siw *ServerInterfaceWrapper) GetDriverList(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetDriverListParams
+
+	// ------------- Required query parameter "user_id" -------------
+
+	if paramValue := r.URL.Query().Get("user_id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "user_id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "user_id", r.URL.Query(), &params.UserId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user_id", Err: err})
 		return
 	}
 
@@ -685,7 +1188,7 @@ func (siw *ServerInterfaceWrapper) GetBreakages(w http.ResponseWriter, r *http.R
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetBreakages(w, r, params)
+		siw.Handler.GetDriverList(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -695,8 +1198,8 @@ func (siw *ServerInterfaceWrapper) GetBreakages(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
-// PostBreakages operation middleware
-func (siw *ServerInterfaceWrapper) PostBreakages(w http.ResponseWriter, r *http.Request) {
+// PutDriverWorktime operation middleware
+func (siw *ServerInterfaceWrapper) PutDriverWorktime(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
@@ -705,7 +1208,7 @@ func (siw *ServerInterfaceWrapper) PostBreakages(w http.ResponseWriter, r *http.
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostBreakages(w, r)
+		siw.Handler.PutDriverWorktime(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -720,6 +1223,421 @@ func (siw *ServerInterfaceWrapper) PostLogin(w http.ResponseWriter, r *http.Requ
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostLogin(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutMileage operation middleware
+func (siw *ServerInterfaceWrapper) PutMileage(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutMileage(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutNotificationAllstatus operation middleware
+func (siw *ServerInterfaceWrapper) PutNotificationAllstatus(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutNotificationAllstatus(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetNotificationInfo operation middleware
+func (siw *ServerInterfaceWrapper) GetNotificationInfo(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNotificationInfoParams
+
+	// ------------- Required query parameter "id" -------------
+
+	if paramValue := r.URL.Query().Get("id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "id", r.URL.Query(), &params.Id)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNotificationInfo(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetNotificationList operation middleware
+func (siw *ServerInterfaceWrapper) GetNotificationList(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNotificationListParams
+
+	// ------------- Required query parameter "user_id" -------------
+
+	if paramValue := r.URL.Query().Get("user_id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "user_id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "user_id", r.URL.Query(), &params.UserId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user_id", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "status" -------------
+
+	if paramValue := r.URL.Query().Get("status"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "status"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "status", r.URL.Query(), &params.Status)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "limit" -------------
+
+	if paramValue := r.URL.Query().Get("limit"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "offset" -------------
+
+	if paramValue := r.URL.Query().Get("offset"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "offset", r.URL.Query(), &params.Offset)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNotificationList(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutNotificationStatus operation middleware
+func (siw *ServerInterfaceWrapper) PutNotificationStatus(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutNotificationStatus(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostPosition operation middleware
+func (siw *ServerInterfaceWrapper) PostPosition(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostPosition(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetPositionCarroute operation middleware
+func (siw *ServerInterfaceWrapper) GetPositionCarroute(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetPositionCarrouteParams
+
+	// ------------- Required query parameter "car_id" -------------
+
+	if paramValue := r.URL.Query().Get("car_id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "car_id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "car_id", r.URL.Query(), &params.CarId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "car_id", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "time_from" -------------
+
+	if paramValue := r.URL.Query().Get("time_from"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "time_from"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "time_from", r.URL.Query(), &params.TimeFrom)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "time_from", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "time_to" -------------
+
+	if paramValue := r.URL.Query().Get("time_to"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "time_to"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "time_to", r.URL.Query(), &params.TimeTo)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "time_to", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPositionCarroute(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetPositionListcurrent operation middleware
+func (siw *ServerInterfaceWrapper) GetPositionListcurrent(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetPositionListcurrentParams
+
+	// ------------- Required query parameter "user_id" -------------
+
+	if paramValue := r.URL.Query().Get("user_id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "user_id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "user_id", r.URL.Query(), &params.UserId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user_id", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "whatshere[pointA]" -------------
+
+	if paramValue := r.URL.Query().Get("whatshere[pointA]"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "whatshere[pointA]"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "whatshere[pointA]", r.URL.Query(), &params.WhatsherePointA)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "whatshere[pointA]", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "whatshere[pointB]" -------------
+
+	if paramValue := r.URL.Query().Get("whatshere[pointB]"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "whatshere[pointB]"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "whatshere[pointB]", r.URL.Query(), &params.WhatsherePointB)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "whatshere[pointB]", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPositionListcurrent(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetPositionsListcars operation middleware
+func (siw *ServerInterfaceWrapper) GetPositionsListcars(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetPositionsListcarsParams
+
+	// ------------- Required query parameter "user_id" -------------
+
+	if paramValue := r.URL.Query().Get("user_id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "user_id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "user_id", r.URL.Query(), &params.UserId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user_id", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "limit" -------------
+
+	if paramValue := r.URL.Query().Get("limit"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "offset" -------------
+
+	if paramValue := r.URL.Query().Get("offset"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "offset", r.URL.Query(), &params.Offset)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPositionsListcars(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1260,13 +2178,52 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/auto/list", wrapper.GetAutoList)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/breakages", wrapper.GetBreakages)
+		r.Post(options.BaseURL+"/breakage", wrapper.PostBreakage)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/breakages", wrapper.PostBreakages)
+		r.Get(options.BaseURL+"/breakage/list", wrapper.GetBreakageList)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/driver", wrapper.PostDriver)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/driver/info", wrapper.GetDriverInfo)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/driver/list", wrapper.GetDriverList)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/driver/worktime", wrapper.PutDriverWorktime)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/login", wrapper.PostLogin)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/mileage", wrapper.PutMileage)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/notification/allstatus", wrapper.PutNotificationAllstatus)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/notification/info", wrapper.GetNotificationInfo)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/notification/list", wrapper.GetNotificationList)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/notification/status", wrapper.PutNotificationStatus)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/position", wrapper.PostPosition)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/position/carroute", wrapper.GetPositionCarroute)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/position/listcurrent", wrapper.GetPositionListcurrent)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/positions/listcars", wrapper.GetPositionsListcars)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/pressuredata", wrapper.GetPressuredata)
@@ -1382,36 +2339,102 @@ func (response GetAutoList200JSONResponse) VisitGetAutoListResponse(w http.Respo
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetBreakagesRequestObject struct {
-	Params GetBreakagesParams
+type PostBreakageRequestObject struct {
+	Body *PostBreakageJSONRequestBody
 }
 
-type GetBreakagesResponseObject interface {
-	VisitGetBreakagesResponse(w http.ResponseWriter) error
+type PostBreakageResponseObject interface {
+	VisitPostBreakageResponse(w http.ResponseWriter) error
 }
 
-type GetBreakages200JSONResponse []BreakageResponse
+type PostBreakage201Response struct {
+}
 
-func (response GetBreakages200JSONResponse) VisitGetBreakagesResponse(w http.ResponseWriter) error {
+func (response PostBreakage201Response) VisitPostBreakageResponse(w http.ResponseWriter) error {
+	w.WriteHeader(201)
+	return nil
+}
+
+type GetBreakageListRequestObject struct {
+	Params GetBreakageListParams
+}
+
+type GetBreakageListResponseObject interface {
+	VisitGetBreakageListResponse(w http.ResponseWriter) error
+}
+
+type GetBreakageList200JSONResponse BreakageListResponse
+
+func (response GetBreakageList200JSONResponse) VisitGetBreakageListResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostBreakagesRequestObject struct {
-	Body *PostBreakagesJSONRequestBody
+type PostDriverRequestObject struct {
+	Body *PostDriverJSONRequestBody
 }
 
-type PostBreakagesResponseObject interface {
-	VisitPostBreakagesResponse(w http.ResponseWriter) error
+type PostDriverResponseObject interface {
+	VisitPostDriverResponse(w http.ResponseWriter) error
 }
 
-type PostBreakages201Response struct {
+type PostDriver201Response struct {
 }
 
-func (response PostBreakages201Response) VisitPostBreakagesResponse(w http.ResponseWriter) error {
+func (response PostDriver201Response) VisitPostDriverResponse(w http.ResponseWriter) error {
 	w.WriteHeader(201)
+	return nil
+}
+
+type GetDriverInfoRequestObject struct {
+	Params GetDriverInfoParams
+}
+
+type GetDriverInfoResponseObject interface {
+	VisitGetDriverInfoResponse(w http.ResponseWriter) error
+}
+
+type GetDriverInfo200JSONResponse DriverInfoResponse
+
+func (response GetDriverInfo200JSONResponse) VisitGetDriverInfoResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetDriverListRequestObject struct {
+	Params GetDriverListParams
+}
+
+type GetDriverListResponseObject interface {
+	VisitGetDriverListResponse(w http.ResponseWriter) error
+}
+
+type GetDriverList200JSONResponse DriverStatisticsResponse
+
+func (response GetDriverList200JSONResponse) VisitGetDriverListResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutDriverWorktimeRequestObject struct {
+	Body *PutDriverWorktimeJSONRequestBody
+}
+
+type PutDriverWorktimeResponseObject interface {
+	VisitPutDriverWorktimeResponse(w http.ResponseWriter) error
+}
+
+type PutDriverWorktime200Response struct {
+}
+
+func (response PutDriverWorktime200Response) VisitPutDriverWorktimeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
 	return nil
 }
 
@@ -1428,6 +2451,155 @@ type PostLogin201JSONResponse TokenResponse
 func (response PostLogin201JSONResponse) VisitPostLoginResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutMileageRequestObject struct {
+	Body *PutMileageJSONRequestBody
+}
+
+type PutMileageResponseObject interface {
+	VisitPutMileageResponse(w http.ResponseWriter) error
+}
+
+type PutMileage200Response struct {
+}
+
+func (response PutMileage200Response) VisitPutMileageResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type PutNotificationAllstatusRequestObject struct {
+	Body *PutNotificationAllstatusJSONRequestBody
+}
+
+type PutNotificationAllstatusResponseObject interface {
+	VisitPutNotificationAllstatusResponse(w http.ResponseWriter) error
+}
+
+type PutNotificationAllstatus200Response struct {
+}
+
+func (response PutNotificationAllstatus200Response) VisitPutNotificationAllstatusResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type GetNotificationInfoRequestObject struct {
+	Params GetNotificationInfoParams
+}
+
+type GetNotificationInfoResponseObject interface {
+	VisitGetNotificationInfoResponse(w http.ResponseWriter) error
+}
+
+type GetNotificationInfo200JSONResponse NotificationInfoResponse
+
+func (response GetNotificationInfo200JSONResponse) VisitGetNotificationInfoResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetNotificationListRequestObject struct {
+	Params GetNotificationListParams
+}
+
+type GetNotificationListResponseObject interface {
+	VisitGetNotificationListResponse(w http.ResponseWriter) error
+}
+
+type GetNotificationList200JSONResponse NotificationListResponse
+
+func (response GetNotificationList200JSONResponse) VisitGetNotificationListResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutNotificationStatusRequestObject struct {
+	Body *PutNotificationStatusJSONRequestBody
+}
+
+type PutNotificationStatusResponseObject interface {
+	VisitPutNotificationStatusResponse(w http.ResponseWriter) error
+}
+
+type PutNotificationStatus200Response struct {
+}
+
+func (response PutNotificationStatus200Response) VisitPutNotificationStatusResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type PostPositionRequestObject struct {
+	Body *PostPositionJSONRequestBody
+}
+
+type PostPositionResponseObject interface {
+	VisitPostPositionResponse(w http.ResponseWriter) error
+}
+
+type PostPosition201Response struct {
+}
+
+func (response PostPosition201Response) VisitPostPositionResponse(w http.ResponseWriter) error {
+	w.WriteHeader(201)
+	return nil
+}
+
+type GetPositionCarrouteRequestObject struct {
+	Params GetPositionCarrouteParams
+}
+
+type GetPositionCarrouteResponseObject interface {
+	VisitGetPositionCarrouteResponse(w http.ResponseWriter) error
+}
+
+type GetPositionCarroute200JSONResponse PositionCarRouteResponse
+
+func (response GetPositionCarroute200JSONResponse) VisitGetPositionCarrouteResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetPositionListcurrentRequestObject struct {
+	Params GetPositionListcurrentParams
+}
+
+type GetPositionListcurrentResponseObject interface {
+	VisitGetPositionListcurrentResponse(w http.ResponseWriter) error
+}
+
+type GetPositionListcurrent200JSONResponse PositionCurrentListResponse
+
+func (response GetPositionListcurrent200JSONResponse) VisitGetPositionListcurrentResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetPositionsListcarsRequestObject struct {
+	Params GetPositionsListcarsParams
+}
+
+type GetPositionsListcarsResponseObject interface {
+	VisitGetPositionsListcarsResponse(w http.ResponseWriter) error
+}
+
+type GetPositionsListcars200JSONResponse PositionCarListResponse
+
+func (response GetPositionsListcars200JSONResponse) VisitGetPositionsListcarsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -1671,15 +2843,54 @@ type StrictServerInterface interface {
 	// Get list of Autos
 	// (GET /auto/list)
 	GetAutoList(ctx context.Context, request GetAutoListRequestObject) (GetAutoListResponseObject, error)
-	// Get breakages by car ID
-	// (GET /breakages)
-	GetBreakages(ctx context.Context, request GetBreakagesRequestObject) (GetBreakagesResponseObject, error)
-	// Register a new breakage
-	// (POST /breakages)
-	PostBreakages(ctx context.Context, request PostBreakagesRequestObject) (PostBreakagesResponseObject, error)
+	// Add a new breakage from MQTT data
+	// (POST /breakage)
+	PostBreakage(ctx context.Context, request PostBreakageRequestObject) (PostBreakageResponseObject, error)
+	// Get a list of breakages for a specific car
+	// (GET /breakage/list)
+	GetBreakageList(ctx context.Context, request GetBreakageListRequestObject) (GetBreakageListResponseObject, error)
+	// Add a driver
+	// (POST /driver)
+	PostDriver(ctx context.Context, request PostDriverRequestObject) (PostDriverResponseObject, error)
+	// Driver information
+	// (GET /driver/info)
+	GetDriverInfo(ctx context.Context, request GetDriverInfoRequestObject) (GetDriverInfoResponseObject, error)
+	// Driver statistics
+	// (GET /driver/list)
+	GetDriverList(ctx context.Context, request GetDriverListRequestObject) (GetDriverListResponseObject, error)
+	// Update the driver's worked hours
+	// (PUT /driver/worktime)
+	PutDriverWorktime(ctx context.Context, request PutDriverWorktimeRequestObject) (PutDriverWorktimeResponseObject, error)
 	// User login
 	// (POST /login)
 	PostLogin(ctx context.Context, request PostLoginRequestObject) (PostLoginResponseObject, error)
+	// Update car mileage
+	// (PUT /mileage)
+	PutMileage(ctx context.Context, request PutMileageRequestObject) (PutMileageResponseObject, error)
+	// Change the status of all notifications for a specific user
+	// (PUT /notification/allstatus)
+	PutNotificationAllstatus(ctx context.Context, request PutNotificationAllstatusRequestObject) (PutNotificationAllstatusResponseObject, error)
+	// Get detailed information about a specific notification
+	// (GET /notification/info)
+	GetNotificationInfo(ctx context.Context, request GetNotificationInfoRequestObject) (GetNotificationInfoResponseObject, error)
+	// Get list of notifications based on status
+	// (GET /notification/list)
+	GetNotificationList(ctx context.Context, request GetNotificationListRequestObject) (GetNotificationListResponseObject, error)
+	// Change the status of a specific notification
+	// (PUT /notification/status)
+	PutNotificationStatus(ctx context.Context, request PutNotificationStatusRequestObject) (PutNotificationStatusResponseObject, error)
+	// Add car position from MQTT
+	// (POST /position)
+	PostPosition(ctx context.Context, request PostPositionRequestObject) (PostPositionResponseObject, error)
+	// Get the route of a car
+	// (GET /position/carroute)
+	GetPositionCarroute(ctx context.Context, request GetPositionCarrouteRequestObject) (GetPositionCarrouteResponseObject, error)
+	// Get current car positions
+	// (GET /position/listcurrent)
+	GetPositionListcurrent(ctx context.Context, request GetPositionListcurrentRequestObject) (GetPositionListcurrentResponseObject, error)
+	// Get list of cars
+	// (GET /positions/listcars)
+	GetPositionsListcars(ctx context.Context, request GetPositionsListcarsRequestObject) (GetPositionsListcarsResponseObject, error)
 	// Get data by wheel ID
 	// (GET /pressuredata)
 	GetPressuredata(ctx context.Context, request GetPressuredataRequestObject) (GetPressuredataResponseObject, error)
@@ -1859,37 +3070,11 @@ func (sh *strictHandler) GetAutoList(w http.ResponseWriter, r *http.Request, par
 	}
 }
 
-// GetBreakages operation middleware
-func (sh *strictHandler) GetBreakages(w http.ResponseWriter, r *http.Request, params GetBreakagesParams) {
-	var request GetBreakagesRequestObject
+// PostBreakage operation middleware
+func (sh *strictHandler) PostBreakage(w http.ResponseWriter, r *http.Request) {
+	var request PostBreakageRequestObject
 
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetBreakages(ctx, request.(GetBreakagesRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetBreakages")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetBreakagesResponseObject); ok {
-		if err := validResponse.VisitGetBreakagesResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// PostBreakages operation middleware
-func (sh *strictHandler) PostBreakages(w http.ResponseWriter, r *http.Request) {
-	var request PostBreakagesRequestObject
-
-	var body PostBreakagesJSONRequestBody
+	var body PostBreakageJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -1897,18 +3082,158 @@ func (sh *strictHandler) PostBreakages(w http.ResponseWriter, r *http.Request) {
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PostBreakages(ctx, request.(PostBreakagesRequestObject))
+		return sh.ssi.PostBreakage(ctx, request.(PostBreakageRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostBreakages")
+		handler = middleware(handler, "PostBreakage")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PostBreakagesResponseObject); ok {
-		if err := validResponse.VisitPostBreakagesResponse(w); err != nil {
+	} else if validResponse, ok := response.(PostBreakageResponseObject); ok {
+		if err := validResponse.VisitPostBreakageResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetBreakageList operation middleware
+func (sh *strictHandler) GetBreakageList(w http.ResponseWriter, r *http.Request, params GetBreakageListParams) {
+	var request GetBreakageListRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetBreakageList(ctx, request.(GetBreakageListRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetBreakageList")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetBreakageListResponseObject); ok {
+		if err := validResponse.VisitGetBreakageListResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostDriver operation middleware
+func (sh *strictHandler) PostDriver(w http.ResponseWriter, r *http.Request) {
+	var request PostDriverRequestObject
+
+	var body PostDriverJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostDriver(ctx, request.(PostDriverRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostDriver")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostDriverResponseObject); ok {
+		if err := validResponse.VisitPostDriverResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDriverInfo operation middleware
+func (sh *strictHandler) GetDriverInfo(w http.ResponseWriter, r *http.Request, params GetDriverInfoParams) {
+	var request GetDriverInfoRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetDriverInfo(ctx, request.(GetDriverInfoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDriverInfo")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDriverInfoResponseObject); ok {
+		if err := validResponse.VisitGetDriverInfoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDriverList operation middleware
+func (sh *strictHandler) GetDriverList(w http.ResponseWriter, r *http.Request, params GetDriverListParams) {
+	var request GetDriverListRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetDriverList(ctx, request.(GetDriverListRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDriverList")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDriverListResponseObject); ok {
+		if err := validResponse.VisitGetDriverListResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PutDriverWorktime operation middleware
+func (sh *strictHandler) PutDriverWorktime(w http.ResponseWriter, r *http.Request) {
+	var request PutDriverWorktimeRequestObject
+
+	var body PutDriverWorktimeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PutDriverWorktime(ctx, request.(PutDriverWorktimeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutDriverWorktime")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PutDriverWorktimeResponseObject); ok {
+		if err := validResponse.VisitPutDriverWorktimeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1940,6 +3265,260 @@ func (sh *strictHandler) PostLogin(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PostLoginResponseObject); ok {
 		if err := validResponse.VisitPostLoginResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PutMileage operation middleware
+func (sh *strictHandler) PutMileage(w http.ResponseWriter, r *http.Request) {
+	var request PutMileageRequestObject
+
+	var body PutMileageJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PutMileage(ctx, request.(PutMileageRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutMileage")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PutMileageResponseObject); ok {
+		if err := validResponse.VisitPutMileageResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PutNotificationAllstatus operation middleware
+func (sh *strictHandler) PutNotificationAllstatus(w http.ResponseWriter, r *http.Request) {
+	var request PutNotificationAllstatusRequestObject
+
+	var body PutNotificationAllstatusJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PutNotificationAllstatus(ctx, request.(PutNotificationAllstatusRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutNotificationAllstatus")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PutNotificationAllstatusResponseObject); ok {
+		if err := validResponse.VisitPutNotificationAllstatusResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetNotificationInfo operation middleware
+func (sh *strictHandler) GetNotificationInfo(w http.ResponseWriter, r *http.Request, params GetNotificationInfoParams) {
+	var request GetNotificationInfoRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetNotificationInfo(ctx, request.(GetNotificationInfoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetNotificationInfo")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetNotificationInfoResponseObject); ok {
+		if err := validResponse.VisitGetNotificationInfoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetNotificationList operation middleware
+func (sh *strictHandler) GetNotificationList(w http.ResponseWriter, r *http.Request, params GetNotificationListParams) {
+	var request GetNotificationListRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetNotificationList(ctx, request.(GetNotificationListRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetNotificationList")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetNotificationListResponseObject); ok {
+		if err := validResponse.VisitGetNotificationListResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PutNotificationStatus operation middleware
+func (sh *strictHandler) PutNotificationStatus(w http.ResponseWriter, r *http.Request) {
+	var request PutNotificationStatusRequestObject
+
+	var body PutNotificationStatusJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PutNotificationStatus(ctx, request.(PutNotificationStatusRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutNotificationStatus")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PutNotificationStatusResponseObject); ok {
+		if err := validResponse.VisitPutNotificationStatusResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostPosition operation middleware
+func (sh *strictHandler) PostPosition(w http.ResponseWriter, r *http.Request) {
+	var request PostPositionRequestObject
+
+	var body PostPositionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostPosition(ctx, request.(PostPositionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostPosition")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostPositionResponseObject); ok {
+		if err := validResponse.VisitPostPositionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetPositionCarroute operation middleware
+func (sh *strictHandler) GetPositionCarroute(w http.ResponseWriter, r *http.Request, params GetPositionCarrouteParams) {
+	var request GetPositionCarrouteRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetPositionCarroute(ctx, request.(GetPositionCarrouteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetPositionCarroute")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetPositionCarrouteResponseObject); ok {
+		if err := validResponse.VisitGetPositionCarrouteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetPositionListcurrent operation middleware
+func (sh *strictHandler) GetPositionListcurrent(w http.ResponseWriter, r *http.Request, params GetPositionListcurrentParams) {
+	var request GetPositionListcurrentRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetPositionListcurrent(ctx, request.(GetPositionListcurrentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetPositionListcurrent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetPositionListcurrentResponseObject); ok {
+		if err := validResponse.VisitGetPositionListcurrentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetPositionsListcars operation middleware
+func (sh *strictHandler) GetPositionsListcars(w http.ResponseWriter, r *http.Request, params GetPositionsListcarsParams) {
+	var request GetPositionsListcarsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetPositionsListcars(ctx, request.(GetPositionsListcarsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetPositionsListcars")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetPositionsListcarsResponseObject); ok {
+		if err := validResponse.VisitGetPositionsListcarsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

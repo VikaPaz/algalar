@@ -9,3 +9,8 @@ server.crt
 server.csr
 server.key
 Makefile
+breakage.yaml
+driver.yaml
+mileage.yaml
+notification.yaml
+positions.yaml
