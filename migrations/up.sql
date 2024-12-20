@@ -52,6 +52,13 @@ CREATE TABLE IF NOT EXISTS sensors_data (
 	created_at timestamp
 );
 
+CREATE TABLE IF NOT EXISTS position_data (
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+	device_number varchar(100),
+	location point,
+	created_at timestamp
+);
+
 CREATE TABLE IF NOT EXISTS drivers (
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
 	id_company uuid REFERENCES users,
@@ -63,24 +70,28 @@ CREATE TABLE IF NOT EXISTS drivers (
 	phone varchar(100),
 	birthday timestamp,
 	road varchar(100),
-	score varchar(100)
+	score varchar(100),
+	worked_time timestamp,
+	created_at timestamp
 );
 
 
 CREATE TABLE IF NOT EXISTS breakages (
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-	car_id uuid REFERENCES cars,
-	state_number varchar(100),
+	id_car uuid REFERENCES cars,
+	location point,
 	type varchar(100),
 	description varchar(100),
-	datetime timestamp
+	created_at timestamp
 );
 
 CREATE TABLE IF NOT EXISTS notifications (
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-	user_id uuid REFERENCES users,
-	breakages_id uuid REFERENCES breakages,
-	status varchar(100)
+	id_user uuid REFERENCES users,
+	id_breakages uuid REFERENCES breakages,
+	note varchar(100),
+	status varchar(100).
+	created_at timestamp
 );
 
 create table if not exists refresh_store (

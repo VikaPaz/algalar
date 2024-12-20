@@ -101,7 +101,7 @@ func (r *Repository) GetIDByLoginAndPassword(email, password string) (string, er
 
 func (r *Repository) CreateCar(car models.Car) (models.Car, error) {
 	query := `
-        INSERT INTO cars (id_company, state_number, brand, id_device, id_unicum, count_axis, car_type)
+        INSERT INTO cars (id_company, state_number, brand, device_number, id_unicum, count_axis, car_type)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING *`
 	resp := models.Car{}
@@ -236,7 +236,7 @@ func (r *Repository) GetWheelById(wheelID string) (models.Wheel, error) {
 
 func (r *Repository) GetCarById(carID string) (models.Car, error) {
 	query := `
-        SELECT id, id_company, state_number, brand, id_device, id_unicum, count_axis
+        SELECT id, id_company, state_number, brand, device_number, id_unicum, count_axis
         FROM cars
         WHERE id = $1`
 
@@ -282,7 +282,7 @@ func (r *Repository) GetIdCarByStateNumber(stateNumber string) (string, error) {
 
 func (r *Repository) GetCarsList(userID string, offset int, limit int) ([]models.Car, error) {
 	query := `
-        SELECT id, id_company, state_number, brand, id_device, id_unicum, count_axis
+        SELECT id, id_company, state_number, brand, device_number, id_unicum, count_axis
         FROM cars
         WHERE id_company = $1
         LIMIT $2 OFFSET $3`
@@ -511,7 +511,7 @@ func (r *Repository) GetReportData(userId string) ([]models.ReportData, error) {
 		FROM
 			cars c
 		JOIN wheels w ON w.id_car = c.id
-		JOIN sensors s ON s.car_id = c.id AND s.count_axis = w.count_axis AND s.position = w.position
+		JOIN sensors_data s ON s.device_number = c.device_number AND s.sensor_number = w.sensor_number
 		WHERE
 			c.id_company = $1  
 		GROUP BY
@@ -549,7 +549,7 @@ func (r *Repository) GetCarWheelData(carID string) (models.CarWithWheels, error)
             c.id AS car_id,
             c.state_number,
             c.brand,
-            c.id_device,
+            c.device_number,
             c.id_unicum,
             c.count_axis,
 			c.car_type,
