@@ -26,13 +26,10 @@ type Service interface {
 	UpdateWheelData(ctx context.Context, wheel models.Wheel) error
 	GetWheelData(ctx context.Context, id string) (models.Wheel, error)
 	GenerateReport(ctx context.Context) ([]models.ReportData, error)
-	GetBreackegeData(ctx context.Context, id string) ([]models.Breakage, error)
 	IsCreatred(table string, key string, val any) (bool, error)
 	GetAutoData(ctx context.Context, id string) (models.Car, error)
 	GetAutoWheelsData(ctx context.Context, id string) (models.CarWithWheels, error)
 	GetAutoList(ctx context.Context, offset int, limit int) ([]models.Car, error)
-	RegisterBeakege(ctx context.Context, breakege models.Breakage) (models.Breakage, error)
-	GetCarId(ctx context.Context, stateNumber string) (string, error)
 	GetWheelsData(ctx context.Context, stateNumber string) ([]models.Wheel, error)
 	NewSensorData(ctx context.Context, newData models.SensorData) (models.SensorData, error)
 	SensorsDataByCarID(ctx context.Context, carID string) ([]models.SensorsData, error)
@@ -284,14 +281,15 @@ func (s *ServImplemented) PostAuto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var Auto rest.AutoRegistration
-	if err := json.NewDecoder(r.Body).Decode(&Auto); err != nil {
+	var req rest.AutoRegistration
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	car := ToCar(Auto)
+	user_id := ctx.Value("user_id").(string)
+	car := ToCar(user_id, req)
 
 	ok, err := s.service.IsCreatred("cars", "state_number", car.StateNumber)
 	if ok {
@@ -313,10 +311,10 @@ func (s *ServImplemented) PostAuto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := ToAutoResponse(car)
+	res := ToAutoResponse(car)
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(res)
 }
 
 func (s *ServImplemented) GetAuto(w http.ResponseWriter, r *http.Request, params rest.GetAutoParams) {
@@ -632,7 +630,31 @@ func (s *ServImplemented) GetPressuredata(w http.ResponseWriter, r *http.Request
 // Add a driver
 // (POST /driver)
 func (s *ServImplemented) PostDriver(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+	// ctx, err := s.getUserID(r)
+	// if err != nil {
+	// 	s.log.Error(err)
+	// 	http.Error(w, err.Error(), http.StatusUnauthorized)
+	// 	return
+	// }
+
+	// var req rest.DriverRegistration
+	// if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	// 	s.log.Error(err)
+	// 	http.Error(w, err.Error(), http.StatusBadRequest)
+	// 	return
+	// }
+
+	// user_id := ctx.Value("user_id").(string)
+	// var newDriver models.Driver = ToNewDriver(user_id, req)
+
+	// _, err = s.service.CreateDriver(ctx, newDriver)
+	// if err != nil {
+	// 	s.log.Error(err)
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // Driver information
@@ -797,9 +819,9 @@ func ToUserDetails(user models.User) rest.UserDetails {
 }
 
 // Car
-func ToCar(AutoRegistration rest.AutoRegistration) models.Car {
+func ToCar(idCompany string, AutoRegistration rest.AutoRegistration) models.Car {
 	return models.Car{
-		IDCompany:    AutoRegistration.CompanyInn,
+		IDCompany:    idCompany,
 		StateNumber:  AutoRegistration.StateNumber,
 		Brand:        AutoRegistration.Brand,
 		DeviceNumber: AutoRegistration.DeviceNumber,
@@ -813,7 +835,6 @@ func ToAutoResponse(car models.Car) rest.AutoResponse {
 	return rest.AutoResponse{
 		AxleCount:    &car.CountAxis,
 		Brand:        &car.Brand,
-		CompanyInn:   &car.IDCompany,
 		DeviceNumber: &car.DeviceNumber,
 		Id:           &car.ID,
 		StateNumber:  &car.StateNumber,
@@ -912,6 +933,13 @@ func ToNewData(data rest.NewSensorData) models.SensorData {
 		Pressure:     *data.Pressure,
 		Temperature:  *data.Temperature,
 		Time:         *data.Time,
+	}
+}
+
+// Driver
+func ToNewDriver(idCompany string, new rest.DriverRegistration) models.Driver {
+	return models.Driver{
+		IDCompany: idCompany,
 	}
 }
 

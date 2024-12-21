@@ -26,7 +26,6 @@ type AutoRegistration struct {
 	AutoType     string `json:"autoType"`
 	AxleCount    int    `json:"axleCount"`
 	Brand        string `json:"brand"`
-	CompanyInn   string `json:"companyInn"`
 	DeviceNumber string `json:"deviceNumber"`
 	StateNumber  string `json:"stateNumber"`
 	UniqueId     string `json:"uniqueId"`
@@ -37,7 +36,6 @@ type AutoResponse struct {
 	AutoType     *string `json:"autoType,omitempty"`
 	AxleCount    *int    `json:"axleCount,omitempty"`
 	Brand        *string `json:"brand,omitempty"`
-	CompanyInn   *string `json:"companyInn,omitempty"`
 	DeviceNumber *string `json:"deviceNumber,omitempty"`
 	Id           *string `json:"id,omitempty"`
 	StateNumber  *string `json:"stateNumber,omitempty"`

@@ -1079,15 +1079,12 @@ components:
       required:
       - axleCount
       - brand
-      - companyInn
       - deviceNumber
       - stateNumber
       - uniqueId
       - autoType
       type: object
       properties:
-        companyInn:
-          type: string
         deviceNumber:
           type: string
         uniqueId:
@@ -1104,8 +1101,6 @@ components:
       type: object
       properties:
         id:
-          type: string
-        companyInn:
           type: string
         deviceNumber:
           type: string

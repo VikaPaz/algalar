@@ -86,6 +86,20 @@ type PressureDataByWheelIDFilter struct {
 	To      time.Time
 }
 
+type Driver struct {
+	ID         string
+	IDCompany  string
+	IDCar      string
+	Name       string
+	Surname    string
+	Middle     string
+	Phone      string
+	Birthday   time.Time
+	Rating     float32
+	WorkedTime time.Duration
+	CreatedAt  time.Time
+}
+
 type Breakage struct {
 	ID          string
 	CarID       string

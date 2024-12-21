@@ -66,11 +66,9 @@ CREATE TABLE IF NOT EXISTS drivers (
 	name varchar(100),
 	surname varchar(100),
 	middle_name varchar(100),
-	experience varchar(100),
 	phone varchar(100),
 	birthday timestamp,
-	road varchar(100),
-	score varchar(100),
+	rating varchar(100),
 	worked_time timestamp,
 	created_at timestamp
 );
