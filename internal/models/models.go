@@ -96,7 +96,7 @@ type Driver struct {
 	Phone      string
 	Birthday   time.Time
 	Rating     float32
-	WorkedTime time.Duration
+	WorkedTime int
 	CreatedAt  time.Time
 }
 

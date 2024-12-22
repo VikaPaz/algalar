@@ -68,9 +68,9 @@ CREATE TABLE IF NOT EXISTS drivers (
 	middle_name varchar(100),
 	phone varchar(100),
 	birthday timestamp,
-	rating varchar(100),
-	worked_time timestamp,
-	created_at timestamp
+	rating float,
+	worked_time int,
+	created_at timestamp default CURRENT_TIMESTAMP
 );
 
 
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 	id_breakages uuid REFERENCES breakages,
 	note varchar(100),
 	status varchar(100),
-	created_at timestamp
+	created_at timestamp default CURRENT_TIMESTAMP
 );
 
 create table if not exists refresh_store (

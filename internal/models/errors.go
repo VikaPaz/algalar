@@ -10,4 +10,5 @@ var (
 	ErrNoContent           = errors.New("failed to provide content: not exists")
 	ErrAlreadyExists       = errors.New("failed to create: already exists")
 	ErrInvalidRefreshToken = errors.New("invalid refresh token")
+	ErrLoginOrPassword     = errors.New("login and password are required")
 )

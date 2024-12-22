@@ -23,10 +23,6 @@ func NewRepository(conn *sql.DB, logger *logrus.Logger) *Repository {
 }
 
 func (r *Repository) CreateUser(user models.User) (string, error) {
-	if user.Login == "" || user.Password == "" {
-		return "", errors.New("login and password are required")
-	}
-
 	query := `
         INSERT INTO users (inn, name, surname, gender, login, password, utc_timezone, phone)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -99,6 +95,7 @@ func (r *Repository) GetIDByLoginAndPassword(email, password string) (string, er
 	return userID, nil
 }
 
+// Auto
 func (r *Repository) CreateCar(car models.Car) (models.Car, error) {
 	query := `
         INSERT INTO cars (id_company, state_number, brand, device_number, id_unicum, count_axis, car_type)
@@ -122,6 +119,110 @@ func (r *Repository) CreateCar(car models.Car) (models.Car, error) {
 	return resp, nil
 }
 
+func (r *Repository) GetCarById(carID string) (models.Car, error) {
+	query := `
+		SELECT id, id_company, state_number, brand, device_number, id_unicum, count_axis
+		FROM cars
+		WHERE id = $1`
+
+	car := models.Car{}
+	err := r.conn.QueryRow(query, carID).Scan(
+		&car.ID,
+		&car.IDCompany,
+		&car.StateNumber,
+		&car.Brand,
+		&car.DeviceNumber,
+		&car.IDUnicum,
+		&car.CountAxis,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return models.Car{}, models.ErrNoContent
+		}
+		return models.Car{}, err
+	}
+
+	return car, nil
+}
+
+func (r *Repository) GetIdCarByStateNumber(stateNumber string) (string, error) {
+	query := `
+		SELECT id
+		FROM cars
+		WHERE state_number = $1`
+
+	var carID string
+	err := r.conn.QueryRow(query, stateNumber).Scan(&carID)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", models.ErrNoContent
+		}
+		return "", err
+	}
+
+	return carID, nil
+}
+
+func (r *Repository) GetCarsList(userID string, offset int, limit int) ([]models.Car, error) {
+	query := `
+		SELECT id, id_company, state_number, brand, device_number, id_unicum, count_axis
+		FROM cars
+		WHERE id_company = $1
+		LIMIT $2 OFFSET $3`
+
+	cars := []models.Car{}
+
+	rows, err := r.conn.Query(query, userID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var car models.Car
+		if err := rows.Scan(&car.ID, &car.IDCompany, &car.StateNumber, &car.Brand, &car.DeviceNumber, &car.IDUnicum, &car.CountAxis); err != nil {
+			return nil, err
+		}
+		cars = append(cars, car)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return cars, nil
+}
+
+func (r *Repository) GetCarByStateNumber(stateNumber string) (models.Car, error) {
+	query := `
+	SELECT id, id_company, state_number, brand, device_number, id_unicum, count_axis
+	FROM cars
+	WHERE state_number = $1`
+
+	car := models.Car{}
+	err := r.conn.QueryRow(query, stateNumber).Scan(
+		&car.ID,
+		&car.IDCompany,
+		&car.StateNumber,
+		&car.Brand,
+		&car.DeviceNumber,
+		&car.IDUnicum,
+		&car.CountAxis,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return models.Car{}, models.ErrNoContent
+		}
+		return models.Car{}, err
+	}
+
+	return car, nil
+}
+
+// Wheel
 func (r *Repository) CreateWheel(wheel models.Wheel) (string, error) {
 	query := `
         INSERT INTO wheels (id_company, id_car, count_axis, position, size, cost, brand, model, mileage, min_temperature, min_pressure, max_temperature, max_pressure, ngp, tkvh)
@@ -232,82 +333,6 @@ func (r *Repository) GetWheelById(wheelID string) (models.Wheel, error) {
 	}
 
 	return wheel, nil
-}
-
-func (r *Repository) GetCarById(carID string) (models.Car, error) {
-	query := `
-        SELECT id, id_company, state_number, brand, device_number, id_unicum, count_axis
-        FROM cars
-        WHERE id = $1`
-
-	car := models.Car{}
-	err := r.conn.QueryRow(query, carID).Scan(
-		&car.ID,
-		&car.IDCompany,
-		&car.StateNumber,
-		&car.Brand,
-		&car.DeviceNumber,
-		&car.IDUnicum,
-		&car.CountAxis,
-	)
-
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return models.Car{}, models.ErrNoContent
-		}
-		return models.Car{}, err
-	}
-
-	return car, nil
-}
-
-func (r *Repository) GetIdCarByStateNumber(stateNumber string) (string, error) {
-	query := `
-        SELECT id
-        FROM cars
-        WHERE state_number = $1`
-
-	var carID string
-	err := r.conn.QueryRow(query, stateNumber).Scan(&carID)
-
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return "", models.ErrNoContent
-		}
-		return "", err
-	}
-
-	return carID, nil
-}
-
-func (r *Repository) GetCarsList(userID string, offset int, limit int) ([]models.Car, error) {
-	query := `
-        SELECT id, id_company, state_number, brand, device_number, id_unicum, count_axis
-        FROM cars
-        WHERE id_company = $1
-        LIMIT $2 OFFSET $3`
-
-	cars := []models.Car{}
-
-	rows, err := r.conn.Query(query, userID, limit, offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var car models.Car
-		if err := rows.Scan(&car.ID, &car.IDCompany, &car.StateNumber, &car.Brand, &car.DeviceNumber, &car.IDUnicum, &car.CountAxis); err != nil {
-			return nil, err
-		}
-		cars = append(cars, car)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return cars, nil
 }
 
 func (r *Repository) CreateBreakage(breakage models.Breakage) (string, error) {
@@ -496,6 +521,35 @@ func (r *Repository) Pressuredata(filter models.PressureDataByWheelIDFilter) ([]
 	}
 
 	return pressureData, nil
+}
+
+// Driver
+func (r *Repository) CreateDriver(driver models.Driver) (models.Driver, error) {
+	query := `
+	INSERT INTO drivers (id_company, id_car, name, surname, middle_name, phone, birthday, rating, worked_time)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	RETURNING id, id_company, id_car, name, surname, middle_name, phone, birthday, rating, worked_time, created_at
+	`
+
+	resp := models.Driver{}
+	err := r.conn.QueryRow(query, driver.IDCompany, driver.IDCar, driver.Name, driver.Surname, driver.Middle, driver.Phone, driver.Birthday, driver.Rating, driver.WorkedTime).Scan(
+		&resp.ID,
+		&resp.IDCompany,
+		&resp.IDCar,
+		&resp.Name,
+		&resp.Surname,
+		&resp.Middle,
+		&resp.Phone,
+		&resp.Birthday,
+		&resp.Rating,
+		&resp.WorkedTime,
+		&resp.CreatedAt,
+	)
+	if err != nil {
+		return models.Driver{}, fmt.Errorf("failed to create driver or find car: %w", err)
+	}
+
+	return resp, nil
 }
 
 // Report

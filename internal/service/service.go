@@ -20,6 +20,7 @@ type Repository interface {
 	SelectAny(table string, key string, val any) (bool, error)
 	CreateBreakage(breakage models.Breakage) (string, error)
 	GetCarById(carID string) (models.Car, error)
+	GetCarByStateNumber(stateNumber string) (models.Car, error)
 	GetCarsList(user_id string, offset int, limit int) ([]models.Car, error)
 	GetIdCarByStateNumber(stateNumber string) (string, error)
 	GetBreakagesByCarId(carID string) ([]models.Breakage, error)
@@ -30,6 +31,7 @@ type Repository interface {
 	SensorsDataByCarID(carID string) ([]models.SensorsData, error)
 	Temperaturedata(filter models.TemperatureDataByWheelIDFilter) ([]models.TemperatureData, error)
 	Pressuredata(filter models.PressureDataByWheelIDFilter) ([]models.PressureData, error)
+	CreateDriver(driver models.Driver) (models.Driver, error)
 }
 
 type Service struct {
@@ -46,6 +48,10 @@ func (s *Service) IsCreatred(table string, key string, val any) (bool, error) {
 }
 
 func (s *Service) RegisterUser(ctx context.Context, user models.User) error {
+	if user.Login == "" || user.Password == "" {
+		return models.ErrLoginOrPassword
+	}
+
 	_, err := s.repo.CreateUser(user)
 	if err != nil {
 		s.log.Debugf("Error creating user: %s", user.Login)
@@ -177,6 +183,17 @@ func (s *Service) GetAutoData(ctx context.Context, id string) (models.Car, error
 	return auto, nil
 }
 
+func (s *Service) GetAutoDataByStateNumber(ctx context.Context, stateNumber string) (models.Car, error) {
+	auto, err := s.repo.GetCarByStateNumber(stateNumber)
+	if err != nil {
+		s.log.Debugf("Auto not found: %s", stateNumber)
+		return models.Car{}, err
+	}
+
+	s.log.Debugf("Auto data fetched successfully: %s", stateNumber)
+	return auto, nil
+}
+
 func (s *Service) GetAutoList(ctx context.Context, offset int, limit int) ([]models.Car, error) {
 	user_id, ok := ctx.Value("user_id").(string)
 	if !ok {
@@ -257,6 +274,16 @@ func (s *Service) Pressuredata(ctx context.Context, filter models.PressureDataBy
 	}
 	return res, nil
 }
+
+// Driver
+func (s *Service) CreateDriver(ctx context.Context, driver models.Driver) (models.Driver, error) {
+	res, err := s.repo.CreateDriver(driver)
+	if err != nil {
+		return models.Driver{}, err
+	}
+	return res, nil
+}
+
 func NewService(repo Repository, log *logrus.Logger) *Service {
 	return &Service{
 		repo: repo,

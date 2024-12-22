@@ -35,6 +35,8 @@ type Service interface {
 	SensorsDataByCarID(ctx context.Context, carID string) ([]models.SensorsData, error)
 	Temperaturedata(ctx context.Context, filter models.TemperatureDataByWheelIDFilter) ([]models.TemperatureData, error)
 	Pressuredata(ctx context.Context, filter models.PressureDataByWheelIDFilter) ([]models.PressureData, error)
+	CreateDriver(ctx context.Context, driver models.Driver) (models.Driver, error)
+	GetAutoDataByStateNumber(ctx context.Context, stateNumber string) (models.Car, error)
 }
 
 type AuthService interface {
@@ -630,29 +632,42 @@ func (s *ServImplemented) GetPressuredata(w http.ResponseWriter, r *http.Request
 // Add a driver
 // (POST /driver)
 func (s *ServImplemented) PostDriver(w http.ResponseWriter, r *http.Request) {
-	// ctx, err := s.getUserID(r)
-	// if err != nil {
-	// 	s.log.Error(err)
-	// 	http.Error(w, err.Error(), http.StatusUnauthorized)
-	// 	return
-	// }
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
 
-	// var req rest.DriverRegistration
-	// if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-	// 	s.log.Error(err)
-	// 	http.Error(w, err.Error(), http.StatusBadRequest)
-	// 	return
-	// }
+	var req rest.DriverRegistration
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
-	// user_id := ctx.Value("user_id").(string)
-	// var newDriver models.Driver = ToNewDriver(user_id, req)
+	user_id := ctx.Value("user_id").(string)
+	var newDriver models.Driver = ToNewDriver(user_id, req)
 
-	// _, err = s.service.CreateDriver(ctx, newDriver)
-	// if err != nil {
-	// 	s.log.Error(err)
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
+	car, err := s.service.GetAutoDataByStateNumber(ctx, req.StateNumber)
+	if err != nil {
+		s.log.Error(err)
+		if err == models.ErrNoContent {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	newDriver.IDCar = car.ID
+
+	_, err = s.service.CreateDriver(ctx, newDriver)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 }
@@ -940,6 +955,12 @@ func ToNewData(data rest.NewSensorData) models.SensorData {
 func ToNewDriver(idCompany string, new rest.DriverRegistration) models.Driver {
 	return models.Driver{
 		IDCompany: idCompany,
+		Name:      new.Name,
+		Surname:   new.Surname,
+		Middle:    new.MiddleName,
+		Phone:     new.Phone,
+		Birthday:  new.Birthday.Time,
+		Rating:    0,
 	}
 }
 
