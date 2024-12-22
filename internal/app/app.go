@@ -59,7 +59,7 @@ func Run() {
 	confAuth := authService.Config{
 		AccessSigningKey:  accessSigningKey,
 		RefreshSigningKey: os.Getenv("JWT_REFRESH_SIGNING_KEY"),
-		AccessTTL:         10 * time.Minute,
+		AccessTTL:         20 * time.Minute,
 		RefreshTTL:        1000 * time.Hour,
 	}
 
