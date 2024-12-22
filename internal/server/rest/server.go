@@ -104,11 +104,11 @@ type ChangeNotificationStatusRequest struct {
 
 // DriverInfoResponse defines model for DriverInfoResponse.
 type DriverInfoResponse struct {
-	Birthday   *openapi_types.Date `json:"birthday,omitempty"`
-	MiddleName *string             `json:"middle_name,omitempty"`
-	Name       *string             `json:"name,omitempty"`
-	Phone      *string             `json:"phone,omitempty"`
-	Surname    *string             `json:"surname,omitempty"`
+	Birthday   openapi_types.Date `json:"birthday"`
+	MiddleName string             `json:"middle_name"`
+	Name       string             `json:"name"`
+	Phone      string             `json:"phone"`
+	Surname    string             `json:"surname"`
 }
 
 // DriverRegistration defines model for DriverRegistration.
@@ -134,12 +134,12 @@ type DriverRegistration struct {
 
 // DriverStatisticsResponse defines model for DriverStatisticsResponse.
 type DriverStatisticsResponse = []struct {
-	BreakagesCount *int                `json:"breakages_count,omitempty"`
-	DriverId       *openapi_types.UUID `json:"driver_id,omitempty"`
-	Experience     *float32            `json:"experience,omitempty"`
-	FullName       *string             `json:"full_name,omitempty"`
-	Rating         *float32            `json:"rating,omitempty"`
-	WorkedTime     *int                `json:"worked_time,omitempty"`
+	BreakagesCount int                `json:"breakages_count"`
+	DriverId       openapi_types.UUID `json:"driver_id"`
+	Experience     float32            `json:"experience"`
+	FullName       string             `json:"full_name"`
+	Rating         float32            `json:"rating"`
+	WorkedTime     int                `json:"worked_time"`
 }
 
 // LoginRequest defines model for LoginRequest.
@@ -404,9 +404,6 @@ type GetDriverInfoParams struct {
 
 // GetDriverListParams defines parameters for GetDriverList.
 type GetDriverListParams struct {
-	// UserId Unique company identifier
-	UserId openapi_types.UUID `form:"user_id" json:"user_id"`
-
 	// Offset Pagination offset
 	Offset int `form:"offset" json:"offset"`
 
@@ -422,9 +419,6 @@ type GetNotificationInfoParams struct {
 
 // GetNotificationListParams defines parameters for GetNotificationList.
 type GetNotificationListParams struct {
-	// UserId Unique identifier of the user
-	UserId openapi_types.UUID `form:"user_id" json:"user_id"`
-
 	// Status Status of notifications
 	Status string `form:"status" json:"status"`
 
@@ -449,9 +443,6 @@ type GetPositionCarrouteParams struct {
 
 // GetPositionListcurrentParams defines parameters for GetPositionListcurrent.
 type GetPositionListcurrentParams struct {
-	// UserId Unique identifier for the user (company)
-	UserId openapi_types.UUID `form:"user_id" json:"user_id"`
-
 	// WhatsherePointA Point A
 	WhatsherePointA Point `form:"whatshere[pointA]" json:"whatshere[pointA]"`
 
@@ -461,9 +452,6 @@ type GetPositionListcurrentParams struct {
 
 // GetPositionsListcarsParams defines parameters for GetPositionsListcars.
 type GetPositionsListcarsParams struct {
-	// UserId Unique identifier for the user (company)
-	UserId openapi_types.UUID `form:"user_id" json:"user_id"`
-
 	// Limit Limit for pagination
 	Limit int `form:"limit" json:"limit"`
 
@@ -563,7 +551,7 @@ type ServerInterface interface {
 	// Driver information
 	// (GET /driver/info)
 	GetDriverInfo(w http.ResponseWriter, r *http.Request, params GetDriverInfoParams)
-	// Driver statistics
+	// Drivers info
 	// (GET /driver/list)
 	GetDriverList(w http.ResponseWriter, r *http.Request, params GetDriverListParams)
 	// Update the driver's worked hours
@@ -692,7 +680,7 @@ func (_ Unimplemented) GetDriverInfo(w http.ResponseWriter, r *http.Request, par
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Driver statistics
+// Drivers info
 // (GET /driver/list)
 func (_ Unimplemented) GetDriverList(w http.ResponseWriter, r *http.Request, params GetDriverListParams) {
 	w.WriteHeader(http.StatusNotImplemented)
@@ -1140,21 +1128,6 @@ func (siw *ServerInterfaceWrapper) GetDriverList(w http.ResponseWriter, r *http.
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetDriverListParams
 
-	// ------------- Required query parameter "user_id" -------------
-
-	if paramValue := r.URL.Query().Get("user_id"); paramValue != "" {
-
-	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "user_id"})
-		return
-	}
-
-	err = runtime.BindQueryParameter("form", true, true, "user_id", r.URL.Query(), &params.UserId)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user_id", Err: err})
-		return
-	}
-
 	// ------------- Required query parameter "offset" -------------
 
 	if paramValue := r.URL.Query().Get("offset"); paramValue != "" {
@@ -1323,21 +1296,6 @@ func (siw *ServerInterfaceWrapper) GetNotificationList(w http.ResponseWriter, r 
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetNotificationListParams
-
-	// ------------- Required query parameter "user_id" -------------
-
-	if paramValue := r.URL.Query().Get("user_id"); paramValue != "" {
-
-	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "user_id"})
-		return
-	}
-
-	err = runtime.BindQueryParameter("form", true, true, "user_id", r.URL.Query(), &params.UserId)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user_id", Err: err})
-		return
-	}
 
 	// ------------- Required query parameter "status" -------------
 
@@ -1519,21 +1477,6 @@ func (siw *ServerInterfaceWrapper) GetPositionListcurrent(w http.ResponseWriter,
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetPositionListcurrentParams
 
-	// ------------- Required query parameter "user_id" -------------
-
-	if paramValue := r.URL.Query().Get("user_id"); paramValue != "" {
-
-	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "user_id"})
-		return
-	}
-
-	err = runtime.BindQueryParameter("form", true, true, "user_id", r.URL.Query(), &params.UserId)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user_id", Err: err})
-		return
-	}
-
 	// ------------- Required query parameter "whatshere[pointA]" -------------
 
 	if paramValue := r.URL.Query().Get("whatshere[pointA]"); paramValue != "" {
@@ -1588,21 +1531,6 @@ func (siw *ServerInterfaceWrapper) GetPositionsListcars(w http.ResponseWriter, r
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetPositionsListcarsParams
-
-	// ------------- Required query parameter "user_id" -------------
-
-	if paramValue := r.URL.Query().Get("user_id"); paramValue != "" {
-
-	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "user_id"})
-		return
-	}
-
-	err = runtime.BindQueryParameter("form", true, true, "user_id", r.URL.Query(), &params.UserId)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user_id", Err: err})
-		return
-	}
 
 	// ------------- Required query parameter "limit" -------------
 
@@ -2853,7 +2781,7 @@ type StrictServerInterface interface {
 	// Driver information
 	// (GET /driver/info)
 	GetDriverInfo(ctx context.Context, request GetDriverInfoRequestObject) (GetDriverInfoResponseObject, error)
-	// Driver statistics
+	// Drivers info
 	// (GET /driver/list)
 	GetDriverList(ctx context.Context, request GetDriverListRequestObject) (GetDriverListResponseObject, error)
 	// Update the driver's worked hours

@@ -37,6 +37,7 @@ type Service interface {
 	Pressuredata(ctx context.Context, filter models.PressureDataByWheelIDFilter) ([]models.PressureData, error)
 	CreateDriver(ctx context.Context, driver models.Driver) (models.Driver, error)
 	GetAutoDataByStateNumber(ctx context.Context, stateNumber string) (models.Car, error)
+	// GetDrivers(ctx context.Context, offset int, limit int) ([]models.Driver, error)
 }
 
 type AuthService interface {
@@ -672,15 +673,39 @@ func (s *ServImplemented) PostDriver(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// Driver information
-// (GET /driver/info)
-func (s *ServImplemented) GetDriverInfo(w http.ResponseWriter, r *http.Request, params rest.GetDriverInfoParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // Driver statistics
 // (GET /driver/list)
 func (s *ServImplemented) GetDriverList(w http.ResponseWriter, r *http.Request, params rest.GetDriverListParams) {
+	// ctx, err := s.getUserID(r)
+	// if err != nil {
+	// 	s.log.Error(err)
+	// 	http.Error(w, err.Error(), http.StatusUnauthorized)
+	// 	return
+	// }
+
+	// drivers, err := s.service.GetDrivers(ctx, params.Offset, params.Limit)
+	// if err != nil {
+	// 	s.log.Error(err)
+	// 	if err == models.ErrNoContent {
+	// 		http.Error(w, err.Error(), http.StatusBadRequest)
+	// 		return
+	// 	}
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// var res = rest.DriverStatisticsResponse{}
+
+	// for i, driver := range res {
+	// 	res[i] = ToDriverResponse(driver)
+	// }
+
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Driver information
+// (GET /driver/info)
+func (s *ServImplemented) GetDriverInfo(w http.ResponseWriter, r *http.Request, params rest.GetDriverInfoParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -962,6 +987,10 @@ func ToNewDriver(idCompany string, new rest.DriverRegistration) models.Driver {
 		Birthday:  new.Birthday.Time,
 		Rating:    0,
 	}
+}
+
+func ToDriverResponse(driver models.Driver) rest.DriverStatisticsResponse {
+	return rest.DriverStatisticsResponse{}
 }
 
 func validateToken(tokenStr string, jwtSecret string) (*models.Claims, error) {

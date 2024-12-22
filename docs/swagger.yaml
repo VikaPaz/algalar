@@ -386,15 +386,8 @@ paths:
     get:
       tags:
         - Driver
-      summary: Driver statistics
+      summary: Drivers info
       parameters:
-        - name: user_id
-          in: query
-          required: true
-          description: Unique company identifier
-          schema:
-            type: string
-            format: uuid
         - name: offset
           in: query
           required: true
@@ -476,13 +469,6 @@ paths:
         - Position
       summary: Get current car positions
       parameters:
-        - name: user_id
-          in: query
-          required: true
-          description: Unique identifier for the user (company)
-          schema:
-            type: string
-            format: uuid
         - name: whatshere[pointA]
           in: query
           required: true
@@ -509,13 +495,6 @@ paths:
         - Position
       summary: Get list of cars
       parameters:
-        - name: user_id
-          in: query
-          required: true
-          description: Unique identifier for the user (company)
-          schema:
-            type: string
-            format: uuid
         - name: limit
           in: query
           required: true
@@ -578,13 +557,6 @@ paths:
         - Notifications
       summary: Get list of notifications based on status
       parameters:
-        - name: user_id
-          in: query
-          required: true
-          description: Unique identifier of the user
-          schema:
-            type: string
-            format: uuid
         - name: status
           in: query
           required: true
@@ -1321,6 +1293,7 @@ components:
         time:
           type: string
           format: date-time
+          
     TemperatureData:
       type: object
       properties:
@@ -1329,6 +1302,7 @@ components:
         time:
           type: string
           format: date-time
+          
     DriverRegistration:
       type: object
       required:
@@ -1363,6 +1337,13 @@ components:
       type: array
       items:
         type: object
+        required:
+        - full_name
+        - worked_time
+        - experience
+        - rating
+        - breakages_count
+        - driver_id
         properties:
           full_name:
             type: string
@@ -1382,6 +1363,12 @@ components:
 
     DriverInfoResponse:
       type: object
+      required:
+        - name
+        - surname
+        - middle_name
+        - phone
+        - birthday
       properties:
         name:
           type: string
