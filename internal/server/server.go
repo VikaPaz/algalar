@@ -934,7 +934,7 @@ func ToWheelResponse(wheel models.Wheel) rest.WheelResponse {
 		Mileage:        &wheel.Mileage,
 		MinPressure:    &wheel.MinPressure,
 		MinTemperature: &wheel.MinTemperature,
-		SensorNumber:   &wheel.ID,
+		SensorNumber:   &wheel.SensorNumber,
 		TireBrand:      &wheel.Brand,
 		TireCost:       &wheel.Cost,
 		TireModel:      &wheel.Model,
