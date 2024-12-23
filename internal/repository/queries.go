@@ -337,7 +337,7 @@ func (r *Repository) GetWheelById(wheelID string) (models.Wheel, error) {
 
 func (r *Repository) CreateBreakage(breakage models.Breakage) (string, error) {
 	query := `
-        INSERT INTO breakages (car_id, state_number, type, description, datetime)
+        INSERT INTO breakages (car_id, state_number, type, description, created_at)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING id`
 
@@ -371,7 +371,7 @@ func (r *Repository) ChangeWheel(wheel models.Wheel) error {
 
 func (r *Repository) GetBreakagesByCarId(carID string) ([]models.Breakage, error) {
 	query := `
-        SELECT id, car_id, state_number, type, description, datetime
+        SELECT id, car_id, state_number, type, description, created_at
         FROM breakages
         WHERE car_id = $1
     `
@@ -473,9 +473,10 @@ func (r *Repository) SensorsDataByCarID(carID string) ([]models.SensorsData, err
 
 // Data
 func (r *Repository) Temperaturedata(filter models.TemperatureDataByWheelIDFilter) ([]models.TemperatureData, error) {
-	query := `SELECT s.temperature, s.datetime FROM sensors_data s 
+	query := `SELECT s.temperature, s.created_at 
+	FROM sensors_data s 
 	JOIN wheels w ON s.id = w.id_car 
-	WHERE w.id_wheel = $1 AND s.datetime 
+	WHERE w.id_wheel = $1 AND s.created_at 
 	BETWEEN $2 AND $3`
 
 	rows, err := r.conn.Query(query, filter.IDWheel, filter.From, filter.To)
@@ -500,7 +501,10 @@ func (r *Repository) Temperaturedata(filter models.TemperatureDataByWheelIDFilte
 }
 
 func (r *Repository) Pressuredata(filter models.PressureDataByWheelIDFilter) ([]models.PressureData, error) {
-	query := `SELECT s.pressure, s.datetime FROM sensors_data s JOIN wheels w ON s.id = w.id_car WHERE w.id_wheel = $1 AND s.datetime BETWEEN $2 AND $3`
+	query := `SELECT s.pressure, s.created_at 
+	FROM sensors_data s 
+	JOIN wheels w ON s.id = w.id_car 
+	WHERE w.id_wheel = $1 AND s.created_at BETWEEN $2 AND $3`
 
 	rows, err := r.conn.Query(query, filter.IDWheel, filter.From, filter.To)
 	if err != nil {
