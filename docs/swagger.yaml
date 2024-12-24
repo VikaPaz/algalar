@@ -432,7 +432,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DriverInfoResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/DriverInfoResponse'
        
 
   /driver/worktime:
@@ -1380,7 +1382,7 @@ components:
           type: string
         birthday:
           type: string
-          format: date
+          format: date-time
 
     WorkTimeUpdateRequest:
       type: object

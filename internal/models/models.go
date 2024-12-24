@@ -109,6 +109,14 @@ type DriverStatisticsResponse struct {
 	DriverID       string
 }
 
+type DriverInfoResponse struct {
+	Name       string
+	Surname    string
+	MiddleName string
+	Phone      string
+	Birthday   time.Time
+}
+
 type Breakage struct {
 	ID          string
 	CarID       string

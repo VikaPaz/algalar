@@ -39,7 +39,7 @@ type Service interface {
 	CreateDriver(ctx context.Context, driver models.Driver) (models.Driver, error)
 	GetAutoDataByStateNumber(ctx context.Context, stateNumber string) (models.Car, error)
 	GetDriversList(ctx context.Context, offset int, limit int) ([]models.DriverStatisticsResponse, error)
-	GetDriverInfo(ctx context.Context, driverID string) (models.DriverStatisticsResponse, error)
+	GetDriverInfo(ctx context.Context, driverID string) (models.DriverInfoResponse, error)
 	UpdateDriverWorktime(ctx context.Context, deviceNum string, workedTime int) error
 }
 
@@ -720,7 +720,7 @@ func (s *ServImplemented) GetDriverInfo(w http.ResponseWriter, r *http.Request, 
 
 	driverID := params.DriverId
 
-	driver, err := s.service.GetDriverInfo(ctx, driverID.String())
+	driverInfo, err := s.service.GetDriverInfo(ctx, driverID.String())
 	if err != nil {
 		s.log.Error(err)
 		if err == models.ErrDriverNotFound {
@@ -731,7 +731,13 @@ func (s *ServImplemented) GetDriverInfo(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	response := ToDriverResponse(driver)
+	response := rest.DriverInfoResponse{
+		Name:       driverInfo.Name,
+		Surname:    driverInfo.Surname,
+		MiddleName: driverInfo.MiddleName,
+		Phone:      driverInfo.Phone,
+		Birthday:   driverInfo.Birthday,
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

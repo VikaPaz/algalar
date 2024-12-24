@@ -104,11 +104,11 @@ type ChangeNotificationStatusRequest struct {
 
 // DriverInfoResponse defines model for DriverInfoResponse.
 type DriverInfoResponse struct {
-	Birthday   openapi_types.Date `json:"birthday"`
-	MiddleName string             `json:"middle_name"`
-	Name       string             `json:"name"`
-	Phone      string             `json:"phone"`
-	Surname    string             `json:"surname"`
+	Birthday   time.Time `json:"birthday"`
+	MiddleName string    `json:"middle_name"`
+	Name       string    `json:"name"`
+	Phone      string    `json:"phone"`
+	Surname    string    `json:"surname"`
 }
 
 // DriverRegistration defines model for DriverRegistration.
@@ -2322,7 +2322,7 @@ type GetDriverInfoResponseObject interface {
 	VisitGetDriverInfoResponse(w http.ResponseWriter) error
 }
 
-type GetDriverInfo200JSONResponse DriverInfoResponse
+type GetDriverInfo200JSONResponse []DriverInfoResponse
 
 func (response GetDriverInfo200JSONResponse) VisitGetDriverInfoResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
