@@ -117,6 +117,24 @@ type DriverInfoResponse struct {
 	Birthday   time.Time
 }
 
+type Position struct {
+	ID           string
+	DeviceNumber string
+	Location     Point
+	CreatedAt    time.Time
+}
+
+type Point struct {
+	X float32
+	Y float32
+}
+
+type CurentPosition struct {
+	Point    Point
+	IDCar    string
+	IDUnicum string
+}
+
 type Breakage struct {
 	ID          string
 	CarID       string

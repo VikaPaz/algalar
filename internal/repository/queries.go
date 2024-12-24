@@ -1,9 +1,11 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/VikaPaz/algalar/internal/models"
 	"github.com/google/uuid"
@@ -688,6 +690,108 @@ func (r *Repository) UpdateDriverWorktime(deviceNum string, workedTime int) erro
 	}
 
 	return nil
+}
+
+// Position
+func (r *Repository) CreatePosition(ctx context.Context, position models.Position) (models.Position, error) {
+	query := `
+		INSERT INTO position_data (device_number, location, created_at) 
+		VALUES ($1, ST_SetSRID(ST_MakePoint($2, $3), 4326), CURRENT_TIMESTAMP) 
+		RETURNING id, device_number, location, created_at
+	`
+
+	var newPosition models.Position
+	err := r.conn.QueryRowContext(ctx, query, position.DeviceNumber, position.Location.X, position.Location.Y).Scan(
+		&newPosition.ID,
+		&newPosition.DeviceNumber,
+		&newPosition.Location,
+		&newPosition.CreatedAt,
+	)
+
+	if err != nil {
+		return models.Position{}, fmt.Errorf("failed to create position: %w", err)
+	}
+
+	return newPosition, nil
+}
+
+func (r *Repository) GetCarRoutePositions(ctx context.Context, carID string, from time.Time, to time.Time) ([]models.Position, error) {
+	var positions []models.Position
+
+	query := `
+		SELECT id, device_number, location, created_at
+		FROM position_data
+		WHERE device_number = $1
+		AND created_at BETWEEN $2 AND $3
+		ORDER BY created_at ASC;
+	`
+
+	rows, err := r.conn.Query(query, carID, from, to)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var position models.Position
+		var locationX, locationY float32
+
+		if err := rows.Scan(&position.ID, &position.DeviceNumber, &locationX, &locationY, &position.CreatedAt); err != nil {
+			return nil, fmt.Errorf("failed to process row: %v", err)
+		}
+
+		position.Location = models.Point{
+			X: locationX,
+			Y: locationY,
+		}
+
+		positions = append(positions, position)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error while iterating rows: %v", err)
+	}
+
+	return positions, nil
+}
+
+func (r *Repository) GetCurrentCarPositions(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurentPosition, error) {
+	var positions []models.CurentPosition
+
+	query := `
+		SELECT 
+			p.location[0] AS x,
+			p.location[1] AS y,
+			c.id AS id_car,
+			c.id_unicum AS id_unicum
+		FROM 
+			position_data p
+		INNER JOIN 
+			cars c ON p.device_number = c.device_number
+		WHERE 
+			p.location[0] BETWEEN LEAST($1, $2) AND GREATEST($1, $2)
+			AND p.location[1] BETWEEN LEAST($3, $4) AND GREATEST($3, $4)
+	`
+
+	rows, err := r.conn.QueryContext(ctx, query, pointA.X, pointB.X, pointA.Y, pointB.Y)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var position models.CurentPosition
+		if err := rows.Scan(&position.Point.X, &position.Point.Y, &position.IDCar, &position.IDUnicum); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		positions = append(positions, position)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+	}
+
+	return positions, nil
 }
 
 // Report

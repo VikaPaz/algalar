@@ -191,7 +191,7 @@ type NotificationListResponse = []struct {
 type Point = []float32
 
 // PositionCarListResponse defines model for PositionCarListResponse.
-type PositionCarListResponse = []struct {
+type PositionCarListResponse struct {
 	// Brand Brand of the car
 	Brand *string `json:"brand,omitempty"`
 
@@ -206,15 +206,13 @@ type PositionCarListResponse = []struct {
 }
 
 // PositionCarRouteResponse defines model for PositionCarRouteResponse.
-type PositionCarRouteResponse = []struct {
-	Point *[]float32 `json:"point,omitempty"`
-
-	// Timestamp The timestamp when the position was recorded
+type PositionCarRouteResponse struct {
+	Point     *[]float32 `json:"point,omitempty"`
 	Timestamp *time.Time `json:"timestamp,omitempty"`
 }
 
 // PositionCurrentListResponse defines model for PositionCurrentListResponse.
-type PositionCurrentListResponse = []struct {
+type PositionCurrentListResponse struct {
 	// CarId Car's unique identifier
 	CarId *openapi_types.UUID `json:"car_id,omitempty"`
 	Point *[]float32          `json:"point,omitempty"`
@@ -2487,7 +2485,7 @@ type GetPositionCarrouteResponseObject interface {
 	VisitGetPositionCarrouteResponse(w http.ResponseWriter) error
 }
 
-type GetPositionCarroute200JSONResponse PositionCarRouteResponse
+type GetPositionCarroute200JSONResponse []PositionCarRouteResponse
 
 func (response GetPositionCarroute200JSONResponse) VisitGetPositionCarrouteResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2504,7 +2502,7 @@ type GetPositionListcurrentResponseObject interface {
 	VisitGetPositionListcurrentResponse(w http.ResponseWriter) error
 }
 
-type GetPositionListcurrent200JSONResponse PositionCurrentListResponse
+type GetPositionListcurrent200JSONResponse []PositionCurrentListResponse
 
 func (response GetPositionListcurrent200JSONResponse) VisitGetPositionListcurrentResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2521,7 +2519,7 @@ type GetPositionsListcarsResponseObject interface {
 	VisitGetPositionsListcarsResponse(w http.ResponseWriter) error
 }
 
-type GetPositionsListcars200JSONResponse PositionCarListResponse
+type GetPositionsListcars200JSONResponse []PositionCarListResponse
 
 func (response GetPositionsListcars200JSONResponse) VisitGetPositionsListcarsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")

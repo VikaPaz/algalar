@@ -41,6 +41,9 @@ type Service interface {
 	GetDriversList(ctx context.Context, offset int, limit int) ([]models.DriverStatisticsResponse, error)
 	GetDriverInfo(ctx context.Context, driverID string) (models.DriverInfoResponse, error)
 	UpdateDriverWorktime(ctx context.Context, deviceNum string, workedTime int) error
+	CreatePosition(ctx context.Context, position models.Position) (models.Position, error)
+	GetCarRoutePositions(ctx context.Context, carID string, from time.Time, to time.Time) ([]models.Position, error)
+	GetCurrentCarPositions(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurentPosition, error)
 }
 
 type AuthService interface {
@@ -789,29 +792,166 @@ func (s *ServImplemented) PutDriverWorktime(w http.ResponseWriter, r *http.Reque
 // Add car position from MQTT
 // (POST /position)
 func (s *ServImplemented) PostPosition(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	var req rest.PositionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.log.Error(err)
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if len(req.Point) != 2 {
+		err := fmt.Errorf("invalid point coordinates")
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	position := models.Position{
+		DeviceNumber: req.DeviceNumber,
+		Location: models.Point{
+			X: float32(req.Point[0]),
+			Y: float32(req.Point[1]),
+		},
+		CreatedAt: req.Timestamp,
+	}
+
+	if _, err := s.service.CreatePosition(ctx, position); err != nil {
+		s.log.Error(err)
+		http.Error(w, "failed to add car position", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }
 
 // Get the route of a car
 // (GET /position/carroute)
 func (s *ServImplemented) GetPositionCarroute(w http.ResponseWriter, r *http.Request, params rest.GetPositionCarrouteParams) {
-	w.WriteHeader(http.StatusNotImplemented)
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	positions, err := s.service.GetCarRoutePositions(ctx, params.CarId.String(), params.TimeFrom, params.TimeTo)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, "failed to fetch car route positions", http.StatusInternalServerError)
+		return
+	}
+
+	res := make([]rest.PositionCarRouteResponse, len(positions))
+	for i, val := range positions {
+		res[i] = rest.PositionCarRouteResponse{
+			Point:     &[]float32{val.Location.X, val.Location.Y},
+			Timestamp: &val.CreatedAt,
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(res); err != nil {
+		s.log.Error(err)
+		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+	}
 }
 
 // Get current car positions
 // (GET /position/listcurrent)
 func (s *ServImplemented) GetPositionListcurrent(w http.ResponseWriter, r *http.Request, params rest.GetPositionListcurrentParams) {
-	w.WriteHeader(http.StatusNotImplemented)
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	if len(params.WhatsherePointA) != 2 || len(params.WhatsherePointB) != 2 {
+		err := fmt.Errorf("invalid points: PointA and PointB must contain exactly 2 coordinates each")
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	pointA := models.Point{
+		X: float32(params.WhatsherePointA[0]),
+		Y: float32(params.WhatsherePointA[1]),
+	}
+	pointB := models.Point{
+		X: float32(params.WhatsherePointB[0]),
+		Y: float32(params.WhatsherePointB[1]),
+	}
+
+	positions, err := s.service.GetCurrentCarPositions(ctx, pointA, pointB)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, "failed to fetch car positions", http.StatusInternalServerError)
+		return
+	}
+
+	res := make([]rest.PositionCurrentListResponse, len(positions))
+	for i, val := range positions {
+		carID := uuid.MustParse(val.IDCar)
+		res[i] = rest.PositionCurrentListResponse{
+			CarId:    &carID,
+			Point:    &[]float32{val.Point.X, val.Point.Y},
+			UniqueId: &val.IDUnicum,
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(res); err != nil {
+		s.log.Error(err)
+		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+	}
 }
 
 // Get list of cars
 // (GET /positions/listcars)
 func (s *ServImplemented) GetPositionsListcars(w http.ResponseWriter, r *http.Request, params rest.GetPositionsListcarsParams) {
-	w.WriteHeader(http.StatusNotImplemented)
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	cars, err := s.service.GetAutoList(ctx, params.Limit, params.Offset)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, "failed to fetch list of cars", http.StatusInternalServerError)
+		return
+	}
+
+	res := make([]rest.PositionCarListResponse, len(cars))
+	for i, val := range cars {
+		id := uuid.MustParse(val.ID)
+		res[i] = rest.PositionCarListResponse{
+			CarId:       &id,
+			Brand:       &val.Brand,
+			StateNumber: &val.StateNumber,
+			UniqueId:    &val.IDUnicum,
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(cars); err != nil {
+		s.log.Error(err)
+		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+	}
 }
 
-//Notifications
-
+// Notifications
 // Change the status of all notifications for a specific user
 // (PUT /notification/allstatus)
 func (s *ServImplemented) PutNotificationAllstatus(w http.ResponseWriter, r *http.Request) {

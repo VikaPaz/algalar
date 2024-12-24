@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/VikaPaz/algalar/internal/models"
 	"github.com/sirupsen/logrus"
@@ -35,6 +36,9 @@ type Repository interface {
 	GetDriversList(user_id string, limit int, offset int) ([]models.DriverStatisticsResponse, error)
 	GetDriverInfo(driverID string) (models.DriverInfoResponse, error)
 	UpdateDriverWorktime(deviceNum string, workedTime int) error
+	CreatePosition(ctx context.Context, position models.Position) (models.Position, error)
+	GetCarRoutePositions(ctx context.Context, carID string, from time.Time, to time.Time) ([]models.Position, error)
+	GetCurrentCarPositions(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurentPosition, error)
 }
 
 type Service struct {
@@ -304,7 +308,36 @@ func (s *Service) GetDriverInfo(ctx context.Context, driverID string) (models.Dr
 }
 
 func (s *Service) UpdateDriverWorktime(ctx context.Context, deviceNum string, workedTime int) error {
-	return s.repo.UpdateDriverWorktime(deviceNum, workedTime)
+	err := s.repo.UpdateDriverWorktime(deviceNum, workedTime)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Position
+func (s *Service) CreatePosition(ctx context.Context, position models.Position) (models.Position, error) {
+	position, err := s.repo.CreatePosition(ctx, position)
+	if err != nil {
+		return models.Position{}, err
+	}
+	return position, nil
+}
+
+func (s *Service) GetCarRoutePositions(ctx context.Context, carID string, from time.Time, to time.Time) ([]models.Position, error) {
+	positions, err := s.repo.GetCarRoutePositions(ctx, carID, from, to)
+	if err != nil {
+		return []models.Position{}, err
+	}
+	return positions, nil
+}
+
+func (s *Service) GetCurrentCarPositions(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurentPosition, error) {
+	positions, err := s.repo.GetCurrentCarPositions(ctx, pointA, pointB)
+	if err != nil {
+		return []models.CurentPosition{}, err
+	}
+	return positions, nil
 }
 
 func NewService(repo Repository, log *logrus.Logger) *Service {

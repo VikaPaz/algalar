@@ -491,7 +491,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PositionCurrentListResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/PositionCurrentListResponse'
 
   /positions/listcars:
     get:
@@ -519,7 +521,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PositionCarListResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/PositionCarListResponse'
 
   /position/carroute:
     get:
@@ -554,7 +558,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PositionCarRouteResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/PositionCarRouteResponse'
   /notification/list:
     get:
       tags:
@@ -901,67 +907,56 @@ components:
         timestamp: "2024-12-20T12:34:56Z"
 
     PositionCurrentListResponse:
-      type: array
-      items:
-        type: object
-        properties:
-          point:
-            type: array
-            items:
-              type: number
-              format: float
-              minItems: 2
-              maxItems: 2
-          unique_id:
-            type: string
-            description: Unique identifier of the car
-          car_id:
-            type: string
-            format: uuid
-            description: Car's unique identifier
+      type: object
+      properties:
+        point:
+          type: array
+          items:
+            type: number
+            format: float
+            minItems: 2
+            maxItems: 2
+        unique_id:
+          type: string
+          description: Unique identifier of the car
+        car_id:
+          type: string
+          format: uuid
+          description: Car's unique identifier
 
     PositionCarListResponse:
-      type: array
-      items:
-        type: object
-        properties:
-          state_number:
-            type: string
-            description: State number of the car
-          unique_id:
-            type: string
-            description: Unique identifier of the car
-          brand:
-            type: string
-            description: Brand of the car
-          car_id:
-            type: string
-            format: uuid
-            description: Unique identifier of the car
+      type: object
+      properties:
+        state_number:
+          type: string
+          description: State number of the car
+        unique_id:
+          type: string
+          description: Unique identifier of the car
+        brand:
+          type: string
+          description: Brand of the car
+        car_id:
+          type: string
+          format: uuid
+          description: Unique identifier of the car
 
     PositionCarRouteResponse:
-      type: array
-      items:
-        type: object
-        properties:
-          point:
-            type: array
-            items:
-              type: number
-              format: float
-              minItems: 2
-              maxItems: 2
-          timestamp:
-            type: string
-            format: date-time
-            description: The timestamp when the position was recorded
+      type: object
+      properties:
+        point:
+          type: array
+          items:
+            type: number
+            format: float
+            minItems: 2
+            maxItems: 2
+        timestamp:
+          type: string
+          format: date-time
       example:
-        - point: [61.591456, 56.905609]
-          timestamp: "2024-12-20T12:00:00Z"
-        - point: [61.591500, 56.905800]
-          timestamp: "2024-12-20T12:05:00Z"
-        - point: [61.591550, 56.906000]
-          timestamp: "2024-12-20T12:10:00Z"
+        point: [61.591456, 56.905609]
+        timestamp: "2024-12-24T15:30:00Z"
 
     Point:
       type: array
