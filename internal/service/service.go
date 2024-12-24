@@ -33,6 +33,7 @@ type Repository interface {
 	Pressuredata(filter models.PressureDataByWheelIDFilter) ([]models.PressureData, error)
 	CreateDriver(driver models.Driver) (models.Driver, error)
 	GetDriversList(user_id string, limit int, offset int) ([]models.DriverStatisticsResponse, error)
+	GetDriverInfo(driverID string) (models.DriverStatisticsResponse, error)
 }
 
 type Service struct {
@@ -289,6 +290,14 @@ func (s *Service) GetDriversList(ctx context.Context, limit int, offset int) ([]
 	res, err := s.repo.GetDriversList(ctx.Value("user_id").(string), limit, offset)
 	if err != nil {
 		return []models.DriverStatisticsResponse{}, err
+	}
+	return res, nil
+}
+
+func (s *Service) GetDriverInfo(ctx context.Context, driverID string) (models.DriverStatisticsResponse, error) {
+	res, err := s.repo.GetDriverInfo(driverID)
+	if err != nil {
+		return models.DriverStatisticsResponse{}, err
 	}
 	return res, nil
 }

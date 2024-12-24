@@ -605,6 +605,43 @@ func (r *Repository) GetDriversList(userID string, limit int, offset int) ([]mod
 	return drivers, nil
 }
 
+func (r *Repository) GetDriverInfo(driverID string) (models.DriverStatisticsResponse, error) {
+	query := `
+	SELECT 
+		CONCAT(d.name, ' ', d.surname, ' ', COALESCE(d.middle_name, '')) AS full_name,
+		d.worked_time,
+		(EXTRACT(YEAR FROM AGE(d.birthday))) AS experience,
+		d.rating,
+		COALESCE(COUNT(b.id), 0) AS breakages_count,
+		d.id AS driver_id
+	FROM drivers d
+	LEFT JOIN breakages b ON d.id_car = b.id_car
+	WHERE d.id = $1
+	GROUP BY d.id
+	`
+
+	rows := r.conn.QueryRow(query, driverID)
+
+	var driver models.DriverStatisticsResponse
+	err := rows.Scan(
+		&driver.FullName,
+		&driver.WorkedTime,
+		&driver.Experience,
+		&driver.Rating,
+		&driver.BreakagesCount,
+		&driver.DriverID,
+	)
+	if err != nil {
+		return models.DriverStatisticsResponse{}, fmt.Errorf("failed to scan driver data: %w", err)
+	}
+
+	if err = rows.Err(); err != nil {
+		return models.DriverStatisticsResponse{}, fmt.Errorf("rows iteration error: %w", err)
+	}
+
+	return driver, nil
+}
+
 // Report
 func (r *Repository) GetReportData(userId string) ([]models.ReportData, error) {
 	query := `

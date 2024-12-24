@@ -39,6 +39,7 @@ type Service interface {
 	CreateDriver(ctx context.Context, driver models.Driver) (models.Driver, error)
 	GetAutoDataByStateNumber(ctx context.Context, stateNumber string) (models.Car, error)
 	GetDriversList(ctx context.Context, offset int, limit int) ([]models.DriverStatisticsResponse, error)
+	GetDriverInfo(ctx context.Context, driverID string) (models.DriverStatisticsResponse, error)
 }
 
 type AuthService interface {
@@ -709,7 +710,34 @@ func (s *ServImplemented) GetDriverList(w http.ResponseWriter, r *http.Request, 
 // Driver information
 // (GET /driver/info)
 func (s *ServImplemented) GetDriverInfo(w http.ResponseWriter, r *http.Request, params rest.GetDriverInfoParams) {
-	w.WriteHeader(http.StatusNotImplemented)
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	driverID := params.DriverId
+
+	driver, err := s.service.GetDriverInfo(ctx, driverID.String())
+	if err != nil {
+		s.log.Error(err)
+		if err == models.ErrDriverNotFound {
+			http.Error(w, "Driver not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	response := ToDriverResponse(driver)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		s.log.Error(err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+	}
 }
 
 // Update the driver's worked hours

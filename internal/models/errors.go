@@ -11,4 +11,5 @@ var (
 	ErrAlreadyExists       = errors.New("failed to create: already exists")
 	ErrInvalidRefreshToken = errors.New("invalid refresh token")
 	ErrLoginOrPassword     = errors.New("login and password are required")
+	ErrDriverNotFound      = errors.New("driver not found")
 )
