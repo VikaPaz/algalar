@@ -632,14 +632,37 @@ func (r *Repository) GetDriverInfo(driverID string) (models.DriverStatisticsResp
 		&driver.DriverID,
 	)
 	if err != nil {
-		return models.DriverStatisticsResponse{}, fmt.Errorf("failed to scan driver data: %w", err)
-	}
-
-	if err = rows.Err(); err != nil {
-		return models.DriverStatisticsResponse{}, fmt.Errorf("rows iteration error: %w", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.DriverStatisticsResponse{}, models.ErrDriverNotFound
+		}
+		return models.DriverStatisticsResponse{}, fmt.Errorf("failed to fetch driver info: %w", err)
 	}
 
 	return driver, nil
+}
+
+func (r *Repository) UpdateDriverWorktime(deviceNum string, workedTime int) error {
+	query := `
+		UPDATE drivers
+		SET worked_time = worked_time + $1
+		WHERE id_car = (SELECT id FROM cars WHERE device_number = $2)
+	`
+
+	res, err := r.conn.Exec(query, workedTime, deviceNum)
+	if err != nil {
+		return fmt.Errorf("failed to update driver worktime: %w", err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return models.ErrDriverNotFound
+	}
+
+	return nil
 }
 
 // Report

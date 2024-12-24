@@ -34,6 +34,7 @@ type Repository interface {
 	CreateDriver(driver models.Driver) (models.Driver, error)
 	GetDriversList(user_id string, limit int, offset int) ([]models.DriverStatisticsResponse, error)
 	GetDriverInfo(driverID string) (models.DriverStatisticsResponse, error)
+	UpdateDriverWorktime(deviceNum string, workedTime int) error
 }
 
 type Service struct {
@@ -300,6 +301,10 @@ func (s *Service) GetDriverInfo(ctx context.Context, driverID string) (models.Dr
 		return models.DriverStatisticsResponse{}, err
 	}
 	return res, nil
+}
+
+func (s *Service) UpdateDriverWorktime(ctx context.Context, deviceNum string, workedTime int) error {
+	return s.repo.UpdateDriverWorktime(deviceNum, workedTime)
 }
 
 func NewService(repo Repository, log *logrus.Logger) *Service {

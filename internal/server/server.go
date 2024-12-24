@@ -40,6 +40,7 @@ type Service interface {
 	GetAutoDataByStateNumber(ctx context.Context, stateNumber string) (models.Car, error)
 	GetDriversList(ctx context.Context, offset int, limit int) ([]models.DriverStatisticsResponse, error)
 	GetDriverInfo(ctx context.Context, driverID string) (models.DriverStatisticsResponse, error)
+	UpdateDriverWorktime(ctx context.Context, deviceNum string, workedTime int) error
 }
 
 type AuthService interface {
@@ -743,7 +744,39 @@ func (s *ServImplemented) GetDriverInfo(w http.ResponseWriter, r *http.Request, 
 // Update the driver's worked hours
 // (PUT /driver/worktime)
 func (s *ServImplemented) PutDriverWorktime(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	var request rest.WorkTimeUpdateRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		s.log.Error(err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if request.DeviceNum == "" || request.WorkedTime <= 0 {
+		s.log.Error("Missing or invalid fields")
+		http.Error(w, "Missing or invalid fields", http.StatusBadRequest)
+		return
+	}
+
+	err = s.service.UpdateDriverWorktime(ctx, request.DeviceNum, request.WorkedTime)
+	if err != nil {
+		s.log.Error(err)
+		if err == models.ErrDriverNotFound {
+			http.Error(w, "Driver not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // Position
