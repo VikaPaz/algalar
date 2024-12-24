@@ -354,22 +354,28 @@ func (r *Repository) ChangeWheel(wheel models.Wheel) error {
 	return nil
 }
 
-// func (r *Repository) CreateBreakage(breakage models.Breakage) (string, error) {
-// 	query := `
-// 		INSERT INTO breakages (car_id, state_number, type, description, created_at)
-// 		VALUES ($1, $2, $3, $4, $5)
-// 		RETURNING id`
+func (r *Repository) CreateBreakage(breakage models.Breakage) (string, error) {
+	query := `
+        INSERT INTO breakages (car_id, location, type, description, created_at)
+        VALUES ($1, ST_SetSRID(ST_MakePoint($2, $3), 4326), $4, $5, $6)
+        RETURNING id`
 
-// 	var breakageID string
-// 	err := r.conn.QueryRow(query,
-// 		breakage.CarID, breakage.StateNumber, breakage.Type, breakage.Description, breakage.Datetime).
-// 		Scan(&breakageID)
-// 	if err != nil {
-// 		return "", err
-// 	}
+	var breakageID string
+	err := r.conn.QueryRow(query,
+		breakage.CarID,
+		breakage.Location[0], // Longitude
+		breakage.Location[1], // Latitude
+		breakage.Type,
+		breakage.Description,
+		breakage.Datetime).
+		Scan(&breakageID)
 
-// 	return breakageID, nil
-// }
+	if err != nil {
+		return "", err
+	}
+
+	return breakageID, nil
+}
 
 func (r *Repository) GetBreakagesByCarId(carID string) ([]models.BreakageInfo, error) {
 	query := `

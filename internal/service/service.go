@@ -234,7 +234,7 @@ func (s *Service) GenerateReport(ctx context.Context) ([]models.ReportData, erro
 	return repost, nil
 }
 
-func (s *Service) GetBreackegeData(ctx context.Context, carID string) ([]models.BreakageInfo, error) {
+func (s *Service) GetBreakagesByCarId(ctx context.Context, carID string) ([]models.BreakageInfo, error) {
 	list, err := s.repo.GetBreakagesByCarId(carID)
 	if err != nil {
 		return nil, err
