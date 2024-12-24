@@ -40,6 +40,7 @@ type Repository interface {
 	GetCarRoutePositions(ctx context.Context, carID string, from time.Time, to time.Time) ([]models.Position, error)
 	GetCurrentCarPositions(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurentPosition, error)
 	CreateBreakageFromMqtt(ctx context.Context, breakage models.BreakageFromMqtt) (models.Breakage, error)
+	CreateNotification(new models.Notification) (models.Notification, error)
 }
 
 type Service struct {
@@ -345,6 +346,14 @@ func (s *Service) CreateBreakageFromMqtt(ctx context.Context, breakage models.Br
 	res, err := s.repo.CreateBreakageFromMqtt(ctx, breakage)
 	if err != nil {
 		return models.Breakage{}, err
+	}
+	return res, nil
+}
+
+func (s *Service) CreateNotification(ctx context.Context, new models.Notification) (models.Notification, error) {
+	res, err := s.repo.CreateNotification(new)
+	if err != nil {
+		return models.Notification{}, err
 	}
 	return res, nil
 }

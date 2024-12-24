@@ -161,6 +161,15 @@ type BreakageInfo struct {
 	Datetime    time.Time
 }
 
+type Notification struct {
+	ID         string
+	IDUser     string
+	IDBreakage string
+	Note       string
+	Status     string
+	CreatedAt  time.Time
+}
+
 type GetReportParams struct {
 	UserId string `form:"userId" json:"userId"`
 }

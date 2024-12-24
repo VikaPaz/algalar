@@ -836,6 +836,35 @@ func (r *Repository) CreateBreakageFromMqtt(ctx context.Context, breakage models
 	return createdBreakage, nil
 }
 
+// Notification
+func (r *Repository) CreateNotification(new models.Notification) (models.Notification, error) {
+	query := `
+        INSERT INTO notifications (id_user, id_breakages, note, status, created_at)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id, id_user, id_breakages, note, status, created_at`
+
+	var createdNotification models.Notification
+	err := r.conn.QueryRow(query,
+		new.IDUser,
+		new.IDBreakage,
+		new.Note,
+		new.Status,
+		new.CreatedAt).
+		Scan(
+			&createdNotification.ID,
+			&createdNotification.IDUser,
+			&createdNotification.IDBreakage,
+			&createdNotification.Note,
+			&createdNotification.Status,
+			&createdNotification.CreatedAt)
+
+	if err != nil {
+		return models.Notification{}, fmt.Errorf("error creating notification: %w", err)
+	}
+
+	return createdNotification, nil
+}
+
 // Report
 func (r *Repository) GetReportData(userId string) ([]models.ReportData, error) {
 	query := `

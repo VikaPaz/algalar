@@ -46,6 +46,7 @@ type Service interface {
 	GetCurrentCarPositions(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurentPosition, error)
 	CreateBreakageFromMqtt(ctx context.Context, breakage models.BreakageFromMqtt) (models.Breakage, error)
 	GetBreakagesByCarId(ctx context.Context, carID string) ([]models.BreakageInfo, error)
+	CreateNotification(ctx context.Context, new models.Notification) (models.Notification, error)
 }
 
 type AuthService interface {
@@ -1011,13 +1012,28 @@ func (s *ServImplemented) PostBreakage(w http.ResponseWriter, r *http.Request) {
 		Point:       [2]float32{req.Point[0], req.Point[1]},
 	}
 
-	if _, err := s.service.CreateBreakageFromMqtt(ctx, breakage); err != nil {
+	new_breakage, err := s.service.CreateBreakageFromMqtt(ctx, breakage)
+	if err != nil {
 		s.log.Error(err)
 		http.Error(w, "Failed to create breakage", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
+
+	notification := models.Notification{
+		IDUser:     ctx.Value("user_id").(string),
+		IDBreakage: new_breakage.ID,
+		Note:       models.NoteBreakage + ": " + breakage.Description,
+		Status:     models.StatusNew,
+		CreatedAt:  time.Now(),
+	}
+
+	if _, err := s.service.CreateNotification(ctx, notification); err != nil {
+		s.log.Error(err)
+		http.Error(w, "Failed to create breakage", http.StatusInternalServerError)
+		return
+	}
 }
 
 // Get a list of breakages for a specific car
