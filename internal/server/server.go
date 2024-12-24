@@ -13,6 +13,7 @@ import (
 	"github.com/VikaPaz/algalar/internal/models"
 	"github.com/VikaPaz/algalar/internal/server/rest"
 	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/tealeg/xlsx"
 )
@@ -37,7 +38,7 @@ type Service interface {
 	Pressuredata(ctx context.Context, filter models.PressureDataByWheelIDFilter) ([]models.PressureData, error)
 	CreateDriver(ctx context.Context, driver models.Driver) (models.Driver, error)
 	GetAutoDataByStateNumber(ctx context.Context, stateNumber string) (models.Car, error)
-	// GetDrivers(ctx context.Context, offset int, limit int) ([]models.Driver, error)
+	GetDriversList(ctx context.Context, offset int, limit int) ([]models.DriverStatisticsResponse, error)
 }
 
 type AuthService interface {
@@ -676,31 +677,33 @@ func (s *ServImplemented) PostDriver(w http.ResponseWriter, r *http.Request) {
 // Driver statistics
 // (GET /driver/list)
 func (s *ServImplemented) GetDriverList(w http.ResponseWriter, r *http.Request, params rest.GetDriverListParams) {
-	// ctx, err := s.getUserID(r)
-	// if err != nil {
-	// 	s.log.Error(err)
-	// 	http.Error(w, err.Error(), http.StatusUnauthorized)
-	// 	return
-	// }
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
 
-	// drivers, err := s.service.GetDrivers(ctx, params.Offset, params.Limit)
-	// if err != nil {
-	// 	s.log.Error(err)
-	// 	if err == models.ErrNoContent {
-	// 		http.Error(w, err.Error(), http.StatusBadRequest)
-	// 		return
-	// 	}
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
+	drivers, err := s.service.GetDriversList(ctx, params.Limit, params.Offset)
+	if err != nil {
+		s.log.Error(err)
+		if err == models.ErrNoContent {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	// var res = rest.DriverStatisticsResponse{}
+	res := make([]rest.DriverStatisticsResponse, len(drivers))
 
-	// for i, driver := range res {
-	// 	res[i] = ToDriverResponse(driver)
-	// }
+	for i, driver := range drivers {
+		res[i] = ToDriverResponse(driver)
+	}
 
-	w.WriteHeader(http.StatusNotImplemented)
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
 }
 
 // Driver information
@@ -989,8 +992,15 @@ func ToNewDriver(idCompany string, new rest.DriverRegistration) models.Driver {
 	}
 }
 
-func ToDriverResponse(driver models.Driver) rest.DriverStatisticsResponse {
-	return rest.DriverStatisticsResponse{}
+func ToDriverResponse(driver models.DriverStatisticsResponse) rest.DriverStatisticsResponse {
+	return rest.DriverStatisticsResponse{
+		BreakagesCount: driver.BreakagesCount,
+		FullName:       driver.FullName,
+		DriverId:       uuid.MustParse(driver.DriverID),
+		Experience:     driver.Experience,
+		Rating:         driver.Rating,
+		WorkedTime:     driver.WorkedTime,
+	}
 }
 
 func validateToken(tokenStr string, jwtSecret string) (*models.Claims, error) {

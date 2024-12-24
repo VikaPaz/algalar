@@ -100,6 +100,15 @@ type Driver struct {
 	CreatedAt  time.Time
 }
 
+type DriverStatisticsResponse struct {
+	FullName       string
+	WorkedTime     int
+	Experience     float32
+	Rating         float32
+	BreakagesCount int
+	DriverID       string
+}
+
 type Breakage struct {
 	ID          string
 	CarID       string

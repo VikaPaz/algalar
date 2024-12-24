@@ -408,7 +408,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DriverStatisticsResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/DriverStatisticsResponse'
        
 
   /driver/info:
@@ -1334,32 +1336,30 @@ components:
           description: Vehicle's state number
 
     DriverStatisticsResponse:
-      type: array
-      items:
-        type: object
-        required:
-        - full_name
-        - worked_time
-        - experience
-        - rating
-        - breakages_count
-        - driver_id
-        properties:
-          full_name:
-            type: string
-          worked_time:
-            type: integer
-          experience:
-            type: number
-            format: float
-          rating:
-            type: number
-            format: float
-          breakages_count:
-            type: integer
-          driver_id:
-            type: string
-            format: uuid
+      type: object
+      required:
+      - full_name
+      - worked_time
+      - experience
+      - rating
+      - breakages_count
+      - driver_id
+      properties:
+        full_name:
+          type: string
+        worked_time:
+          type: integer
+        experience:
+          type: number
+          format: float
+        rating:
+          type: number
+          format: float
+        breakages_count:
+          type: integer
+        driver_id:
+          type: string
+          format: uuid
 
     DriverInfoResponse:
       type: object

@@ -133,7 +133,7 @@ type DriverRegistration struct {
 }
 
 // DriverStatisticsResponse defines model for DriverStatisticsResponse.
-type DriverStatisticsResponse = []struct {
+type DriverStatisticsResponse struct {
 	BreakagesCount int                `json:"breakages_count"`
 	DriverId       openapi_types.UUID `json:"driver_id"`
 	Experience     float32            `json:"experience"`
@@ -2339,7 +2339,7 @@ type GetDriverListResponseObject interface {
 	VisitGetDriverListResponse(w http.ResponseWriter) error
 }
 
-type GetDriverList200JSONResponse DriverStatisticsResponse
+type GetDriverList200JSONResponse []DriverStatisticsResponse
 
 func (response GetDriverList200JSONResponse) VisitGetDriverListResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
