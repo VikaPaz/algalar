@@ -53,18 +53,15 @@ type BreakageFromMqttRequest struct {
 	// DeviceNum The device number of the car
 	DeviceNum string `json:"device_num"`
 
-	// Latitude Latitude of the breakage location
-	Latitude float32 `json:"latitude"`
-
-	// Longitude Longitude of the breakage location
-	Longitude float32 `json:"longitude"`
+	// Point Latitude and longitude of the breakage location
+	Point []float32 `json:"point"`
 
 	// Type Type of the breakage (e.g., "Engine failure", "Tire puncture")
 	Type string `json:"type"`
 }
 
 // BreakageListResponse defines model for BreakageListResponse.
-type BreakageListResponse = []struct {
+type BreakageListResponse struct {
 	// Datetime Date and time when the breakage occurred
 	Datetime *time.Time `json:"datetime,omitempty"`
 
@@ -2287,7 +2284,7 @@ type GetBreakageListResponseObject interface {
 	VisitGetBreakageListResponse(w http.ResponseWriter) error
 }
 
-type GetBreakageList200JSONResponse BreakageListResponse
+type GetBreakageList200JSONResponse []BreakageListResponse
 
 func (response GetBreakageList200JSONResponse) VisitGetBreakageListResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")

@@ -337,23 +337,6 @@ func (r *Repository) GetWheelById(wheelID string) (models.Wheel, error) {
 	return wheel, nil
 }
 
-func (r *Repository) CreateBreakage(breakage models.Breakage) (string, error) {
-	query := `
-        INSERT INTO breakages (car_id, state_number, type, description, created_at)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING id`
-
-	var breakageID string
-	err := r.conn.QueryRow(query,
-		breakage.CarID, breakage.StateNumber, breakage.Type, breakage.Description, breakage.Datetime).
-		Scan(&breakageID)
-	if err != nil {
-		return "", err
-	}
-
-	return breakageID, nil
-}
-
 func (r *Repository) ChangeWheel(wheel models.Wheel) error {
 	carID, err := uuid.Parse(wheel.IDCar)
 	if err != nil {
@@ -361,7 +344,7 @@ func (r *Repository) ChangeWheel(wheel models.Wheel) error {
 	}
 
 	query := `
-        UPDATE wheels
+	UPDATE wheels
         SET id_car = $1, count_axis = $2, position = $3, size = $4, cost = $5, brand = $6, model = $7, mileage = $8, min_temperature = $9, min_pressure = $10, max_temperature = $11, max_pressure = $12, ngp = $13, tkvh = $14
         WHERE id_car = $15 AND position = $16`
 	err = r.conn.QueryRow(query, carID, wheel.AxisNumber, wheel.Position, wheel.Size, wheel.Cost, wheel.Brand, wheel.Model, wheel.Mileage, wheel.MinTemperature, wheel.MinPressure, wheel.MaxTemperature, wheel.MaxPressure, *wheel.Ngp, *wheel.Tkvh, carID, wheel.Position).Err()
@@ -371,14 +354,32 @@ func (r *Repository) ChangeWheel(wheel models.Wheel) error {
 	return nil
 }
 
-func (r *Repository) GetBreakagesByCarId(carID string) ([]models.Breakage, error) {
+// func (r *Repository) CreateBreakage(breakage models.Breakage) (string, error) {
+// 	query := `
+// 		INSERT INTO breakages (car_id, state_number, type, description, created_at)
+// 		VALUES ($1, $2, $3, $4, $5)
+// 		RETURNING id`
+
+// 	var breakageID string
+// 	err := r.conn.QueryRow(query,
+// 		breakage.CarID, breakage.StateNumber, breakage.Type, breakage.Description, breakage.Datetime).
+// 		Scan(&breakageID)
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	return breakageID, nil
+// }
+
+func (r *Repository) GetBreakagesByCarId(carID string) ([]models.BreakageInfo, error) {
 	query := `
-        SELECT id, car_id, state_number, type, description, created_at
-        FROM breakages
-        WHERE car_id = $1
+        SELECT b.id, c.state_number, b.type, b.description, b.created_at
+        FROM breakages b
+        JOIN cars c ON b.car_id = c.id
+        WHERE b.car_id = $1
     `
 
-	var breakages []models.Breakage
+	var breakages []models.BreakageInfo
 
 	parsedUUID, err := uuid.Parse(carID)
 	if err != nil {
@@ -392,8 +393,8 @@ func (r *Repository) GetBreakagesByCarId(carID string) ([]models.Breakage, error
 	defer rows.Close()
 
 	for rows.Next() {
-		var breakage models.Breakage
-		if err := rows.Scan(&breakage.ID, &breakage.CarID, &breakage.StateNumber, &breakage.Type, &breakage.Description, &breakage.Datetime); err != nil {
+		var breakage models.BreakageInfo
+		if err := rows.Scan(&breakage.ID, &breakage.StateNumber, &breakage.Type, &breakage.Description, &breakage.Datetime); err != nil {
 			return nil, fmt.Errorf("error scanning row into breakage: %w", err)
 		}
 		breakages = append(breakages, breakage)
@@ -402,6 +403,7 @@ func (r *Repository) GetBreakagesByCarId(carID string) ([]models.Breakage, error
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("error iterating over rows: %w", err)
 	}
+
 	return breakages, nil
 }
 
@@ -792,6 +794,40 @@ func (r *Repository) GetCurrentCarPositions(ctx context.Context, pointA models.P
 	}
 
 	return positions, nil
+}
+
+// Breakage
+func (r *Repository) CreateBreakageFromMqtt(ctx context.Context, breakage models.BreakageFromMqtt) (models.Breakage, error) {
+	datetime, err := time.Parse(time.RFC3339, breakage.Datetime)
+	if err != nil {
+		return models.Breakage{}, err
+	}
+
+	id := uuid.New()
+
+	query := `
+		INSERT INTO breakages (id, id_car, location, type, description, created_at)
+		VALUES ($1, (SELECT id FROM cars WHERE device_number = $2 LIMIT 1), point($3, $4), $5, $6, $7)
+		RETURNING id, id_car, location, type, description, created_at
+	`
+	var createdBreakage models.Breakage
+
+	err = r.conn.QueryRow(
+		query,
+		id,
+		breakage.DeviceNum,
+		breakage.Point[0],
+		breakage.Point[1],
+		breakage.Type,
+		breakage.Description,
+		datetime,
+	).Scan(&createdBreakage.ID, &createdBreakage.CarID, &createdBreakage.Location, &createdBreakage.Type, &createdBreakage.Description, &createdBreakage.Datetime)
+
+	if err != nil {
+		return models.Breakage{}, err
+	}
+
+	return createdBreakage, nil
 }
 
 // Report

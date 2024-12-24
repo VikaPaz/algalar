@@ -44,6 +44,8 @@ type Service interface {
 	CreatePosition(ctx context.Context, position models.Position) (models.Position, error)
 	GetCarRoutePositions(ctx context.Context, carID string, from time.Time, to time.Time) ([]models.Position, error)
 	GetCurrentCarPositions(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurentPosition, error)
+	CreateBreakageFromMqtt(ctx context.Context, breakage models.BreakageFromMqtt) (models.Breakage, error)
+	GetBreakagesByCarId(ctx context.Context, carID string) ([]models.BreakageInfo, error)
 }
 
 type AuthService interface {
@@ -980,13 +982,81 @@ func (s *ServImplemented) PutNotificationStatus(w http.ResponseWriter, r *http.R
 // Add a new breakage from MQTT data
 // (POST /breakage)
 func (s *ServImplemented) PostBreakage(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	var req rest.BreakageFromMqttRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.log.Error(err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if len(req.Point) != 2 {
+		s.log.Error("Invalid point: must contain exactly two coordinates")
+		http.Error(w, "Invalid point format", http.StatusBadRequest)
+		return
+	}
+
+	breakage := models.BreakageFromMqtt{
+		DeviceNum:   req.DeviceNum,
+		Type:        req.Type,
+		Description: req.Description,
+		Datetime:    req.Datetime.Format(time.RFC3339),
+		Point:       [2]float32{req.Point[0], req.Point[1]},
+	}
+
+	if _, err := s.service.CreateBreakageFromMqtt(ctx, breakage); err != nil {
+		s.log.Error(err)
+		http.Error(w, "Failed to create breakage", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }
 
 // Get a list of breakages for a specific car
 // (GET /breakage/list)
 func (s *ServImplemented) GetBreakageList(w http.ResponseWriter, r *http.Request, params rest.GetBreakageListParams) {
-	w.WriteHeader(http.StatusNotImplemented)
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	breakages, err := s.service.GetBreakagesByCarId(ctx, params.CarId.String())
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, "failed to fetch breakages for the car", http.StatusInternalServerError)
+		return
+	}
+
+	res := make([]rest.BreakageListResponse, len(breakages))
+
+	for i, val := range breakages {
+		id := uuid.MustParse(val.ID)
+		res[i] = rest.BreakageListResponse{
+			Id:          &id,
+			DriverName:  &val.DriverName,
+			StateNumber: &val.StateNumber,
+			Type:        &val.Type,
+			Description: &val.Description,
+			Datetime:    &val.Datetime,
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(breakages); err != nil {
+		s.log.Error(err)
+		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+	}
 }
 
 // Report

@@ -138,6 +138,23 @@ type CurentPosition struct {
 type Breakage struct {
 	ID          string
 	CarID       string
+	Location    [2]float32
+	Type        string
+	Description string
+	Datetime    time.Time
+}
+
+type BreakageFromMqtt struct {
+	DeviceNum   string
+	Type        string
+	Description string
+	Datetime    string
+	Point       [2]float32
+}
+
+type BreakageInfo struct {
+	ID          string
+	DriverName  string
 	StateNumber string
 	Type        string
 	Description string

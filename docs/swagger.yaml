@@ -694,8 +694,10 @@ paths:
           description: List of breakages for the car
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/BreakageListResponse'
+              schema:   
+                type: array
+                items:
+                    $ref: '#/components/schemas/BreakageListResponse'
 
 components:
   schemas:
@@ -706,8 +708,7 @@ components:
         - type
         - description
         - datetime
-        - latitude
-        - longitude
+        - point
       properties:
         device_num:
           type: string
@@ -722,47 +723,44 @@ components:
           type: string
           format: date-time
           description: The date and time when the breakage occurred
-        latitude:
-          type: number
-          format: float
-          description: Latitude of the breakage location
-        longitude:
-          type: number
-          format: float
-          description: Longitude of the breakage location
+        point:
+          type: array
+          items:
+            type: number
+            format: float
+          minItems: 2
+          maxItems: 2
+          description: Latitude and longitude of the breakage location
       example:
         device_num: "123ABC"
         type: "Tire puncture"
         description: "Flat tire on the front left side"
         datetime: "2024-12-20T12:00:00Z"
-        latitude: 56.905609
-        longitude: 61.591456
+        point: [61.591456, 56.905609]
 
     BreakageListResponse:
-      type: array
-      items:
-        type: object
-        properties:
-          id:
-            type: string
-            format: uuid
-            description: Unique identifier for the breakage
-          stateNumber:
-            type: string
-            description: State number of the car
-          type:
-            type: string
-            description: Type of the breakage (e.g., "Engine failure", "Tire puncture")
-          description:
-            type: string
-            description: Detailed description of the breakage
-          datetime:
-            type: string
-            format: date-time
-            description: Date and time when the breakage occurred
-          driver_name:
-            type: string
-            description: Full name of the driver associated with the breakage
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the breakage
+        stateNumber:
+          type: string
+          description: State number of the car
+        type:
+          type: string
+          description: Type of the breakage (e.g., "Engine failure", "Tire puncture")
+        description:
+          type: string
+          description: Detailed description of the breakage
+        datetime:
+          type: string
+          format: date-time
+          description: Date and time when the breakage occurred
+        driver_name:
+          type: string
+          description: Full name of the driver associated with the breakage
       example:
         - id: "f47c8fc0-efb0-4df0-8e4f-319b3f2d447d"
           stateNumber: "A123BC"

@@ -24,7 +24,7 @@ type Repository interface {
 	GetCarByStateNumber(stateNumber string) (models.Car, error)
 	GetCarsList(user_id string, offset int, limit int) ([]models.Car, error)
 	GetIdCarByStateNumber(stateNumber string) (string, error)
-	GetBreakagesByCarId(carID string) ([]models.Breakage, error)
+	GetBreakagesByCarId(carID string) ([]models.BreakageInfo, error)
 	GetReportData(userId string) ([]models.ReportData, error)
 	GetWheelsByStateNumber(stateNumber string) ([]models.Wheel, error)
 	GetCarWheelData(carID string) (models.CarWithWheels, error)
@@ -39,6 +39,7 @@ type Repository interface {
 	CreatePosition(ctx context.Context, position models.Position) (models.Position, error)
 	GetCarRoutePositions(ctx context.Context, carID string, from time.Time, to time.Time) ([]models.Position, error)
 	GetCurrentCarPositions(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurentPosition, error)
+	CreateBreakageFromMqtt(ctx context.Context, breakage models.BreakageFromMqtt) (models.Breakage, error)
 }
 
 type Service struct {
@@ -233,7 +234,7 @@ func (s *Service) GenerateReport(ctx context.Context) ([]models.ReportData, erro
 	return repost, nil
 }
 
-func (s *Service) GetBreackegeData(ctx context.Context, carID string) ([]models.Breakage, error) {
+func (s *Service) GetBreackegeData(ctx context.Context, carID string) ([]models.BreakageInfo, error) {
 	list, err := s.repo.GetBreakagesByCarId(carID)
 	if err != nil {
 		return nil, err
@@ -338,6 +339,14 @@ func (s *Service) GetCurrentCarPositions(ctx context.Context, pointA models.Poin
 		return []models.CurentPosition{}, err
 	}
 	return positions, nil
+}
+
+func (s *Service) CreateBreakageFromMqtt(ctx context.Context, breakage models.BreakageFromMqtt) (models.Breakage, error) {
+	res, err := s.repo.CreateBreakageFromMqtt(ctx, breakage)
+	if err != nil {
+		return models.Breakage{}, err
+	}
+	return res, nil
 }
 
 func NewService(repo Repository, log *logrus.Logger) *Service {
