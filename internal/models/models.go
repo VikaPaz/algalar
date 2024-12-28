@@ -170,6 +170,20 @@ type Notification struct {
 	CreatedAt  time.Time
 }
 
+type NotificationInfo struct {
+	Description string     `json:"description"`
+	DriverName  string     `json:"driver_name"`
+	Location    [2]float32 `json:"location"`
+}
+
+type NotificationListItem struct {
+	StateNumber  string    `json:"state_number"`
+	Brand        string    `json:"brand"`
+	BreakageType string    `json:"breakage_type"`
+	Timestamp    time.Time `json:"timestamp"`
+	ID           string    `json:"id"`
+}
+
 type GetReportParams struct {
 	UserId string `form:"userId" json:"userId"`
 }

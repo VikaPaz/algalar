@@ -911,6 +911,65 @@ func (r *Repository) UpdateAllNotificationsStatus(ctx context.Context, userID st
 	return nil
 }
 
+func (r *Repository) GetNotificationInfo(ctx context.Context, notificationID string) (models.NotificationInfo, error) {
+	query := `
+		SELECT 
+			b.description,
+			b.driver_name,
+			ARRAY[b.location_x, b.location_y] AS location
+		FROM notifications n
+		INNER JOIN breakages b ON n.id_breakages = b.id
+		WHERE n.id = $1`
+
+	var notificationInfo models.NotificationInfo
+	err := r.conn.QueryRowContext(ctx, query, notificationID).Scan(
+		&notificationInfo.Description,
+		&notificationInfo.DriverName,
+		&notificationInfo.Location,
+	)
+	if err == sql.ErrNoRows {
+		return models.NotificationInfo{}, models.ErrNoContent
+	}
+	if err != nil {
+		return models.NotificationInfo{}, err
+	}
+
+	return notificationInfo, nil
+}
+
+func (r *Repository) GetNotificationList(ctx context.Context, status string, limit, offset int) ([]models.NotificationListItem, error) {
+	query := `
+		SELECT 
+			c.state_number,
+			c.brand,
+			b.type AS breakage_type,
+			n.created_at AS timestamp,
+			n.id
+		FROM notifications n
+		INNER JOIN breakages b ON n.id_breakages = b.id
+		INNER JOIN cars c ON b.car_id = c.id
+		WHERE n.status = $1
+		ORDER BY n.created_at DESC
+		LIMIT $2 OFFSET $3`
+
+	rows, err := r.conn.QueryContext(ctx, query, status, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var notifications []models.NotificationListItem
+	for rows.Next() {
+		var item models.NotificationListItem
+		if err := rows.Scan(&item.StateNumber, &item.Brand, &item.BreakageType, &item.Timestamp, &item.ID); err != nil {
+			return nil, err
+		}
+		notifications = append(notifications, item)
+	}
+
+	return notifications, nil
+}
+
 // Report
 func (r *Repository) GetReportData(userId string) ([]models.ReportData, error) {
 	query := `

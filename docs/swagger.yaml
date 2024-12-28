@@ -561,6 +561,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/PositionCarRouteResponse'
+
   /notification/list:
     get:
       tags:

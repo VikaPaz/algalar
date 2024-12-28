@@ -49,6 +49,8 @@ type Service interface {
 	CreateNotification(ctx context.Context, new models.Notification) (models.Notification, error)
 	UpdateNotificationStatus(ctx context.Context, id string, status string) error
 	UpdateAllNotificationsStatus(ctx context.Context, status string) error
+	GetNotificationInfo(ctx context.Context, notificationID string) (models.NotificationInfo, error)
+	GetNotificationList(ctx context.Context, status string, limit, offset int) ([]models.NotificationListItem, error)
 }
 
 type AuthService interface {
@@ -994,13 +996,69 @@ func (s *ServImplemented) PutNotificationAllstatus(w http.ResponseWriter, r *htt
 // Get detailed information about a specific notification
 // (GET /notification/info)
 func (s *ServImplemented) GetNotificationInfo(w http.ResponseWriter, r *http.Request, params rest.GetNotificationInfoParams) {
-	w.WriteHeader(http.StatusNotImplemented)
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	if params.Id == uuid.Nil {
+		err := fmt.Errorf("missing required parameter: id")
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	notificationInfo, err := s.service.GetNotificationInfo(ctx, params.Id.String())
+	if err != nil {
+		if errors.Is(err, models.ErrNoContent) {
+			s.log.Error(err)
+			http.Error(w, "notification not found", http.StatusNotFound)
+			return
+		}
+		s.log.Error(err)
+		http.Error(w, "failed to fetch notification info", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(notificationInfo); err != nil {
+		s.log.Error(err)
+		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // Get list of notifications based on status
 // (GET /notification/list)
 func (s *ServImplemented) GetNotificationList(w http.ResponseWriter, r *http.Request, params rest.GetNotificationListParams) {
-	w.WriteHeader(http.StatusNotImplemented)
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	status := params.Status
+	limit := params.Limit
+	offset := params.Offset
+
+	notifications, err := s.service.GetNotificationList(ctx, status, limit, offset)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, "failed to retrieve notifications", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(notifications); err != nil {
+		s.log.Error(err)
+		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // Change the status of a specific notification

@@ -43,6 +43,8 @@ type Repository interface {
 	CreateNotification(new models.Notification) (models.Notification, error)
 	UpdateNotificationStatus(ctx context.Context, id string, status string) error
 	UpdateAllNotificationsStatus(ctx context.Context, userID string, status string) error
+	GetNotificationInfo(ctx context.Context, notificationID string) (models.NotificationInfo, error)
+	GetNotificationList(ctx context.Context, status string, limit, offset int) ([]models.NotificationListItem, error)
 }
 
 type Service struct {
@@ -381,6 +383,32 @@ func (s *Service) UpdateAllNotificationsStatus(ctx context.Context, status strin
 	}
 
 	return nil
+}
+
+func (s *Service) GetNotificationInfo(ctx context.Context, notificationID string) (models.NotificationInfo, error) {
+	if notificationID == "" {
+		return models.NotificationInfo{}, fmt.Errorf("notification ID is required")
+	}
+
+	notificationInfo, err := s.repo.GetNotificationInfo(ctx, notificationID)
+	if err != nil {
+		return models.NotificationInfo{}, fmt.Errorf("failed to retrieve notification info: %w", err)
+	}
+
+	return notificationInfo, nil
+}
+
+func (s *Service) GetNotificationList(ctx context.Context, status string, limit, offset int) ([]models.NotificationListItem, error) {
+	if status == "" {
+		return nil, fmt.Errorf("status is required")
+	}
+
+	notifications, err := s.repo.GetNotificationList(ctx, status, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve notifications: %w", err)
+	}
+
+	return notifications, nil
 }
 
 func NewService(repo Repository, log *logrus.Logger) *Service {
