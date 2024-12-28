@@ -865,6 +865,52 @@ func (r *Repository) CreateNotification(new models.Notification) (models.Notific
 	return createdNotification, nil
 }
 
+func (r *Repository) UpdateNotificationStatus(ctx context.Context, id string, status string) error {
+	query := `
+		UPDATE notifications
+		SET status = $1
+		WHERE id = $2`
+
+	result, err := r.conn.ExecContext(ctx, query, status, id)
+	if err != nil {
+		return fmt.Errorf("failed to execute update query: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to fetch affected rows: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return models.ErrNoContent
+	}
+
+	return nil
+}
+
+func (r *Repository) UpdateAllNotificationsStatus(ctx context.Context, userID string, status string) error {
+	query := `
+		UPDATE notifications
+		SET status = $1
+		WHERE id_user = $2`
+
+	result, err := r.conn.ExecContext(ctx, query, status, userID)
+	if err != nil {
+		return fmt.Errorf("failed to execute update query: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to fetch affected rows: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("no notifications found for user")
+	}
+
+	return nil
+}
+
 // Report
 func (r *Repository) GetReportData(userId string) ([]models.ReportData, error) {
 	query := `

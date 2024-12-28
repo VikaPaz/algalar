@@ -85,9 +85,6 @@ type BreakageListResponse struct {
 type ChangeAllNotificationsStatusRequest struct {
 	// Status The new status
 	Status string `json:"status"`
-
-	// UserId Unique identifier of the user
-	UserId openapi_types.UUID `json:"user_id"`
 }
 
 // ChangeNotificationStatusRequest defines model for ChangeNotificationStatusRequest.

@@ -41,6 +41,8 @@ type Repository interface {
 	GetCurrentCarPositions(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurentPosition, error)
 	CreateBreakageFromMqtt(ctx context.Context, breakage models.BreakageFromMqtt) (models.Breakage, error)
 	CreateNotification(new models.Notification) (models.Notification, error)
+	UpdateNotificationStatus(ctx context.Context, id string, status string) error
+	UpdateAllNotificationsStatus(ctx context.Context, userID string, status string) error
 }
 
 type Service struct {
@@ -356,6 +358,29 @@ func (s *Service) CreateNotification(ctx context.Context, new models.Notificatio
 		return models.Notification{}, err
 	}
 	return res, nil
+}
+
+func (s *Service) UpdateNotificationStatus(ctx context.Context, id string, status string) error {
+	err := s.repo.UpdateNotificationStatus(ctx, id, status)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Service) UpdateAllNotificationsStatus(ctx context.Context, status string) error {
+	id, ok := ctx.Value("user_id").(string)
+	if !ok {
+		return fmt.Errorf("wrong context: %v", ctx)
+	}
+
+	err := s.repo.UpdateAllNotificationsStatus(ctx, id, status)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func NewService(repo Repository, log *logrus.Logger) *Service {

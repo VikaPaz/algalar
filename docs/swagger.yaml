@@ -865,19 +865,14 @@ components:
     ChangeAllNotificationsStatusRequest:
       type: object
       required:
-        - user_id
         - status
       properties:
-        user_id:
-          type: string
-          format: uuid
-          description: Unique identifier of the user
         status:
           type: string
           description: The new status
       example:
-        user_id: "e9c8ff60-6d65-4fb4-bf8b-5b7ec2d09713"
         status: "new"
+
     PositionRequest:
       type: object
       required:

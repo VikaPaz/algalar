@@ -47,6 +47,8 @@ type Service interface {
 	CreateBreakageFromMqtt(ctx context.Context, breakage models.BreakageFromMqtt) (models.Breakage, error)
 	GetBreakagesByCarId(ctx context.Context, carID string) ([]models.BreakageInfo, error)
 	CreateNotification(ctx context.Context, new models.Notification) (models.Notification, error)
+	UpdateNotificationStatus(ctx context.Context, id string, status string) error
+	UpdateAllNotificationsStatus(ctx context.Context, status string) error
 }
 
 type AuthService interface {
@@ -958,7 +960,35 @@ func (s *ServImplemented) GetPositionsListcars(w http.ResponseWriter, r *http.Re
 // Change the status of all notifications for a specific user
 // (PUT /notification/allstatus)
 func (s *ServImplemented) PutNotificationAllstatus(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	var req rest.ChangeAllNotificationsStatusRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.log.Error(err)
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Status == "" {
+		err := fmt.Errorf("missing required field: status")
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = s.service.UpdateAllNotificationsStatus(ctx, req.Status)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, "failed to update notifications status", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // Get detailed information about a specific notification
@@ -976,7 +1006,40 @@ func (s *ServImplemented) GetNotificationList(w http.ResponseWriter, r *http.Req
 // Change the status of a specific notification
 // (PUT /notification/status)
 func (s *ServImplemented) PutNotificationStatus(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	var req rest.ChangeNotificationStatusRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.log.Error(err)
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Id == uuid.Nil || req.Status == "" {
+		err := fmt.Errorf("missing required fields: id or status")
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = s.service.UpdateNotificationStatus(ctx, req.Id.String(), req.Status)
+	if err != nil {
+		if errors.Is(err, models.ErrNoContent) {
+			s.log.Error(err)
+			http.Error(w, "notification not found", http.StatusNotFound)
+			return
+		}
+		s.log.Error(err)
+		http.Error(w, "failed to update notification status", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // Breakages
@@ -1031,7 +1094,7 @@ func (s *ServImplemented) PostBreakage(w http.ResponseWriter, r *http.Request) {
 
 	if _, err := s.service.CreateNotification(ctx, notification); err != nil {
 		s.log.Error(err)
-		http.Error(w, "Failed to create breakage", http.StatusInternalServerError)
+		http.Error(w, "Failed to create notification", http.StatusInternalServerError)
 		return
 	}
 }
