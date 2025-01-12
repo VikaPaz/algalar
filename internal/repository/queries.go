@@ -571,7 +571,7 @@ func (r *Repository) GetDriversList(userID string, limit int, offset int) ([]mod
 	SELECT 
 		CONCAT(d.name, ' ', d.surname, ' ', COALESCE(d.middle_name, '')) AS full_name,
 		d.worked_time,
-		(EXTRACT(YEAR FROM AGE(d.birthday))) AS experience,
+		EXTRACT(YEAR FROM AGE(d.created_at)) * 12 + EXTRACT(MONTH FROM AGE(d.created_at)) AS experience_months,
 		d.rating,
 		COALESCE(COUNT(b.id), 0) AS breakages_count,
 		d.id AS driver_id
@@ -620,7 +620,7 @@ func (r *Repository) GetDriversList(userID string, limit int, offset int) ([]mod
 // 	SELECT
 // 		CONCAT(d.name, ' ', d.surname, ' ', COALESCE(d.middle_name, '')) AS full_name,
 // 		d.worked_time,
-// 		(EXTRACT(YEAR FROM AGE(d.birthday))) AS experience,
+// 		EXTRACT(YEAR FROM AGE(d.created_at)) * 12 + EXTRACT(MONTH FROM AGE(d.created_at)) AS experience_months,
 // 		d.rating,
 // 		COALESCE(COUNT(b.id), 0) AS breakages_count,
 // 		d.id AS driver_id
