@@ -1402,7 +1402,7 @@ func ToNewDriver(idCompany string, new rest.DriverRegistration) models.Driver {
 		Middle:    new.MiddleName,
 		Phone:     new.Phone,
 		Birthday:  new.Birthday.Time,
-		Rating:    0,
+		Rating:    10,
 	}
 }
 
