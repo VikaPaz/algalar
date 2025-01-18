@@ -952,7 +952,7 @@ func (s *ServImplemented) GetPositionsListcars(w http.ResponseWriter, r *http.Re
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(cars); err != nil {
+	if err := json.NewEncoder(w).Encode(res); err != nil {
 		s.log.Error(err)
 		http.Error(w, "failed to encode response", http.StatusInternalServerError)
 	}
