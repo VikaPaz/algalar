@@ -97,6 +97,7 @@ func (s *ServImplemented) PostLogin(w http.ResponseWriter, r *http.Request) {
 		s.log.Error(err)
 		if err == models.ErrNoContent {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -938,6 +939,7 @@ func (s *ServImplemented) GetPositionsListcars(w http.ResponseWriter, r *http.Re
 		http.Error(w, "failed to fetch list of cars", http.StatusInternalServerError)
 		return
 	}
+	s.log.Debug(cars)
 
 	res := make([]rest.PositionCarListResponse, len(cars))
 	for i, val := range cars {
