@@ -773,19 +773,16 @@ func (r *Repository) GetCurrentCarPositions(ctx context.Context, pointA models.P
 	var positions []models.CurentPosition
 
 	query := `
-		SELECT 
-			ST_X(p.location) AS x,
-			ST_Y(p.location) AS y,
-			c.id AS id_car,
-			c.id_unicum AS id_unicum
-		FROM 
-			position_data p
-		INNER JOIN 
-			cars c ON p.device_number = c.device_number
-		WHERE 
-			ST_X(p.location) BETWEEN LEAST($1, $2) AND GREATEST($1, $2)
-			AND ST_Y(p.location) BETWEEN LEAST($3, $4) AND GREATEST($3, $4)
-	`
+        SELECT 
+            location[0] AS x,  -- Координата X из point
+            location[1] AS y,  -- Координата Y из point
+            device_number
+        FROM 
+            position_data
+        WHERE 
+            location[0] >= $1 AND location[0] <= $2
+            AND location[1] >= $3 AND location[1] <= $4
+    `
 
 	rows, err := r.conn.QueryContext(ctx, query, pointA.X, pointB.X, pointA.Y, pointB.Y)
 	if err != nil {
