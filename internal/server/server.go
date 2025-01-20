@@ -901,7 +901,7 @@ func (s *ServImplemented) GetPositionListcurrent(w http.ResponseWriter, r *http.
 	positions, err := s.service.GetCurrentCarPositions(ctx, pointA, pointB)
 	if err != nil {
 		s.log.Error(err)
-		http.Error(w, "failed to fetch car positions", http.StatusInternalServerError)
+		http.Error(w, "failed to fetch car positions: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
