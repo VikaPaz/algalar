@@ -774,8 +774,8 @@ func (r *Repository) GetCurrentCarPositions(ctx context.Context, pointA models.P
 
 	query := `
 		SELECT 
-			p.location[0] AS x,
-			p.location[1] AS y,
+			ST_X(p.location) AS x,
+			ST_Y(p.location) AS y,
 			c.id AS id_car,
 			c.id_unicum AS id_unicum
 		FROM 
@@ -783,8 +783,8 @@ func (r *Repository) GetCurrentCarPositions(ctx context.Context, pointA models.P
 		INNER JOIN 
 			cars c ON p.device_number = c.device_number
 		WHERE 
-			p.location[0] BETWEEN LEAST($1, $2) AND GREATEST($1, $2)
-			AND p.location[1] BETWEEN LEAST($3, $4) AND GREATEST($3, $4)
+			ST_X(p.location) BETWEEN LEAST($1, $2) AND GREATEST($1, $2)
+			AND ST_Y(p.location) BETWEEN LEAST($3, $4) AND GREATEST($3, $4)
 	`
 
 	rows, err := r.conn.QueryContext(ctx, query, pointA.X, pointB.X, pointA.Y, pointB.Y)
