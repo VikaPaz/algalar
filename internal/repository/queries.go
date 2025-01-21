@@ -167,7 +167,7 @@ func (r *Repository) GetIdCarByStateNumber(stateNumber string) (string, error) {
 	return carID, nil
 }
 
-func (r *Repository) GetCarsList(userID string, limit int, offset int) ([]models.Car, error) {
+func (r *Repository) GetCarsList(userID string, offset int, limit int) ([]models.Car, error) {
 	query := `
 		SELECT id, id_company, state_number, brand, device_number, id_unicum, count_axis
 		FROM cars
