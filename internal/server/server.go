@@ -243,6 +243,25 @@ func (s *ServImplemented) PostUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+// Update user details
+// (PUT /userinfo)
+func (s *ServImplemented) PutUserinfo(w http.ResponseWriter, r *http.Request) {
+	_, err := s.getUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	var userInfo rest.UserDetails
+	if err := json.NewDecoder(r.Body).Decode(&userInfo); err != nil {
+		s.log.Error(err)
+		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 func (s *ServImplemented) PutUser(w http.ResponseWriter, r *http.Request) {
 	ctx, err := s.getUserID(r)
 	if err != nil {
@@ -1388,7 +1407,8 @@ func ToRestSensorsData(data models.SensorsData) rest.SensorsData {
 // Data
 func ToNewData(data rest.NewSensorData) models.SensorData {
 	return models.SensorData{
-		SensorNumber: *data.DeviceNumber,
+		SensorNumber: *data.SensorNumber,
+		DeviceNumber: *data.DeviceNumber,
 		Pressure:     *data.Pressure,
 		Temperature:  *data.Temperature,
 		Time:         *data.Time,

@@ -12,4 +12,5 @@ var (
 	ErrInvalidRefreshToken = errors.New("invalid refresh token")
 	ErrLoginOrPassword     = errors.New("login and password are required")
 	ErrDriverNotFound      = errors.New("driver not found")
+	ErrInvalidInput        = errors.New("invalid input")
 )

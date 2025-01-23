@@ -511,6 +511,9 @@ type PostUserJSONRequestBody = UserRegistration
 // PutUserJSONRequestBody defines body for PutUser for application/json ContentType.
 type PutUserJSONRequestBody = UpdatePassword
 
+// PutUserinfoJSONRequestBody defines body for PutUserinfo for application/json ContentType.
+type PutUserinfoJSONRequestBody = UserDetails
+
 // PostWheelsJSONRequestBody defines body for PostWheels for application/json ContentType.
 type PostWheelsJSONRequestBody = WheelRegistration
 
@@ -606,6 +609,9 @@ type ServerInterface interface {
 	// Update user password
 	// (PUT /user)
 	PutUser(w http.ResponseWriter, r *http.Request)
+	// Update user details
+	// (PUT /userinfo)
+	PutUserinfo(w http.ResponseWriter, r *http.Request)
 	// Get wheel data
 	// (GET /wheels)
 	GetWheels(w http.ResponseWriter, r *http.Request, params GetWheelsParams)
@@ -795,6 +801,12 @@ func (_ Unimplemented) PostUser(w http.ResponseWriter, r *http.Request) {
 // Update user password
 // (PUT /user)
 func (_ Unimplemented) PutUser(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Update user details
+// (PUT /userinfo)
+func (_ Unimplemented) PutUserinfo(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1859,6 +1871,26 @@ func (siw *ServerInterfaceWrapper) PutUser(w http.ResponseWriter, r *http.Reques
 	handler.ServeHTTP(w, r)
 }
 
+// PutUserinfo operation middleware
+func (siw *ServerInterfaceWrapper) PutUserinfo(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutUserinfo(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetWheels operation middleware
 func (siw *ServerInterfaceWrapper) GetWheels(w http.ResponseWriter, r *http.Request) {
 
@@ -2169,6 +2201,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Put(options.BaseURL+"/user", wrapper.PutUser)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/userinfo", wrapper.PutUserinfo)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/wheels", wrapper.GetWheels)
@@ -2679,6 +2714,46 @@ func (response PutUser200Response) VisitPutUserResponse(w http.ResponseWriter) e
 	return nil
 }
 
+type PutUserinfoRequestObject struct {
+	Body *PutUserinfoJSONRequestBody
+}
+
+type PutUserinfoResponseObject interface {
+	VisitPutUserinfoResponse(w http.ResponseWriter) error
+}
+
+type PutUserinfo200Response struct {
+}
+
+func (response PutUserinfo200Response) VisitPutUserinfoResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type PutUserinfo400Response struct {
+}
+
+func (response PutUserinfo400Response) VisitPutUserinfoResponse(w http.ResponseWriter) error {
+	w.WriteHeader(400)
+	return nil
+}
+
+type PutUserinfo404Response struct {
+}
+
+func (response PutUserinfo404Response) VisitPutUserinfoResponse(w http.ResponseWriter) error {
+	w.WriteHeader(404)
+	return nil
+}
+
+type PutUserinfo500Response struct {
+}
+
+func (response PutUserinfo500Response) VisitPutUserinfoResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
+}
+
 type GetWheelsRequestObject struct {
 	Params GetWheelsParams
 }
@@ -2836,6 +2911,9 @@ type StrictServerInterface interface {
 	// Update user password
 	// (PUT /user)
 	PutUser(ctx context.Context, request PutUserRequestObject) (PutUserResponseObject, error)
+	// Update user details
+	// (PUT /userinfo)
+	PutUserinfo(ctx context.Context, request PutUserinfoRequestObject) (PutUserinfoResponseObject, error)
 	// Get wheel data
 	// (GET /wheels)
 	GetWheels(ctx context.Context, request GetWheelsRequestObject) (GetWheelsResponseObject, error)
@@ -3680,6 +3758,37 @@ func (sh *strictHandler) PutUser(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PutUserResponseObject); ok {
 		if err := validResponse.VisitPutUserResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PutUserinfo operation middleware
+func (sh *strictHandler) PutUserinfo(w http.ResponseWriter, r *http.Request) {
+	var request PutUserinfoRequestObject
+
+	var body PutUserinfoJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PutUserinfo(ctx, request.(PutUserinfoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutUserinfo")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PutUserinfoResponseObject); ok {
+		if err := validResponse.VisitPutUserinfoResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

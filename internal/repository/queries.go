@@ -437,13 +437,13 @@ func (r *Repository) SelectAny(table string, key string, val any) (bool, error) 
 
 // Sensors
 func (r *Repository) CreateData(newData models.SensorData) (models.SensorData, error) {
-	query := `INSERT INTO sensors_data (device_number, sensor_number, pressure, temperature) 
+	query := `INSERT INTO sensors_data (device_number, sensor_number, pressure, temperature, created_at) 
 	VALUES ($1, $2, $3, $4) 
-	RETURNING id, device_number, sensor_number, pressure, temperature`
+	RETURNING id, device_number, sensor_number, pressure, temperature, created_at`
 
 	var result models.SensorData
-	err := r.conn.QueryRow(query, newData.DeviceNumber, newData.SensorNumber, newData.Pressure, newData.Temperature).
-		Scan(&result.ID, &result.DeviceNumber, &result.SensorNumber, &result.Pressure, &result.Temperature)
+	err := r.conn.QueryRow(query, newData.DeviceNumber, newData.SensorNumber, newData.Pressure, newData.Temperature, newData.Time).
+		Scan(&result.ID, &result.DeviceNumber, &result.SensorNumber, &result.Pressure, &result.Temperature, &result.Time)
 	if err != nil {
 		return models.SensorData{}, err
 	}
