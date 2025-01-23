@@ -438,7 +438,7 @@ func (r *Repository) SelectAny(table string, key string, val any) (bool, error) 
 // Sensors
 func (r *Repository) CreateData(newData models.SensorData) (models.SensorData, error) {
 	query := `INSERT INTO sensors_data (device_number, sensor_number, pressure, temperature, created_at) 
-	VALUES ($1, $2, $3, $4) 
+	VALUES ($1, $2, $3, $4, $5) 
 	RETURNING id, device_number, sensor_number, pressure, temperature, created_at`
 
 	var result models.SensorData
