@@ -851,7 +851,7 @@ func (s *ServImplemented) PostPosition(w http.ResponseWriter, r *http.Request) {
 
 	if _, err := s.service.CreatePosition(ctx, position); err != nil {
 		s.log.Error(err)
-		http.Error(w, "failed to add car position", http.StatusInternalServerError)
+		http.Error(w, "failed to add car position"+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
