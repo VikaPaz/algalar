@@ -454,14 +454,31 @@ func (r *Repository) CreateData(newData models.SensorData) (models.SensorData, e
 }
 
 func (r *Repository) SensorsDataByCarID(carID string) ([]models.SensorsData, error) {
-	query := `SELECT s.id, s.device_number, s.sensor_number, w.position, s.pressure, s.temperature 
-	FROM sensors_data s 
-	JOIN cars c ON s.device_number = c.device_number 
-	JOIN wheels w ON s.id = w.id_car 
-	WHERE c.id = $1`
+	r.log.Debugf("Querying for sensors data with carID: %v", carID)
+
+	query := `WITH latest_data AS (
+		SELECT 
+			s.id,
+			s.device_number,
+			s.sensor_number,
+			w.position,
+			s.pressure,
+			s.temperature,
+			ROW_NUMBER() OVER (PARTITION BY w.position ORDER BY s.created_at DESC) AS rn
+		FROM sensors_data s
+		JOIN cars c ON s.device_number = c.device_number
+		JOIN wheels w ON s.sensor_number = w.sensor_number
+		WHERE c.id = $1
+	)
+	SELECT id, device_number, sensor_number, position, pressure, temperature
+	FROM latest_data
+	WHERE rn = 1`
+
+	r.log.Debugf("Executing query: %v", query)
 
 	rows, err := r.conn.Query(query, carID)
 	if err != nil {
+		r.log.Errorf("Error executing query: %v", err)
 		return []models.SensorsData{}, err
 	}
 	defer rows.Close()
@@ -477,8 +494,11 @@ func (r *Repository) SensorsDataByCarID(carID string) ([]models.SensorsData, err
 
 		err := rows.Scan(&id, &deviceNumber, &sensorNumber, &wheelPosition, &pressure, &temperature)
 		if err != nil {
+			r.log.Errorf("Error scanning row: %v", err)
 			return []models.SensorsData{}, err
 		}
+
+		r.log.Debugf("Fetched data for wheel position %v: Pressure = %v, Temperature = %v", wheelPosition, pressure, temperature)
 
 		sensorsData = append(sensorsData, models.SensorsData{
 			WheelPosition: wheelPosition,
@@ -486,6 +506,9 @@ func (r *Repository) SensorsDataByCarID(carID string) ([]models.SensorsData, err
 			Temperature:   temperature,
 		})
 	}
+
+	r.log.Debugf("Fetched %d sensor data entries for carID: %v", len(sensorsData), carID)
+
 	return sensorsData, nil
 }
 
