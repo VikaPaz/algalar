@@ -454,7 +454,7 @@ func (r *Repository) CreateData(newData models.SensorData) (models.SensorData, e
 }
 
 func (r *Repository) SensorsDataByCarID(carID string) ([]models.SensorsData, error) {
-	query := `SELECT s.id, s.device_number, s.sensor_number, w.wheel_position, s.pressure, s.temperature 
+	query := `SELECT s.id, s.device_number, s.sensor_number, w.position, s.pressure, s.temperature 
 	FROM sensors_data s 
 	JOIN cars c ON s.device_number = c.device_number 
 	JOIN wheels w ON s.id = w.id_car 
