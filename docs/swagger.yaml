@@ -614,7 +614,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NotificationListResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationListResponse'
 
   /notification/info:
     get:
@@ -811,41 +813,45 @@ components:
           description: The new mileage to set for the car
 
     NotificationListResponse:
-      type: array
-      items:
-        type: object
-        properties:
-          state_number:
-            type: string
-            description: State number of the car
-          brand:
-            type: string
-            description: Brand of the car
-          breakage_type:
-            type: string
-            description: Type of the breakage
-          timestamp:
-            type: string
-            format: date-time
-            description: Date and time when the notification was created
-          id:
-            type: string
-            format: uuid
-            description: Unique identifier for the notification
+      type: object
+      required:
+        - id
+        - state_number
+        - brand
+        - breakage_type
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the notification
+        state_number:
+          type: string
+          description: State number of the car
+        brand:
+          type: string
+          description: Brand of the car
+        breakage_type:
+          type: string
+          description: Type of the breakage
+        created_at:
+          type: string
+          format: date-time
+          description: Date and time when the notification was created
       example:
-        - state_number: "A123BC"
-          brand: "Toyota"
-          breakage_type: "Engine failure"
-          timestamp: "2024-12-20T12:00:00Z"
-          id: "f47c8fc0-efb0-4df0-8e4f-319b3f2d447d"
-        - state_number: "B456DF"
-          brand: "Volkswagen"
-          breakage_type: "Tire puncture"
-          timestamp: "2024-12-20T12:30:00Z"
-          id: "e8f9f3f0-b3e1-4db9-a734-4264a0df574f"
+        state_number: "A123BC"
+        brand: "Toyota"
+        breakage_type: "Engine failure"
+        created_at: "2024-12-20T12:00:00Z"
+        id: "f47c8fc0-efb0-4df0-8e4f-319b3f2d447d"
 
     NotificationInfoResponse:
       type: object
+      required:
+        - description
+        - driver_name
+        - location
+        - created_at
       properties:
         description:
           type: string
@@ -861,10 +867,15 @@ components:
           minItems: 2
           maxItems: 2
           description: Latitude and longitude of the breakage location
+        created_at:
+            type: string
+            format: date-time
+            description: Date and time when the notification was created
       example:
         description: "Flat tire on the front left side"
         driver_name: "John Doe"
         location: [61.591456, 56.905609]
+        created_at: "2024-12-20T12:00:00Z"
 
     ChangeNotificationStatusRequest:
       type: object
@@ -899,7 +910,7 @@ components:
       required:
         - device_number
         - point
-        - timestamp
+        - created_at
       properties:
         device_number:
           type: string
@@ -911,14 +922,14 @@ components:
             format: float
             minItems: 2
             maxItems: 2
-        timestamp:
+        created_at:
           type: string
           format: date-time
           description: The timestamp when the position was recorded
       example:
         device_number: "123ABC"
         point: [40.7128, -74.0060] 
-        timestamp: "2024-12-20T12:34:56Z"
+        created_at: "2024-12-20T12:34:56Z"
 
     PositionCurrentListResponse:
       type: object
@@ -965,12 +976,12 @@ components:
             format: float
             minItems: 2
             maxItems: 2
-        timestamp:
+        created_at:
           type: string
           format: date-time
       example:
         point: [61.591456, 56.905609]
-        timestamp: "2024-12-24T15:30:00Z"
+        created_at: "2024-12-24T15:30:00Z"
 
     Point:
       type: array

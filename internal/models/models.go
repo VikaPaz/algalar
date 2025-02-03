@@ -138,18 +138,19 @@ type CurentPosition struct {
 type Breakage struct {
 	ID          string
 	CarID       string
-	Location    [2]float32
+	DriverID    string
+	Location    Point
 	Type        string
 	Description string
-	Datetime    time.Time
+	CreatedAt   time.Time
 }
 
 type BreakageFromMqtt struct {
 	DeviceNum   string
 	Type        string
 	Description string
-	Datetime    string
-	Point       [2]float32
+	CreatedAt   string
+	Point       [2]float32 // (latitude, longitude)
 }
 
 type BreakageInfo struct {
@@ -158,7 +159,7 @@ type BreakageInfo struct {
 	StateNumber string
 	Type        string
 	Description string
-	Datetime    time.Time
+	CreatedAt   time.Time
 }
 
 type Notification struct {
@@ -171,17 +172,18 @@ type Notification struct {
 }
 
 type NotificationInfo struct {
-	Description string     `json:"description"`
-	DriverName  string     `json:"driver_name"`
-	Location    [2]float32 `json:"location"`
+	Description string    `json:"description"`
+	DriverName  string    `json:"driver_name"`
+	Location    Point     `json:"location"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 type NotificationListItem struct {
+	ID           string    `json:"id"`
 	StateNumber  string    `json:"state_number"`
 	Brand        string    `json:"brand"`
 	BreakageType string    `json:"breakage_type"`
-	Timestamp    time.Time `json:"timestamp"`
-	ID           string    `json:"id"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 type GetReportParams struct {

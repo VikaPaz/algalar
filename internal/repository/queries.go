@@ -24,6 +24,7 @@ func NewRepository(conn *sql.DB, logger *logrus.Logger) *Repository {
 	}
 }
 
+// User
 func (r *Repository) CreateUser(user models.User) (string, error) {
 	query := `
         INSERT INTO users (inn, name, surname, gender, login, password, utc_timezone, phone)
@@ -36,6 +37,37 @@ func (r *Repository) CreateUser(user models.User) (string, error) {
 		return "", err
 	}
 
+	return userID, nil
+}
+
+// UpdateUser updates user information in the database and returns the updated user ID.
+func (r *Repository) UpdateUser(user models.User) (string, error) {
+	query := `
+        UPDATE users 
+        SET inn = $1, 
+            name = $2, 
+            surname = $3, 
+            gender = $4, 
+            login = $5, 
+            utc_timezone = $6, 
+            phone = $7
+        WHERE id = $8
+        RETURNING id`
+
+	r.log.Debugf("Executing query to update user with ID: %s", user.ID)
+
+	var userID string
+	err := r.conn.QueryRow(query,
+		user.INN, user.Name, user.Surname, user.Gender,
+		user.Login, user.Timezone, user.Phone, user.ID,
+	).Scan(&userID)
+
+	if err != nil {
+		r.log.Errorf("Failed to update user: %v", err)
+		return "", fmt.Errorf("%w: %v", models.ErrFailedToExecuteQuery, err)
+	}
+
+	r.log.Debugf("User updated successfully: %s", userID)
 	return userID, nil
 }
 
@@ -362,29 +394,6 @@ func (r *Repository) ChangeWheel(wheel models.Wheel) error {
 	return nil
 }
 
-func (r *Repository) CreateBreakage(breakage models.Breakage) (string, error) {
-	query := `
-        INSERT INTO breakages (car_id, location, type, description, created_at)
-        VALUES ($1, ST_SetSRID(ST_MakePoint($2, $3), 4326), $4, $5, $6)
-        RETURNING id`
-
-	var breakageID string
-	err := r.conn.QueryRow(query,
-		breakage.CarID,
-		breakage.Location[0], // Longitude
-		breakage.Location[1], // Latitude
-		breakage.Type,
-		breakage.Description,
-		breakage.Datetime).
-		Scan(&breakageID)
-
-	if err != nil {
-		return "", err
-	}
-
-	return breakageID, nil
-}
-
 func (r *Repository) GetBreakagesByCarId(carID string) ([]models.BreakageInfo, error) {
 	query := `
         SELECT b.id, c.state_number, b.type, b.description, b.created_at
@@ -408,7 +417,7 @@ func (r *Repository) GetBreakagesByCarId(carID string) ([]models.BreakageInfo, e
 
 	for rows.Next() {
 		var breakage models.BreakageInfo
-		if err := rows.Scan(&breakage.ID, &breakage.StateNumber, &breakage.Type, &breakage.Description, &breakage.Datetime); err != nil {
+		if err := rows.Scan(&breakage.ID, &breakage.StateNumber, &breakage.Type, &breakage.Description, &breakage.CreatedAt); err != nil {
 			return nil, fmt.Errorf("error scanning row into breakage: %w", err)
 		}
 		breakages = append(breakages, breakage)
@@ -465,11 +474,11 @@ func (r *Repository) SensorsDataByCarID(carID string) ([]models.SensorsData, err
 			s.pressure,
 			s.temperature,
 			ROW_NUMBER() OVER (PARTITION BY w.position ORDER BY s.created_at DESC) AS rn
-		FROM sensors_data s
+			FROM sensors_data s
 		JOIN cars c ON s.device_number = c.device_number
 		JOIN wheels w ON s.sensor_number = w.sensor_number
 		WHERE c.id = $1
-	)
+		)
 	SELECT id, device_number, sensor_number, position, pressure, temperature
 	FROM latest_data
 	WHERE rn = 1`
@@ -602,9 +611,9 @@ func (r *Repository) CreateDriver(driver models.Driver) (models.Driver, error) {
 func (r *Repository) GetDriversList(userID string, limit int, offset int) ([]models.DriverStatisticsResponse, error) {
 	query := `
 	SELECT 
-		CONCAT(d.name, ' ', d.surname, ' ', COALESCE(d.middle_name, '')) AS full_name,
-		d.worked_time,
-		EXTRACT(YEAR FROM AGE(d.created_at)) * 12 + EXTRACT(MONTH FROM AGE(d.created_at)) AS experience_months,
+	CONCAT(d.name, ' ', d.surname, ' ', COALESCE(d.middle_name, '')) AS full_name,
+	d.worked_time,
+	EXTRACT(YEAR FROM AGE(d.created_at)) * 12 + EXTRACT(MONTH FROM AGE(d.created_at)) AS experience_months,
 		d.rating,
 		COALESCE(COUNT(b.id), 0) AS breakages_count,
 		d.id AS driver_id
@@ -714,7 +723,7 @@ func (r *Repository) UpdateDriverWorktime(deviceNum string, workedTime int) erro
 		UPDATE drivers
 		SET worked_time = worked_time + $1
 		WHERE id_car = (SELECT id FROM cars WHERE device_number = $2)
-	`
+		`
 
 	res, err := r.conn.Exec(query, workedTime, deviceNum)
 	if err != nil {
@@ -734,34 +743,42 @@ func (r *Repository) UpdateDriverWorktime(deviceNum string, workedTime int) erro
 }
 
 // Position
+// CreatePosition creates a new position entry in the database and returns the created position.
 func (r *Repository) CreatePosition(ctx context.Context, position models.Position) (models.Position, error) {
 	query := `
-		INSERT INTO position_data (device_number, location, created_at) 
-		VALUES ($1, ST_SetSRID(ST_MakePoint($2, $3), 4326), CURRENT_TIMESTAMP) 
-		RETURNING id, device_number, location, created_at
+		INSERT INTO position_data (device_number, latitude, longitude, created_at) 
+		VALUES ($1, $2, $3, CURRENT_TIMESTAMP) 
+		RETURNING id, device_number, latitude, longitude, created_at
 	`
+	r.log.Debugf("Executing query: %s with values: %s, %f, %f", query, position.DeviceNumber, position.Location.X, position.Location.Y)
 
 	var newPosition models.Position
 	err := r.conn.QueryRowContext(ctx, query, position.DeviceNumber, position.Location.X, position.Location.Y).Scan(
 		&newPosition.ID,
 		&newPosition.DeviceNumber,
-		&newPosition.Location,
+		&newPosition.Location.X,
+		&newPosition.Location.Y,
 		&newPosition.CreatedAt,
 	)
 
 	if err != nil {
-		return models.Position{}, fmt.Errorf("failed to create position: %w", err)
+		r.log.Errorf("Failed to create position: %v", err)
+		return models.Position{}, fmt.Errorf("%w: %v", models.ErrFailedToExecuteQuery, err)
 	}
 
+	r.log.Debugf("Position created successfully: %+v", newPosition)
 	return newPosition, nil
 }
 
+// GetCarRoutePositions retrieves the positions of a car within a specific time range.
 func (r *Repository) GetCarRoutePositions(ctx context.Context, carID string, from time.Time, to time.Time) ([]models.Position, error) {
 	var positions []models.Position
 
+	r.log.Debugf("Querying route positions for carID: %s from %v to %v", carID, from, to)
+
 	query := `
-		SELECT id, device_number, location, created_at
-		FROM position_data
+	SELECT id, device_number, latitude, longitude, created_at
+	FROM position_data
 		WHERE device_number = $1
 		AND created_at BETWEEN $2 AND $3
 		ORDER BY created_at ASC;
@@ -769,100 +786,174 @@ func (r *Repository) GetCarRoutePositions(ctx context.Context, carID string, fro
 
 	rows, err := r.conn.Query(query, carID, from, to)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute query: %v", err)
+		r.log.Errorf("Failed to execute query: %v", err)
+		return nil, fmt.Errorf("%w: %v", models.ErrFailedToExecuteQuery, err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		var position models.Position
-		var locationX, locationY float32
 
-		if err := rows.Scan(&position.ID, &position.DeviceNumber, &locationX, &locationY, &position.CreatedAt); err != nil {
-			return nil, fmt.Errorf("failed to process row: %v", err)
-		}
-
-		position.Location = models.Point{
-			X: locationX,
-			Y: locationY,
+		if err := rows.Scan(&position.ID, &position.DeviceNumber, &position.Location.X, &position.Location.Y, &position.CreatedAt); err != nil {
+			r.log.Errorf("Failed to scan row: %v", err)
+			return nil, fmt.Errorf("%w: %v", models.ErrFailedToProcessRow, err)
 		}
 
 		positions = append(positions, position)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error while iterating rows: %v", err)
+		r.log.Errorf("Error while iterating rows: %v", err)
+		return nil, fmt.Errorf("%w: %v", models.ErrRowsIterationError, err)
 	}
+
+	r.log.Debugf("Found %d positions for carID %s", len(positions), carID)
 
 	return positions, nil
 }
 
+// GetCurrentCarPositions retrieves cars in the area between two points.
 func (r *Repository) GetCurrentCarPositions(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurentPosition, error) {
 	var positions []models.CurentPosition
 
-	query := `
-        SELECT 
-            location[0] AS x,  -- Координата X из point
-            location[1] AS y,  -- Координата Y из point
-            device_number
-        FROM 
-            position_data
-        WHERE 
-            location[0] >= $1 AND location[0] <= $2
-            AND location[1] >= $3 AND location[1] <= $4
-    `
+	r.log.Debugf("Querying car positions in area: [%f, %f] (lat) x [%f, %f] (lng)", pointA.X, pointB.X, pointA.Y, pointB.Y)
 
-	rows, err := r.conn.QueryContext(ctx, query, pointA.X, pointB.X, pointA.Y, pointB.Y)
+	if pointA.X > pointB.X {
+		pointA.X, pointB.X = pointB.X, pointA.X
+	}
+	if pointA.Y > pointB.Y {
+		pointA.Y, pointB.Y = pointB.Y, pointA.Y
+	}
+
+	query := `
+		SELECT latitude, longitude, device_number
+		FROM position_data
+		WHERE latitude BETWEEN $1 AND $2
+		AND longitude BETWEEN $3 AND $4
+	`
+
+	rows, err := r.conn.Query(query, pointA.X, pointB.X, pointA.Y, pointB.Y)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute query: %w", err)
+		r.log.Errorf("Failed to execute query: %v", err)
+		return nil, fmt.Errorf("%w: %v", models.ErrFailedToExecuteQuery, err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		var position models.CurentPosition
-		if err := rows.Scan(&position.Point.X, &position.Point.Y, &position.IDCar, &position.IDUnicum); err != nil {
-			return nil, fmt.Errorf("failed to scan row: %w", err)
+		if err := rows.Scan(&position.Point.X, &position.Point.Y, &position.IDCar); err != nil {
+			r.log.Errorf("Failed to scan row: %v", err)
+			return nil, fmt.Errorf("%w: %v", models.ErrFailedToProcessRow, err)
 		}
 		positions = append(positions, position)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows iteration error: %w", err)
+		r.log.Errorf("Error while iterating rows: %v", err)
+		return nil, fmt.Errorf("%w: %v", models.ErrRowsIterationError, err)
 	}
+
+	r.log.Debugf("Found %d positions in the specified area.", len(positions))
 
 	return positions, nil
 }
 
 // Breakage
-func (r *Repository) CreateBreakageFromMqtt(ctx context.Context, breakage models.BreakageFromMqtt) (models.Breakage, error) {
-	datetime, err := time.Parse(time.RFC3339, breakage.Datetime)
+// CreateBreakage inserts a new breakage record into the database and returns the created breakage ID.
+func (r *Repository) CreateBreakage(breakage models.Breakage) (string, error) {
+	query := `
+		INSERT INTO breakages (car_id, id_driver, latitude, longitude, type, description, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING id`
+
+	r.log.Debugf("Executing query to create breakage with values: car_id=%s, driver=%s, latitude=%f, longitude=%f, type=%s, description=%s, created_at=%v",
+		breakage.CarID, breakage.DriverID, breakage.Location.X, breakage.Location.Y, breakage.Type, breakage.Description, breakage.CreatedAt)
+
+	var breakageID string
+	err := r.conn.QueryRow(query,
+		breakage.CarID,
+		breakage.DriverID,
+		breakage.Location.X,
+		breakage.Location.Y,
+		breakage.Type,
+		breakage.Description,
+		breakage.CreatedAt).
+		Scan(&breakageID)
+
 	if err != nil {
-		return models.Breakage{}, err
+		r.log.Errorf("Failed to create breakage: %v", err)
+		return "", fmt.Errorf("%w: %v", models.ErrFailedToExecuteQuery, err)
 	}
 
-	id := uuid.New()
+	r.log.Debugf("Breakage created successfully with ID: %s", breakageID)
+	return breakageID, nil
+}
+
+// CreateBreakageFromMqtt processes the breakage data received from MQTT, inserts it into the database, and returns the created breakage record.
+func (r *Repository) CreateBreakageFromMqtt(ctx context.Context, breakage models.BreakageFromMqtt) (models.Breakage, error) {
+	datetime, err := time.Parse(time.RFC3339, breakage.CreatedAt)
+	if err != nil {
+		r.log.Errorf("Failed to parse created_at: %v", err)
+		return models.Breakage{}, fmt.Errorf("%w: %v", models.ErrFailedToProcessRow, err)
+	}
+
+	// query := `
+	// 	INSERT INTO breakages (id_car, id_driver, latitude, longitude, type, description, created_at)
+	// 	VALUES ((SELECT id FROM cars WHERE device_number = $2 LIMIT 1), (SELECT id FROM cars where (SELECT id FROM cars WHERE device_number = $2 LIMIT 1),  $3, $4, $5, $6)
+	// 	RETURNING id, id_car, latitude, longitude, type, description, created_at
+	// `
 
 	query := `
-		INSERT INTO breakages (id, id_car, location, type, description, created_at)
-		VALUES ($1, (SELECT id FROM cars WHERE device_number = $2 LIMIT 1), point($3, $4), $5, $6, $7)
-		RETURNING id, id_car, location, type, description, created_at
+	WITH car_info AS (
+    SELECT id 
+    FROM cars 
+    WHERE device_number = $1
+    LIMIT 1
+	),
+	driver_info AS (
+		SELECT id 
+		FROM drivers
+		WHERE id_car = (SELECT id FROM car_info)
+		LIMIT 1
+	)
+	INSERT INTO breakages (id_car, id_driver, latitude, longitude, type, description, created_at)
+	VALUES (
+		(SELECT id FROM car_info), 
+		(SELECT id FROM driver_info),
+		$2, $3, $4, $5
+	)
+	RETURNING id, id_car, latitude, longitude, type, description, created_at;
 	`
+
+	r.log.Debugf("Executing query to create breakage with values: device_number=%s, latitude=%f, longitude=%f, type=%s, description=%s, created_at=%v",
+		breakage.DeviceNum, breakage.Point[0], breakage.Point[1], breakage.Type, breakage.Description, datetime)
+
 	var createdBreakage models.Breakage
 
-	err = r.conn.QueryRow(
-		query,
-		id,
+	err = r.conn.QueryRowContext(ctx, query,
 		breakage.DeviceNum,
 		breakage.Point[0],
 		breakage.Point[1],
 		breakage.Type,
 		breakage.Description,
 		datetime,
-	).Scan(&createdBreakage.ID, &createdBreakage.CarID, &createdBreakage.Location, &createdBreakage.Type, &createdBreakage.Description, &createdBreakage.Datetime)
+	).Scan(
+		&createdBreakage.ID,
+		&createdBreakage.CarID,
+		&createdBreakage.DriverID,
+		&createdBreakage.Location.X,
+		&createdBreakage.Location.Y,
+		&createdBreakage.Type,
+		&createdBreakage.Description,
+		&createdBreakage.CreatedAt,
+	)
 
 	if err != nil {
-		return models.Breakage{}, err
+		r.log.Errorf("Failed to create breakage: %v", err)
+		return models.Breakage{}, fmt.Errorf("%w: %w", models.ErrFailedToExecuteQuery, err)
 	}
 
+	r.log.Debugf("Breakage created successfully: %+v", createdBreakage)
 	return createdBreakage, nil
 }
 
@@ -941,40 +1032,56 @@ func (r *Repository) UpdateAllNotificationsStatus(ctx context.Context, userID st
 	return nil
 }
 
+// GetNotificationInfo retrieves detailed notification information from the database based on the notification ID.
 func (r *Repository) GetNotificationInfo(ctx context.Context, notificationID string) (models.NotificationInfo, error) {
 	query := `
-		SELECT 
-			b.description,
-			b.driver_name,
-			ARRAY[b.location_x, b.location_y] AS location
-		FROM notifications n
-		INNER JOIN breakages b ON n.id_breakages = b.id
-		WHERE n.id = $1`
+	SELECT 
+		b.note,
+		b.status,
+    	CONCAT(d.surname, d.name, d.middle_name) AS driver_name,
+		b.latitude, 
+		b.longitude,
+		b.created_at
+	FROM notifications n
+	INNER JOIN breakages b ON n.id_breakages = b.id
+	INNER JOIN drivers d ON b.id_driver = d.id
+	WHERE n.id = $1;
+	`
+
+	r.log.Debugf("Executing query to fetch notification info for notificationID: %s", notificationID)
 
 	var notificationInfo models.NotificationInfo
 	err := r.conn.QueryRowContext(ctx, query, notificationID).Scan(
 		&notificationInfo.Description,
 		&notificationInfo.DriverName,
-		&notificationInfo.Location,
+		&notificationInfo.Location.X,
+		&notificationInfo.Location.Y,
+		&notificationInfo.CreatedAt,
 	)
+
 	if err == sql.ErrNoRows {
+		r.log.Errorf("No rows found for notificationID: %s", notificationID)
 		return models.NotificationInfo{}, models.ErrNoContent
 	}
+
 	if err != nil {
-		return models.NotificationInfo{}, err
+		r.log.Errorf("Failed to execute query for notificationID: %s, error: %v", notificationID, err)
+		return models.NotificationInfo{}, fmt.Errorf("%w: %v", models.ErrFailedToExecuteQuery, err)
 	}
 
+	r.log.Debugf("Successfully fetched notification info for notificationID: %s", notificationID)
 	return notificationInfo, nil
 }
 
+// GetNotificationList retrieves a list of notifications based on the provided status, limit, and offset.
 func (r *Repository) GetNotificationList(ctx context.Context, status string, limit, offset int) ([]models.NotificationListItem, error) {
 	query := `
 		SELECT 
+			n.id,
 			c.state_number,
 			c.brand,
 			b.type AS breakage_type,
-			n.created_at AS timestamp,
-			n.id
+			n.created_at
 		FROM notifications n
 		INNER JOIN breakages b ON n.id_breakages = b.id
 		INNER JOIN cars c ON b.car_id = c.id
@@ -982,21 +1089,37 @@ func (r *Repository) GetNotificationList(ctx context.Context, status string, lim
 		ORDER BY n.created_at DESC
 		LIMIT $2 OFFSET $3`
 
+	r.log.Debugf("Executing query to fetch notifications with status: %s, limit: %d, offset: %d", status, limit, offset)
+
 	rows, err := r.conn.QueryContext(ctx, query, status, limit, offset)
 	if err != nil {
-		return nil, err
+		r.log.Errorf("Failed to execute query: %v", err)
+		return nil, fmt.Errorf("%w: %v", models.ErrFailedToExecuteQuery, err)
 	}
 	defer rows.Close()
 
 	var notifications []models.NotificationListItem
 	for rows.Next() {
 		var item models.NotificationListItem
-		if err := rows.Scan(&item.StateNumber, &item.Brand, &item.BreakageType, &item.Timestamp, &item.ID); err != nil {
-			return nil, err
+		if err := rows.Scan(
+			&item.ID,
+			&item.StateNumber,
+			&item.Brand,
+			&item.BreakageType,
+			&item.CreatedAt,
+		); err != nil {
+			r.log.Errorf("Failed to scan row: %v", err)
+			return nil, fmt.Errorf("%w: %v", models.ErrFailedToProcessRow, err)
 		}
 		notifications = append(notifications, item)
 	}
 
+	if err := rows.Err(); err != nil {
+		r.log.Errorf("Error while iterating rows: %v", err)
+		return nil, fmt.Errorf("%w: %v", models.ErrRowsIterationError, err)
+	}
+
+	r.log.Debugf("Successfully fetched %d notifications", len(notifications))
 	return notifications, nil
 }
 
@@ -1008,12 +1131,17 @@ func (r *Repository) GetReportData(userId string) ([]models.ReportData, error) {
 			c.state_number,              
 			w.brand AS tire_brand,       
 			w.mileage,                   
-			COUNT(CASE WHEN s.temperature < w.min_temperature OR s.temperature > w.max_temperature THEN 1 END) AS temp_out_of_bounds,  
-			COUNT(CASE WHEN s.pressure < w.min_pressure OR s.pressure > w.max_pressure THEN 1 END) AS pressure_out_of_bounds  
+			COUNT(CASE WHEN s.temperature < w.min_temperature 
+				OR s.temperature > w.max_temperature THEN 1 END) 
+			AS temp_out_of_bounds,  
+			COUNT(CASE WHEN s.pressure < w.min_pressure 
+				OR s.pressure > w.max_pressure THEN 1 END) 
+			AS pressure_out_of_bounds  
 		FROM
 			cars c
 		JOIN wheels w ON w.id_car = c.id
-		JOIN sensors_data s ON s.device_number = c.device_number AND s.sensor_number = w.sensor_number
+		JOIN sensors_data s ON s.device_number = c.device_number 
+			AND s.sensor_number = w.sensor_number
 		WHERE
 			c.id_company = $1  
 		GROUP BY
@@ -1022,9 +1150,12 @@ func (r *Repository) GetReportData(userId string) ([]models.ReportData, error) {
 			c.state_number, w.position; 
 	`
 
+	r.log.Debugf("Executing query: %s with userId: %s", query, userId)
+
 	rows, err := r.conn.Query(query, userId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute query: %v", err)
+		r.log.Errorf("Failed to execute query: %v", err)
+		return nil, fmt.Errorf("%w: %v", models.ErrFailedToExecuteQuery, err)
 	}
 	defer rows.Close()
 
@@ -1032,16 +1163,26 @@ func (r *Repository) GetReportData(userId string) ([]models.ReportData, error) {
 
 	for rows.Next() {
 		var data models.ReportData
-		if err := rows.Scan(&data.IdWheel, &data.StateNumber, &data.TireBrand, &data.Mileage, &data.TempOutOfBounds, &data.PressureOutOfBounds); err != nil {
-			return nil, fmt.Errorf("failed to scan row: %v", err)
+		if err := rows.Scan(
+			&data.IdWheel,
+			&data.StateNumber,
+			&data.TireBrand,
+			&data.Mileage,
+			&data.TempOutOfBounds,
+			&data.PressureOutOfBounds,
+		); err != nil {
+			r.log.Errorf("Failed to scan row: %v", err)
+			return nil, fmt.Errorf("%w: %v", models.ErrFailedToProcessRow, err)
 		}
 		reportData = append(reportData, data)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows iteration error: %v", err)
+		r.log.Errorf("Rows iteration error: %v", err)
+		return nil, fmt.Errorf("%w: %v", models.ErrRowsIterationError, err)
 	}
 
+	r.log.Debugf("Successfully retrieved %d report records", len(reportData))
 	return reportData, nil
 }
 

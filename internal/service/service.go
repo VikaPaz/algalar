@@ -11,6 +11,7 @@ import (
 
 type Repository interface {
 	CreateUser(user models.User) (string, error)
+	UpdateUser(user models.User) (string, error)
 	GetById(userID string) (models.User, error)
 	ChangePassword(userID, newPassword string) error
 	GetIDByLoginAndPassword(login, password string) (string, error)
@@ -71,6 +72,27 @@ func (s *Service) RegisterUser(ctx context.Context, user models.User) error {
 		return err
 	}
 	return nil
+}
+
+// UpdateUser updates user information and returns the updated user ID.
+func (s *Service) UpdateUser(ctx context.Context, user models.User) (string, error) {
+	user_id, ok := ctx.Value("user_id").(string)
+	if !ok {
+		s.log.Errorf("Invalid context: %v", ctx)
+		return "", fmt.Errorf("%w: %v", models.ErrInvalidContext, ctx)
+	}
+	user.ID = user_id
+
+	s.log.Debugf("Updating user with ID: %s", user.ID)
+
+	res, err := s.repo.UpdateUser(user)
+	if err != nil {
+		s.log.Errorf("Failed to update user: %v", err)
+		return "", fmt.Errorf("%w: %v", models.ErrUserUpdateFailed, err)
+	}
+
+	s.log.Debugf("User updated successfully: %s", res)
+	return res, nil
 }
 
 func (s *Service) RegisterAuto(ctx context.Context, car models.Car) (models.Car, error) {

@@ -153,32 +153,35 @@ type NewSensorData struct {
 
 // NotificationInfoResponse defines model for NotificationInfoResponse.
 type NotificationInfoResponse struct {
+	// CreatedAt Date and time when the notification was created
+	CreatedAt time.Time `json:"created_at"`
+
 	// Description Detailed description of the breakage
-	Description *string `json:"description,omitempty"`
+	Description string `json:"description"`
 
 	// DriverName Full name of the driver associated with the breakage
-	DriverName *string `json:"driver_name,omitempty"`
+	DriverName string `json:"driver_name"`
 
 	// Location Latitude and longitude of the breakage location
-	Location *[]float32 `json:"location,omitempty"`
+	Location []float32 `json:"location"`
 }
 
 // NotificationListResponse defines model for NotificationListResponse.
-type NotificationListResponse = []struct {
+type NotificationListResponse struct {
 	// Brand Brand of the car
-	Brand *string `json:"brand,omitempty"`
+	Brand string `json:"brand"`
 
 	// BreakageType Type of the breakage
-	BreakageType *string `json:"breakage_type,omitempty"`
+	BreakageType string `json:"breakage_type"`
+
+	// CreatedAt Date and time when the notification was created
+	CreatedAt time.Time `json:"created_at"`
 
 	// Id Unique identifier for the notification
-	Id *openapi_types.UUID `json:"id,omitempty"`
+	Id openapi_types.UUID `json:"id"`
 
 	// StateNumber State number of the car
-	StateNumber *string `json:"state_number,omitempty"`
-
-	// Timestamp Date and time when the notification was created
-	Timestamp *time.Time `json:"timestamp,omitempty"`
+	StateNumber string `json:"state_number"`
 }
 
 // Point A point in the format "latitude,longitude" representing the geographical coordinates.
@@ -201,8 +204,8 @@ type PositionCarListResponse struct {
 
 // PositionCarRouteResponse defines model for PositionCarRouteResponse.
 type PositionCarRouteResponse struct {
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 	Point     *[]float32 `json:"point,omitempty"`
-	Timestamp *time.Time `json:"timestamp,omitempty"`
 }
 
 // PositionCurrentListResponse defines model for PositionCurrentListResponse.
@@ -217,12 +220,12 @@ type PositionCurrentListResponse struct {
 
 // PositionRequest defines model for PositionRequest.
 type PositionRequest struct {
+	// CreatedAt The timestamp when the position was recorded
+	CreatedAt time.Time `json:"created_at"`
+
 	// DeviceNumber The device number of the car
 	DeviceNumber string    `json:"device_number"`
 	Point        []float32 `json:"point"`
-
-	// Timestamp The timestamp when the position was recorded
-	Timestamp time.Time `json:"timestamp"`
 }
 
 // PressureData defines model for PressureData.
@@ -2465,7 +2468,7 @@ type GetNotificationListResponseObject interface {
 	VisitGetNotificationListResponse(w http.ResponseWriter) error
 }
 
-type GetNotificationList200JSONResponse NotificationListResponse
+type GetNotificationList200JSONResponse []NotificationListResponse
 
 func (response GetNotificationList200JSONResponse) VisitGetNotificationListResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")

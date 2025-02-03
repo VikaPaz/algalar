@@ -21,6 +21,7 @@ import (
 type Service interface {
 	RegisterAuto(ctx context.Context, car models.Car) (models.Car, error)
 	RegisterUser(ctx context.Context, user models.User) error
+	UpdateUser(ctx context.Context, user models.User) (string, error)
 	UpdateUserPassword(ctx context.Context, newPassword string) error
 	GetUserDetails(ctx context.Context) (models.User, error)
 	RegisterWheel(ctx context.Context, wheel models.Wheel) (models.Wheel, error)
@@ -246,7 +247,7 @@ func (s *ServImplemented) PostUser(w http.ResponseWriter, r *http.Request) {
 // Update user details
 // (PUT /userinfo)
 func (s *ServImplemented) PutUserinfo(w http.ResponseWriter, r *http.Request) {
-	_, err := s.getUserID(r)
+	ctx, err := s.getUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -256,6 +257,23 @@ func (s *ServImplemented) PutUserinfo(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&userInfo); err != nil {
 		s.log.Error(err)
 		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var user models.User = models.User{
+		INN:      *userInfo.Inn,
+		Name:     *userInfo.FirstName,
+		Surname:  *userInfo.LastName,
+		Gender:   *userInfo.Gender,
+		Login:    *userInfo.Email,
+		Timezone: *userInfo.TimeZone,
+		Phone:    *userInfo.Phone,
+	}
+
+	_, err = s.service.UpdateUser(ctx, user)
+	if err != nil {
+		s.log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -846,7 +864,7 @@ func (s *ServImplemented) PostPosition(w http.ResponseWriter, r *http.Request) {
 			X: float32(req.Point[0]),
 			Y: float32(req.Point[1]),
 		},
-		CreatedAt: req.Timestamp,
+		CreatedAt: req.CreatedAt,
 	}
 
 	if _, err := s.service.CreatePosition(ctx, position); err != nil {
@@ -879,7 +897,7 @@ func (s *ServImplemented) GetPositionCarroute(w http.ResponseWriter, r *http.Req
 	for i, val := range positions {
 		res[i] = rest.PositionCarRouteResponse{
 			Point:     &[]float32{val.Location.X, val.Location.Y},
-			Timestamp: &val.CreatedAt,
+			CreatedAt: &val.CreatedAt,
 		}
 	}
 
@@ -1031,7 +1049,9 @@ func (s *ServImplemented) GetNotificationInfo(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	notificationInfo, err := s.service.GetNotificationInfo(ctx, params.Id.String())
+	var notificationInfo models.NotificationInfo
+
+	notificationInfo, err = s.service.GetNotificationInfo(ctx, params.Id.String())
 	if err != nil {
 		if errors.Is(err, models.ErrNoContent) {
 			s.log.Error(err)
@@ -1043,8 +1063,18 @@ func (s *ServImplemented) GetNotificationInfo(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	var res rest.NotificationInfoResponse = rest.NotificationInfoResponse{
+		Description: notificationInfo.Description,
+		DriverName:  notificationInfo.DriverName,
+		Location: []float32{
+			notificationInfo.Location.X,
+			notificationInfo.Location.Y,
+		},
+		CreatedAt: notificationInfo.CreatedAt,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(notificationInfo); err != nil {
+	if err := json.NewEncoder(w).Encode(res); err != nil {
 		s.log.Error(err)
 		http.Error(w, "failed to encode response", http.StatusInternalServerError)
 		return
@@ -1061,15 +1091,16 @@ func (s *ServImplemented) GetNotificationList(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	status := params.Status
-	limit := params.Limit
-	offset := params.Offset
-
-	notifications, err := s.service.GetNotificationList(ctx, status, limit, offset)
+	notifications, err := s.service.GetNotificationList(ctx, params.Status, params.Limit, params.Offset)
 	if err != nil {
 		s.log.Error(err)
 		http.Error(w, "failed to retrieve notifications", http.StatusInternalServerError)
 		return
+	}
+
+	res := make([]rest.NotificationListResponse, len(notifications))
+	for i, val := range notifications {
+		res[i] = ToNotificationListResponse(val)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -1150,7 +1181,7 @@ func (s *ServImplemented) PostBreakage(w http.ResponseWriter, r *http.Request) {
 		DeviceNum:   req.DeviceNum,
 		Type:        req.Type,
 		Description: req.Description,
-		Datetime:    req.Datetime.Format(time.RFC3339),
+		CreatedAt:   req.Datetime.Format(time.RFC3339),
 		Point:       [2]float32{req.Point[0], req.Point[1]},
 	}
 
@@ -1205,7 +1236,7 @@ func (s *ServImplemented) GetBreakageList(w http.ResponseWriter, r *http.Request
 			StateNumber: &val.StateNumber,
 			Type:        &val.Type,
 			Description: &val.Description,
-			Datetime:    &val.Datetime,
+			Datetime:    &val.CreatedAt,
 		}
 	}
 
@@ -1436,6 +1467,16 @@ func ToDriverResponse(driver models.DriverStatisticsResponse) rest.DriverStatist
 		Experience:     driver.Experience,
 		Rating:         driver.Rating,
 		WorkedTime:     driver.WorkedTime,
+	}
+}
+
+func ToNotificationListResponse(new models.NotificationListItem) rest.NotificationListResponse {
+	return rest.NotificationListResponse{
+		Id:           uuid.MustParse(new.ID),
+		StateNumber:  new.StateNumber,
+		Brand:        new.Brand,
+		BreakageType: new.BreakageType,
+		CreatedAt:    new.CreatedAt,
 	}
 }
 
