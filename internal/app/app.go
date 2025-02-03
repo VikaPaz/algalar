@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -54,13 +55,26 @@ func Run() {
 
 	svc := service.NewService(repo, logger)
 
-	accessSigningKey := os.Getenv("JWT_ACCESS_SIGNING_KEY")
+	var accessSigningKey, refreshSigningKey string
+	var accsessTTL, refreshTTL int
+	accessSigningKey = os.Getenv("JWT_ACCESS_SIGNING_KEY")
+	accsessTTL, err = strconv.Atoi(os.Getenv("JWT_ACCESS_TTL"))
+	if err != nil {
+		logger.Errorf("Error loading .env file: %v", err)
+		return
+	}
+	refreshSigningKey = os.Getenv("JWT_REFRESH_SIGNING_KEY")
+	refreshTTL, err = strconv.Atoi(os.Getenv("JWT_REFRESH_TTL"))
+	if err != nil {
+		logger.Errorf("Error loading .env file: %v", err)
+		return
+	}
 
 	confAuth := authService.Config{
 		AccessSigningKey:  accessSigningKey,
-		RefreshSigningKey: os.Getenv("JWT_REFRESH_SIGNING_KEY"),
-		AccessTTL:         20 * time.Minute,
-		RefreshTTL:        1000 * time.Hour,
+		RefreshSigningKey: refreshSigningKey,
+		AccessTTL:         time.Duration(accsessTTL) * time.Second,
+		RefreshTTL:        time.Duration(refreshTTL) * time.Minute,
 	}
 
 	auth := authService.NewService(confAuth, authRepo, logger)
