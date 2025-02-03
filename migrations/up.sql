@@ -55,8 +55,9 @@ CREATE TABLE IF NOT EXISTS sensors_data (
 CREATE TABLE IF NOT EXISTS position_data (
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
 	device_number varchar(100),
-	location point,
-	created_at timestamp
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
+    created_at TIMESTAMP DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS drivers (
@@ -77,10 +78,12 @@ CREATE TABLE IF NOT EXISTS drivers (
 CREATE TABLE IF NOT EXISTS breakages (
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
 	id_car uuid REFERENCES cars,
-	location point,
+	id_driver uuid REFERENCES cars,
 	type varchar(100),
 	description varchar(100),
-	created_at timestamp
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
+    created_at TIMESTAMP DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS notifications (
