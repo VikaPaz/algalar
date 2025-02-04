@@ -60,13 +60,13 @@ func Run() {
 	accessSigningKey = os.Getenv("JWT_ACCESS_SIGNING_KEY")
 	accsessTTL, err = strconv.Atoi(os.Getenv("JWT_ACCESS_TTL"))
 	if err != nil {
-		logger.Errorf("Error loading .env file: %v", err)
+		logger.Errorf("Error loading JWT_ACCESS_TTL from .env file: %v", err)
 		return
 	}
 	refreshSigningKey = os.Getenv("JWT_REFRESH_SIGNING_KEY")
 	refreshTTL, err = strconv.Atoi(os.Getenv("JWT_REFRESH_TTL"))
 	if err != nil {
-		logger.Errorf("Error loading .env file: %v", err)
+		logger.Errorf("Error loading JWT_REFRESH_TTL from .env file: %v", err)
 		return
 	}
 
