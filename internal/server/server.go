@@ -277,7 +277,7 @@ func (s *ServImplemented) PutUserinfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusNotImplemented)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *ServImplemented) PutUser(w http.ResponseWriter, r *http.Request) {
