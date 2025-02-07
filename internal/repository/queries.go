@@ -747,13 +747,13 @@ func (r *Repository) UpdateDriverWorktime(deviceNum string, workedTime int) erro
 func (r *Repository) CreatePosition(ctx context.Context, position models.Position) (models.Position, error) {
 	query := `
 		INSERT INTO position_data (device_number, latitude, longitude, created_at) 
-		VALUES ($1, $2, $3, CURRENT_TIMESTAMP) 
+		VALUES ($1, $2, $3, $4) 
 		RETURNING id, device_number, latitude, longitude, created_at
 	`
-	r.log.Debugf("Executing query: %s with values: %s, %f, %f", query, position.DeviceNumber, position.Location.X, position.Location.Y)
+	r.log.Debugf("Executing query: %s with values: %s, %f, %f, %v", query, position.DeviceNumber, position.Location.X, position.Location.Y, position.CreatedAt)
 
 	var newPosition models.Position
-	err := r.conn.QueryRowContext(ctx, query, position.DeviceNumber, position.Location.X, position.Location.Y).Scan(
+	err := r.conn.QueryRowContext(ctx, query, position.DeviceNumber, position.Location.X, position.Location.Y, position.CreatedAt).Scan(
 		&newPosition.ID,
 		&newPosition.DeviceNumber,
 		&newPosition.Location.X,
