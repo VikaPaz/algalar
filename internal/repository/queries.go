@@ -791,7 +791,7 @@ func (r *Repository) GetCarRoutePositions(ctx context.Context, carID string, fro
 	query := `
 	SELECT id, device_number, latitude, longitude, created_at
 	FROM position_data
-		WHERE device_number = $1
+		WHERE id = $1
 		AND created_at BETWEEN $2 AND $3
 		ORDER BY created_at ASC;
 	`
@@ -853,7 +853,11 @@ func (r *Repository) GetCurrentCarPositions(ctx context.Context, pointA models.P
 
 	for rows.Next() {
 		var position models.CurentPosition
-		if err := rows.Scan(&position.Point.Latitude, &position.Point.Longitude, &position.IDCar); err != nil {
+		if err := rows.Scan(
+			&position.Point.Latitude,
+			&position.Point.Longitude,
+			&position.IDCar,
+		); err != nil {
 			r.log.Errorf("Failed to scan row: %v", err)
 			return nil, fmt.Errorf("%w: %v", models.ErrFailedToProcessRow, err)
 		}

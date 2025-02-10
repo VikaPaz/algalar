@@ -937,9 +937,6 @@ func (s *ServImplemented) GetPositionListcurrent(w http.ResponseWriter, r *http.
 		Longitude: float32(params.WhatsherePointB[1]),
 	}
 
-	s.log.Debugf("Fetching current car positions between pointA=(%f, %f) and pointB=(%f, %f)",
-		pointA.Latitude, pointA.Longitude, pointB.Latitude, pointB.Longitude)
-
 	positions, err := s.service.GetCurrentCarPositions(ctx, pointA, pointB)
 	if err != nil {
 		s.log.Errorf("%v: %v", models.ErrFailedToFetchPositions, err)
@@ -953,11 +950,14 @@ func (s *ServImplemented) GetPositionListcurrent(w http.ResponseWriter, r *http.
 		return
 	}
 
-	s.log.Debugf("Successfully fetched %d car positions", len(positions))
-
 	res := make([]rest.PositionCurrentListResponse, len(positions))
 	for i, val := range positions {
-		carID := uuid.MustParse(val.IDCar)
+		carID, err := uuid.Parse(val.IDCar)
+		if err != nil {
+			http.Error(w, "Invalid UUID", http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("%v: %v", models.ErrFailedToFetchPositions, err), http.StatusInternalServerError)
+			return
+		}
 		res[i] = rest.PositionCurrentListResponse{
 			CarId:    carID,
 			Point:    []float32{val.Point.Latitude, val.Point.Longitude},
