@@ -789,9 +789,15 @@ func (r *Repository) GetCarRoutePositions(ctx context.Context, carID string, fro
 	r.log.Debugf("Querying route positions for carID: %s from %v to %v", carID, from, to)
 
 	query := `
+	WITH car_info AS (
+		SELECT device_number 
+		FROM cars 
+		WHERE id = $1
+		LIMIT 1
+	)
 	SELECT id, device_number, latitude, longitude, created_at
 	FROM position_data
-		WHERE id = $1
+		WHERE device_number = (select device_number from car_info)
 		AND created_at BETWEEN $2 AND $3
 		ORDER BY created_at ASC;
 	`

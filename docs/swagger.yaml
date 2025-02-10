@@ -972,6 +972,9 @@ components:
 
     PositionCarRouteResponse:
       type: object
+      required:
+       - point
+       - created_at
       properties:
         point:
           type: array

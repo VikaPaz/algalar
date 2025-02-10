@@ -204,8 +204,8 @@ type PositionCarListResponse struct {
 
 // PositionCarRouteResponse defines model for PositionCarRouteResponse.
 type PositionCarRouteResponse struct {
-	CreatedAt *time.Time `json:"created_at,omitempty"`
-	Point     *[]float32 `json:"point,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+	Point     []float32 `json:"point"`
 }
 
 // PositionCurrentListResponse defines model for PositionCurrentListResponse.

@@ -896,8 +896,8 @@ func (s *ServImplemented) GetPositionCarroute(w http.ResponseWriter, r *http.Req
 	res := make([]rest.PositionCarRouteResponse, len(positions))
 	for i, val := range positions {
 		res[i] = rest.PositionCarRouteResponse{
-			Point:     &[]float32{val.Location.Latitude, val.Location.Longitude},
-			CreatedAt: &val.CreatedAt,
+			Point:     []float32{val.Location.Latitude, val.Location.Longitude},
+			CreatedAt: val.CreatedAt,
 		}
 	}
 
