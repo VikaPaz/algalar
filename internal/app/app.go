@@ -21,7 +21,7 @@ import (
 )
 
 func Run() {
-	logger := NewLogger(logrus.InfoLevel, &logrus.TextFormatter{
+	logger := NewLogger(logrus.DebugLevel, &logrus.TextFormatter{
 		FullTimestamp: true,
 	})
 

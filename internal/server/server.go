@@ -993,7 +993,7 @@ func (s *ServImplemented) GetPositionsListcars(w http.ResponseWriter, r *http.Re
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(res); err != nil {
 		s.log.Error(err)
-		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+		http.Error(w, "failed to encode response"+err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -1158,22 +1158,22 @@ func (s *ServImplemented) PutNotificationStatus(w http.ResponseWriter, r *http.R
 func (s *ServImplemented) PostBreakage(w http.ResponseWriter, r *http.Request) {
 	ctx, err := s.getUserID(r)
 	if err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		s.log.Errorf("%v: %v", models.ErrUnauthorizedRequest, err)
+		http.Error(w, models.ErrUnauthorizedRequest.Error(), http.StatusUnauthorized)
 		return
 	}
 
 	var req rest.BreakageFromMqttRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		s.log.Error(err)
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		s.log.Errorf("%v: %v", models.ErrInvalidRequestBody, err)
+		http.Error(w, models.ErrInvalidRequestBody.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if len(req.Point) != 2 {
-		s.log.Error("Invalid point: must contain exactly two coordinates")
-		http.Error(w, "Invalid point format", http.StatusBadRequest)
+		s.log.Errorf("%v", models.ErrInvalidPointFormat)
+		http.Error(w, models.ErrInvalidPointFormat.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -1181,14 +1181,16 @@ func (s *ServImplemented) PostBreakage(w http.ResponseWriter, r *http.Request) {
 		DeviceNum:   req.DeviceNum,
 		Type:        req.Type,
 		Description: req.Description,
-		CreatedAt:   req.Datetime.Format(time.RFC3339),
+		CreatedAt:   req.Datetime,
 		Point:       [2]float32{req.Point[0], req.Point[1]},
 	}
 
-	new_breakage, err := s.service.CreateBreakageFromMqtt(ctx, breakage)
+	s.log.Debugf("Creating breakage: %+v", breakage)
+
+	newBreakage, err := s.service.CreateBreakageFromMqtt(ctx, breakage)
 	if err != nil {
-		s.log.Error(err)
-		http.Error(w, "Failed to create breakage", http.StatusInternalServerError)
+		s.log.Errorf("%v: %v", models.ErrFailedToCreateBreakage, err)
+		http.Error(w, models.ErrFailedToCreateBreakage.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -1196,15 +1198,17 @@ func (s *ServImplemented) PostBreakage(w http.ResponseWriter, r *http.Request) {
 
 	notification := models.Notification{
 		IDUser:     ctx.Value("user_id").(string),
-		IDBreakage: new_breakage.ID,
+		IDBreakage: newBreakage.ID,
 		Note:       models.NoteBreakage + ": " + breakage.Description,
 		Status:     models.StatusNew,
 		CreatedAt:  time.Now(),
 	}
 
+	s.log.Debugf("Creating notification: %+v", notification)
+
 	if _, err := s.service.CreateNotification(ctx, notification); err != nil {
-		s.log.Error(err)
-		http.Error(w, "Failed to create notification", http.StatusInternalServerError)
+		s.log.Errorf("%v: %v", models.ErrFailedToCreateNotification, err)
+		http.Error(w, models.ErrFailedToCreateNotification.Error(), http.StatusInternalServerError)
 		return
 	}
 }
@@ -1214,15 +1218,17 @@ func (s *ServImplemented) PostBreakage(w http.ResponseWriter, r *http.Request) {
 func (s *ServImplemented) GetBreakageList(w http.ResponseWriter, r *http.Request, params rest.GetBreakageListParams) {
 	ctx, err := s.getUserID(r)
 	if err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		s.log.Errorf("Unauthorized request: %v", err)
+		http.Error(w, models.ErrUnauthorizedRequest.Error(), http.StatusUnauthorized)
 		return
 	}
 
+	s.log.Debugf("Fetching breakages for car ID: %s", params.CarId.String())
+
 	breakages, err := s.service.GetBreakagesByCarId(ctx, params.CarId.String())
 	if err != nil {
-		s.log.Error(err)
-		http.Error(w, "failed to fetch breakages for the car", http.StatusInternalServerError)
+		s.log.Errorf("Failed to fetch breakages: %v", err)
+		http.Error(w, models.ErrFailedToFetchBreakages.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -1240,11 +1246,13 @@ func (s *ServImplemented) GetBreakageList(w http.ResponseWriter, r *http.Request
 		}
 	}
 
+	s.log.Debugf("Successfully fetched %d breakages for car ID: %s", len(breakages), params.CarId.String())
+
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(breakages); err != nil {
-		s.log.Error(err)
-		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+	if err := json.NewEncoder(w).Encode(res); err != nil {
+		s.log.Errorf("Failed to encode response: %v", err)
+		http.Error(w, models.ErrFailedToEncodeResponse.Error(), http.StatusInternalServerError)
 	}
 }
 

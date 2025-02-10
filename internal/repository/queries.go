@@ -218,7 +218,15 @@ func (r *Repository) GetCarsList(userID string, offset int, limit int) ([]models
 
 	for rows.Next() {
 		var car models.Car
-		if err := rows.Scan(&car.ID, &car.IDCompany, &car.StateNumber, &car.Brand, &car.DeviceNumber, &car.IDUnicum, &car.CountAxis); err != nil {
+		if err := rows.Scan(
+			&car.ID,
+			&car.IDCompany,
+			&car.StateNumber,
+			&car.Brand,
+			&car.DeviceNumber,
+			&car.IDUnicum,
+			&car.CountAxis,
+		); err != nil {
 			return nil, err
 		}
 		cars = append(cars, car)
@@ -890,53 +898,135 @@ func (r *Repository) CreateBreakage(breakage models.Breakage) (string, error) {
 }
 
 // CreateBreakageFromMqtt processes the breakage data received from MQTT, inserts it into the database, and returns the created breakage record.
+// func (r *Repository) CreateBreakageFromMqtt(ctx context.Context, breakage models.BreakageFromMqtt) (models.Breakage, error) {
+// 	// datetime, err := time.Parse(time.RFC3339, breakage.CreatedAt)
+// 	// if err != nil {
+// 	// 	r.log.Errorf("Failed to parse created_at: %v", err)
+// 	// 	return models.Breakage{}, fmt.Errorf("%w: %v", models.ErrFailedToProcessRow, err)
+// 	// }
+
+// 	// query := `
+// 	// 	INSERT INTO breakages (id_car, id_driver, latitude, longitude, type, description, created_at)
+// 	// 	VALUES ((SELECT id FROM cars WHERE device_number = $2 LIMIT 1), (SELECT id FROM cars where (SELECT id FROM cars WHERE device_number = $2 LIMIT 1),  $3, $4, $5, $6)
+// 	// 	RETURNING id, id_car, latitude, longitude, type, description, created_at
+// 	// `
+
+// 	query := `
+// 	WITH car_info AS (
+//     SELECT id
+//     FROM cars
+//     WHERE device_number = $1
+//     LIMIT 1
+// 	),
+// 	driver_info AS (
+// 		SELECT id
+// 		FROM drivers
+// 		WHERE id_car = (SELECT id FROM car_info)
+// 		LIMIT 1
+// 	)
+// 	INSERT INTO breakages (id_car, id_driver, latitude, longitude, type, description, created_at)
+// 	VALUES (
+// 		(SELECT id FROM car_info),
+// 		(SELECT id FROM driver_info),
+// 		$2, $3, $4, $5
+// 	)
+// 	RETURNING id, id_car, latitude, longitude, type, description, created_at;
+// 	`
+
+// 	r.log.Debugf("Executing query to create breakage with values: device_number=%s, latitude=%f, longitude=%f, type=%s, description=%s, created_at=%v",
+// 		breakage.DeviceNum, breakage.Point[0], breakage.Point[1], breakage.Type, breakage.Description, breakage.CreatedAt)
+
+// 	var createdBreakage models.Breakage
+
+// 	err := r.conn.QueryRowContext(ctx, query,
+// 		breakage.DeviceNum,
+// 		breakage.Point[0],
+// 		breakage.Point[1],
+// 		breakage.Type,
+// 		breakage.Description,
+// 		breakage.CreatedAt,
+// 	).Scan(
+// 		&createdBreakage.ID,
+// 		&createdBreakage.CarID,
+// 		&createdBreakage.DriverID,
+// 		&createdBreakage.Location.X,
+// 		&createdBreakage.Location.Y,
+// 		&createdBreakage.Type,
+// 		&createdBreakage.Description,
+// 		&createdBreakage.CreatedAt,
+// 	)
+
+// 	if err != nil {
+// 		r.log.Errorf("Failed to create breakage: %v", err)
+// 		return models.Breakage{}, fmt.Errorf("%w: %w", models.ErrFailedToExecuteQuery, err)
+// 	}
+
+// 	r.log.Debugf("Breakage created successfully: %+v", createdBreakage)
+// 	return createdBreakage, nil
+// }
+
 func (r *Repository) CreateBreakageFromMqtt(ctx context.Context, breakage models.BreakageFromMqtt) (models.Breakage, error) {
-	datetime, err := time.Parse(time.RFC3339, breakage.CreatedAt)
-	if err != nil {
-		r.log.Errorf("Failed to parse created_at: %v", err)
-		return models.Breakage{}, fmt.Errorf("%w: %v", models.ErrFailedToProcessRow, err)
+	if breakage.DeviceNum == "" {
+		r.log.Errorf("Device number is empty, cannot proceed with the operation")
+		return models.Breakage{}, fmt.Errorf("device number cannot be empty")
 	}
 
 	// query := `
-	// 	INSERT INTO breakages (id_car, id_driver, latitude, longitude, type, description, created_at)
-	// 	VALUES ((SELECT id FROM cars WHERE device_number = $2 LIMIT 1), (SELECT id FROM cars where (SELECT id FROM cars WHERE device_number = $2 LIMIT 1),  $3, $4, $5, $6)
-	// 	RETURNING id, id_car, latitude, longitude, type, description, created_at
+	// WITH car_info AS (
+	// 	SELECT id
+	// 	FROM cars
+	// 	WHERE device_number = $1
+	// 	LIMIT 1
+	// ),
+	// driver_info AS (
+	// 	SELECT id
+	// 	FROM drivers
+	// 	WHERE id_car = (SELECT id FROM car_info)
+	// 	LIMIT 1
+	// )
+	// INSERT INTO breakages (id_car, id_driver, latitude, longitude, type, description, created_at)
+	// VALUES (
+	// 	(SELECT id FROM car_info.id),
+	// 	(SELECT id FROM driver_info.id),
+	// 	$2, $3, $4, $5, $6
+	// )
+	// RETURNING id, id_car, id_driver, latitude, longitude, type, description, created_at;
 	// `
 
 	query := `
 	WITH car_info AS (
-    SELECT id 
-    FROM cars 
-    WHERE device_number = $1
-    LIMIT 1
-	),
-	driver_info AS (
-		SELECT id 
-		FROM drivers
-		WHERE id_car = (SELECT id FROM car_info)
-		LIMIT 1
-	)
+			SELECT id 
+			FROM cars 
+			WHERE device_number = $1
+			LIMIT 1
+		),
+		driver_info AS (
+			SELECT id 
+			FROM drivers
+			WHERE id_car = (SELECT id FROM car_info)
+			LIMIT 1
+		)
 	INSERT INTO breakages (id_car, id_driver, latitude, longitude, type, description, created_at)
 	VALUES (
-		(SELECT id FROM car_info), 
-		(SELECT id FROM driver_info),
-		$2, $3, $4, $5
+		(SELECT car_info.id FROM car_info),
+		(SELECT driver_info.id FROM driver_info LIMIT 1), -- Если водителя нет, вставится NULL
+		$2, $3, $4, $5, $6
 	)
-	RETURNING id, id_car, latitude, longitude, type, description, created_at;
+	RETURNING id, id_car, id_driver, latitude, longitude, type, description, created_at;
 	`
 
-	r.log.Debugf("Executing query to create breakage with values: device_number=%s, latitude=%f, longitude=%f, type=%s, description=%s, created_at=%v",
-		breakage.DeviceNum, breakage.Point[0], breakage.Point[1], breakage.Type, breakage.Description, datetime)
+	r.log.Debugf("Executing query to create breakage: device_number=%s, latitude=%f, longitude=%f, type=%s, description=%s, created_at=%v",
+		breakage.DeviceNum, breakage.Point[0], breakage.Point[1], breakage.Type, breakage.Description, breakage.CreatedAt)
 
 	var createdBreakage models.Breakage
 
-	err = r.conn.QueryRowContext(ctx, query,
+	err := r.conn.QueryRowContext(ctx, query,
 		breakage.DeviceNum,
 		breakage.Point[0],
 		breakage.Point[1],
 		breakage.Type,
 		breakage.Description,
-		datetime,
+		breakage.CreatedAt,
 	).Scan(
 		&createdBreakage.ID,
 		&createdBreakage.CarID,
@@ -948,13 +1038,51 @@ func (r *Repository) CreateBreakageFromMqtt(ctx context.Context, breakage models
 		&createdBreakage.CreatedAt,
 	)
 
+	if err == sql.ErrNoRows {
+		r.log.Debugf("%v: no breakage found for device_number=%s", models.ErrNoContent, breakage.DeviceNum)
+		return models.Breakage{}, models.ErrNoContent
+	}
+
 	if err != nil {
-		r.log.Errorf("Failed to create breakage: %v", err)
+		r.log.Errorf("%v: %v", models.ErrFailedToExecuteQuery, err)
 		return models.Breakage{}, fmt.Errorf("%w: %w", models.ErrFailedToExecuteQuery, err)
 	}
 
 	r.log.Debugf("Breakage created successfully: %+v", createdBreakage)
 	return createdBreakage, nil
+}
+
+func (r *Repository) CheckDriverExists(ctx context.Context, deviceNumber string) (bool, error) {
+	query := `
+		WITH car_info AS (
+			SELECT id
+			FROM cars 
+			WHERE device_number = $1
+			LIMIT 1
+		)
+		SELECT EXISTS (
+			SELECT 1
+			FROM drivers
+			WHERE id_car = (SELECT id FROM car_info)
+		);
+	`
+
+	r.log.Debugf("Executing query to check driver existence for device_number: %s", deviceNumber)
+
+	var driverExists bool
+	err := r.conn.QueryRowContext(ctx, query, deviceNumber).Scan(&driverExists)
+	if err != nil {
+		r.log.Errorf("Failed to execute query: %v", err)
+		return false, fmt.Errorf("%w: %v", models.ErrFailedToExecuteQuery, err)
+	}
+
+	if driverExists {
+		r.log.Debugf("Driver exists for device_number: %s", deviceNumber)
+	} else {
+		r.log.Debugf("No driver found for device_number: %s", deviceNumber)
+	}
+
+	return driverExists, nil
 }
 
 // Notification

@@ -149,7 +149,7 @@ type BreakageFromMqtt struct {
 	DeviceNum   string
 	Type        string
 	Description string
-	CreatedAt   string
+	CreatedAt   time.Time
 	Point       [2]float32 // (latitude, longitude)
 }
 

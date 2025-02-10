@@ -46,6 +46,7 @@ type Repository interface {
 	UpdateAllNotificationsStatus(ctx context.Context, userID string, status string) error
 	GetNotificationInfo(ctx context.Context, notificationID string) (models.NotificationInfo, error)
 	GetNotificationList(ctx context.Context, status string, limit, offset int) ([]models.NotificationListItem, error)
+	CheckDriverExists(ctx context.Context, deviceNumber string) (bool, error)
 }
 
 type Service struct {
@@ -369,10 +370,25 @@ func (s *Service) GetCurrentCarPositions(ctx context.Context, pointA models.Poin
 }
 
 func (s *Service) CreateBreakageFromMqtt(ctx context.Context, breakage models.BreakageFromMqtt) (models.Breakage, error) {
+	s.log.Debugf("Creating breakage from MQTT: %+v", breakage)
+
+	ok, err := s.repo.CheckDriverExists(ctx, breakage.DeviceNum)
+	if err != nil {
+		s.log.Errorf("%v: %v", models.ErrFailedToCreateBreakage, err)
+		return models.Breakage{}, models.ErrFailedToCreateBreakage
+	}
+	if !ok {
+		s.log.Errorf("%v: %v", models.ErrFailedToCreateBreakage, err)
+		return models.Breakage{}, models.ErrFailedToCreateBreakage
+	}
+
 	res, err := s.repo.CreateBreakageFromMqtt(ctx, breakage)
 	if err != nil {
-		return models.Breakage{}, err
+		s.log.Errorf("%v: %v", models.ErrFailedToCreateBreakage, err)
+		return models.Breakage{}, models.ErrFailedToCreateBreakage
 	}
+
+	s.log.Debugf("Breakage created successfully: %+v", res)
 	return res, nil
 }
 
