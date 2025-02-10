@@ -362,10 +362,22 @@ func (s *Service) GetCarRoutePositions(ctx context.Context, carID string, from t
 }
 
 func (s *Service) GetCurrentCarPositions(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurentPosition, error) {
+	s.log.Debugf("Fetching current car positions: pointA=(%f, %f), pointB=(%f, %f)",
+		pointA.Latitude, pointA.Longitude, pointB.Latitude, pointB.Longitude)
+
 	positions, err := s.repo.GetCurrentCarPositions(ctx, pointA, pointB)
 	if err != nil {
-		return []models.CurentPosition{}, err
+		s.log.Errorf("%v: %v", models.ErrFailedToFetchPositions, err)
+		return []models.CurentPosition{}, models.ErrFailedToFetchPositions
 	}
+
+	if len(positions) == 0 {
+		s.log.Debugf("No car positions found in the specified area: pointA=(%f, %f), pointB=(%f, %f)",
+			pointA.Latitude, pointA.Longitude, pointB.Latitude, pointB.Longitude)
+		return []models.CurentPosition{}, models.ErrNoContent
+	}
+
+	s.log.Debugf("Successfully fetched %d car positions", len(positions))
 	return positions, nil
 }
 

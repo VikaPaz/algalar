@@ -861,8 +861,8 @@ func (s *ServImplemented) PostPosition(w http.ResponseWriter, r *http.Request) {
 	position := models.Position{
 		DeviceNumber: req.DeviceNumber,
 		Location: models.Point{
-			X: float32(req.Point[0]),
-			Y: float32(req.Point[1]),
+			Latitude:  float32(req.Point[0]),
+			Longitude: float32(req.Point[1]),
 		},
 		CreatedAt: req.CreatedAt,
 	}
@@ -896,7 +896,7 @@ func (s *ServImplemented) GetPositionCarroute(w http.ResponseWriter, r *http.Req
 	res := make([]rest.PositionCarRouteResponse, len(positions))
 	for i, val := range positions {
 		res[i] = rest.PositionCarRouteResponse{
-			Point:     &[]float32{val.Location.X, val.Location.Y},
+			Point:     &[]float32{val.Location.Latitude, val.Location.Longitude},
 			CreatedAt: &val.CreatedAt,
 		}
 	}
@@ -914,49 +914,62 @@ func (s *ServImplemented) GetPositionCarroute(w http.ResponseWriter, r *http.Req
 func (s *ServImplemented) GetPositionListcurrent(w http.ResponseWriter, r *http.Request, params rest.GetPositionListcurrentParams) {
 	ctx, err := s.getUserID(r)
 	if err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		s.log.Errorf("%v: %v", models.ErrUnauthorized, err)
+		http.Error(w, models.ErrUnauthorized.Error(), http.StatusUnauthorized)
 		return
 	}
 
+	s.log.Debugf("Received request to fetch car positions with params: PointA=%v, PointB=%v", params.WhatsherePointA, params.WhatsherePointB)
+
 	if len(params.WhatsherePointA) != 2 || len(params.WhatsherePointB) != 2 {
-		err := fmt.Errorf("invalid points: PointA and PointB must contain exactly 2 coordinates each")
-		s.log.Error(err)
+		err := fmt.Errorf("%w: PointA and PointB must contain exactly 2 coordinates each", models.ErrInvalidPoints)
+		s.log.Errorf("%v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	pointA := models.Point{
-		X: float32(params.WhatsherePointA[0]),
-		Y: float32(params.WhatsherePointA[1]),
+		Latitude:  float32(params.WhatsherePointA[0]),
+		Longitude: float32(params.WhatsherePointA[1]),
 	}
 	pointB := models.Point{
-		X: float32(params.WhatsherePointB[0]),
-		Y: float32(params.WhatsherePointB[1]),
+		Latitude:  float32(params.WhatsherePointB[0]),
+		Longitude: float32(params.WhatsherePointB[1]),
 	}
+
+	s.log.Debugf("Fetching current car positions between pointA=(%f, %f) and pointB=(%f, %f)",
+		pointA.Latitude, pointA.Longitude, pointB.Latitude, pointB.Longitude)
 
 	positions, err := s.service.GetCurrentCarPositions(ctx, pointA, pointB)
 	if err != nil {
-		s.log.Error(err)
-		http.Error(w, "failed to fetch car positions: "+err.Error(), http.StatusInternalServerError)
+		s.log.Errorf("%v: %v", models.ErrFailedToFetchPositions, err)
+		http.Error(w, fmt.Sprintf("%v: %v", models.ErrFailedToFetchPositions, err), http.StatusInternalServerError)
 		return
 	}
+
+	if len(positions) == 0 {
+		s.log.Debugf("%v: No positions found for the given area", models.ErrNoContent)
+		http.Error(w, models.ErrNoContent.Error(), http.StatusNoContent)
+		return
+	}
+
+	s.log.Debugf("Successfully fetched %d car positions", len(positions))
 
 	res := make([]rest.PositionCurrentListResponse, len(positions))
 	for i, val := range positions {
 		carID := uuid.MustParse(val.IDCar)
 		res[i] = rest.PositionCurrentListResponse{
 			CarId:    &carID,
-			Point:    &[]float32{val.Point.X, val.Point.Y},
+			Point:    &[]float32{val.Point.Latitude, val.Point.Longitude},
 			UniqueId: &val.IDUnicum,
 		}
 	}
 
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(res); err != nil {
-		s.log.Error(err)
-		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+		s.log.Errorf("%v: %v", models.ErrFailedToEncodeResponse, err)
+		http.Error(w, fmt.Sprintf("%v: %v", models.ErrFailedToEncodeResponse, err), http.StatusInternalServerError)
 	}
 }
 
@@ -1083,8 +1096,8 @@ func (s *ServImplemented) GetNotificationInfo(w http.ResponseWriter, r *http.Req
 		Description: notificationInfo.Description,
 		DriverName:  notificationInfo.DriverName,
 		Location: []float32{
-			notificationInfo.Location.X,
-			notificationInfo.Location.Y,
+			notificationInfo.Location.Latitude,
+			notificationInfo.Location.Longitude,
 		},
 		CreatedAt: notificationInfo.CreatedAt,
 	}

@@ -762,14 +762,14 @@ func (r *Repository) CreatePosition(ctx context.Context, position models.Positio
 		VALUES ($1, $2, $3, $4) 
 		RETURNING id, device_number, latitude, longitude, created_at
 	`
-	r.log.Debugf("Executing query: %s with values: %s, %f, %f, %v", query, position.DeviceNumber, position.Location.X, position.Location.Y, position.CreatedAt)
+	r.log.Debugf("Executing query: %s with values: %s, %f, %f, %v", query, position.DeviceNumber, position.Location.Latitude, position.Location.Longitude, position.CreatedAt)
 
 	var newPosition models.Position
-	err := r.conn.QueryRowContext(ctx, query, position.DeviceNumber, position.Location.X, position.Location.Y, position.CreatedAt).Scan(
+	err := r.conn.QueryRowContext(ctx, query, position.DeviceNumber, position.Location.Latitude, position.Location.Longitude, position.CreatedAt).Scan(
 		&newPosition.ID,
 		&newPosition.DeviceNumber,
-		&newPosition.Location.X,
-		&newPosition.Location.Y,
+		&newPosition.Location.Latitude,
+		&newPosition.Location.Longitude,
 		&newPosition.CreatedAt,
 	)
 
@@ -806,7 +806,7 @@ func (r *Repository) GetCarRoutePositions(ctx context.Context, carID string, fro
 	for rows.Next() {
 		var position models.Position
 
-		if err := rows.Scan(&position.ID, &position.DeviceNumber, &position.Location.X, &position.Location.Y, &position.CreatedAt); err != nil {
+		if err := rows.Scan(&position.ID, &position.DeviceNumber, &position.Location.Latitude, &position.Location.Longitude, &position.CreatedAt); err != nil {
 			r.log.Errorf("Failed to scan row: %v", err)
 			return nil, fmt.Errorf("%w: %v", models.ErrFailedToProcessRow, err)
 		}
@@ -828,13 +828,13 @@ func (r *Repository) GetCarRoutePositions(ctx context.Context, carID string, fro
 func (r *Repository) GetCurrentCarPositions(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurentPosition, error) {
 	var positions []models.CurentPosition
 
-	r.log.Debugf("Querying car positions in area: [%f, %f] (lat) x [%f, %f] (lng)", pointA.X, pointB.X, pointA.Y, pointB.Y)
+	r.log.Debugf("Querying car positions in area: [%f, %f] (lat) x [%f, %f] (lng)", pointA.Latitude, pointB.Latitude, pointA.Longitude, pointB.Longitude)
 
-	if pointA.X > pointB.X {
-		pointA.X, pointB.X = pointB.X, pointA.X
+	if pointA.Latitude > pointB.Latitude {
+		pointA.Latitude, pointB.Latitude = pointB.Latitude, pointA.Latitude
 	}
-	if pointA.Y > pointB.Y {
-		pointA.Y, pointB.Y = pointB.Y, pointA.Y
+	if pointA.Longitude > pointB.Longitude {
+		pointA.Longitude, pointB.Longitude = pointB.Longitude, pointA.Longitude
 	}
 
 	query := `
@@ -844,7 +844,7 @@ func (r *Repository) GetCurrentCarPositions(ctx context.Context, pointA models.P
 		AND longitude BETWEEN $3 AND $4
 	`
 
-	rows, err := r.conn.Query(query, pointA.X, pointB.X, pointA.Y, pointB.Y)
+	rows, err := r.conn.Query(query, pointA.Latitude, pointB.Latitude, pointA.Longitude, pointB.Longitude)
 	if err != nil {
 		r.log.Errorf("Failed to execute query: %v", err)
 		return nil, fmt.Errorf("%w: %v", models.ErrFailedToExecuteQuery, err)
@@ -853,7 +853,7 @@ func (r *Repository) GetCurrentCarPositions(ctx context.Context, pointA models.P
 
 	for rows.Next() {
 		var position models.CurentPosition
-		if err := rows.Scan(&position.Point.X, &position.Point.Y, &position.IDCar); err != nil {
+		if err := rows.Scan(&position.Point.Latitude, &position.Point.Longitude, &position.IDCar); err != nil {
 			r.log.Errorf("Failed to scan row: %v", err)
 			return nil, fmt.Errorf("%w: %v", models.ErrFailedToProcessRow, err)
 		}
@@ -879,14 +879,14 @@ func (r *Repository) CreateBreakage(breakage models.Breakage) (string, error) {
 		RETURNING id`
 
 	r.log.Debugf("Executing query to create breakage with values: car_id=%s, driver=%s, latitude=%f, longitude=%f, type=%s, description=%s, created_at=%v",
-		breakage.CarID, breakage.DriverID, breakage.Location.X, breakage.Location.Y, breakage.Type, breakage.Description, breakage.CreatedAt)
+		breakage.CarID, breakage.DriverID, breakage.Location.Latitude, breakage.Location.Longitude, breakage.Type, breakage.Description, breakage.CreatedAt)
 
 	var breakageID string
 	err := r.conn.QueryRow(query,
 		breakage.CarID,
 		breakage.DriverID,
-		breakage.Location.X,
-		breakage.Location.Y,
+		breakage.Location.Latitude,
+		breakage.Location.Longitude,
 		breakage.Type,
 		breakage.Description,
 		breakage.CreatedAt).
@@ -1035,8 +1035,8 @@ func (r *Repository) CreateBreakageFromMqtt(ctx context.Context, breakage models
 		&createdBreakage.ID,
 		&createdBreakage.CarID,
 		&createdBreakage.DriverID,
-		&createdBreakage.Location.X,
-		&createdBreakage.Location.Y,
+		&createdBreakage.Location.Latitude,
+		&createdBreakage.Location.Longitude,
 		&createdBreakage.Type,
 		&createdBreakage.Description,
 		&createdBreakage.CreatedAt,
@@ -1186,8 +1186,8 @@ func (r *Repository) GetNotificationInfo(ctx context.Context, notificationID str
 	err := r.conn.QueryRowContext(ctx, query, notificationID).Scan(
 		&notificationInfo.Description,
 		&notificationInfo.DriverName,
-		&notificationInfo.Location.X,
-		&notificationInfo.Location.Y,
+		&notificationInfo.Location.Latitude,
+		&notificationInfo.Location.Longitude,
 		&notificationInfo.CreatedAt,
 	)
 

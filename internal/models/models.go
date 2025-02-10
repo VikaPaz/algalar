@@ -125,8 +125,8 @@ type Position struct {
 }
 
 type Point struct {
-	X float32
-	Y float32
+	Latitude  float32
+	Longitude float32
 }
 
 type CurentPosition struct {

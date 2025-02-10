@@ -30,4 +30,6 @@ var (
 	ErrUnauthorized               = errors.New("unauthorized access")
 	ErrFailedToFetchCars          = errors.New("failed to fetch list of cars")
 	ErrInvalidUUID                = errors.New("invalid UUID format")
+	ErrFailedToFetchPositions     = errors.New("failed to fetch car positions")
+	ErrInvalidPoints              = errors.New("invalid points format")
 )
