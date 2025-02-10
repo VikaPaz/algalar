@@ -959,9 +959,9 @@ func (s *ServImplemented) GetPositionListcurrent(w http.ResponseWriter, r *http.
 	for i, val := range positions {
 		carID := uuid.MustParse(val.IDCar)
 		res[i] = rest.PositionCurrentListResponse{
-			CarId:    &carID,
-			Point:    &[]float32{val.Point.Latitude, val.Point.Longitude},
-			UniqueId: &val.IDUnicum,
+			CarId:    carID,
+			Point:    []float32{val.Point.Latitude, val.Point.Longitude},
+			UniqueId: val.IDUnicum,
 		}
 	}
 

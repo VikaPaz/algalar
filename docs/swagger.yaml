@@ -933,6 +933,10 @@ components:
 
     PositionCurrentListResponse:
       type: object
+      required:
+        - car_id
+        - point
+        - unique_id
       properties:
         point:
           type: array

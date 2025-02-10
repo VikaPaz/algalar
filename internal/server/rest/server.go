@@ -211,11 +211,11 @@ type PositionCarRouteResponse struct {
 // PositionCurrentListResponse defines model for PositionCurrentListResponse.
 type PositionCurrentListResponse struct {
 	// CarId Car's unique identifier
-	CarId *openapi_types.UUID `json:"car_id,omitempty"`
-	Point *[]float32          `json:"point,omitempty"`
+	CarId openapi_types.UUID `json:"car_id"`
+	Point []float32          `json:"point"`
 
 	// UniqueId Unique identifier of the car
-	UniqueId *string `json:"unique_id,omitempty"`
+	UniqueId string `json:"unique_id"`
 }
 
 // PositionRequest defines model for PositionRequest.
