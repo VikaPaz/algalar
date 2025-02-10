@@ -25,4 +25,6 @@ var (
 	ErrInvalidPointFormat         = errors.New("invalid point format, must contain exactly two coordinates")
 	ErrFailedToCreateBreakage     = errors.New("failed to create breakage")
 	ErrFailedToCreateNotification = errors.New("failed to create notification")
+	ErrFailedToScanRow            = errors.New("failed to scan row")
+	ErrFailedToIterateRows        = errors.New("failed to iterate rows")
 )

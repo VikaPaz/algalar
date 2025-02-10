@@ -206,14 +206,14 @@ func (r *Repository) GetCarsList(userID string, offset int, limit int) ([]models
 		WHERE id_company = $1
 		LIMIT $2 OFFSET $3`
 
-	cars := []models.Car{}
+	r.log.Debugf("Executing query to fetch car list: userID=%s, limit=%d, offset=%d", userID, limit, offset)
 
+	cars := []models.Car{}
 	rows, err := r.conn.Query(query, userID, limit, offset)
 	if err != nil {
-		return nil, err
+		r.log.Errorf("%v: %v", models.ErrFailedToExecuteQuery, err)
+		return nil, fmt.Errorf("%w: %v", models.ErrFailedToExecuteQuery, err)
 	}
-	r.log.Debugf("id, limit, offset: %v, %v, %v", userID, limit, offset)
-
 	defer rows.Close()
 
 	for rows.Next() {
@@ -227,19 +227,23 @@ func (r *Repository) GetCarsList(userID string, offset int, limit int) ([]models
 			&car.IDUnicum,
 			&car.CountAxis,
 		); err != nil {
-			return nil, err
+			r.log.Errorf("%v: %v", models.ErrFailedToScanRow, err)
+			return nil, fmt.Errorf("%w: %v", models.ErrFailedToScanRow, err)
 		}
 		cars = append(cars, car)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		r.log.Errorf("%v: %v", models.ErrFailedToIterateRows, err)
+		return nil, fmt.Errorf("%w: %v", models.ErrFailedToIterateRows, err)
 	}
 
 	if len(cars) == 0 {
+		r.log.Debugf("No cars found for userID=%s", userID)
 		return nil, models.ErrNoContent
 	}
 
+	r.log.Debugf("Successfully fetched %d cars for userID=%s", len(cars), userID)
 	return cars, nil
 }
 
