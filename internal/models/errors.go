@@ -27,4 +27,7 @@ var (
 	ErrFailedToCreateNotification = errors.New("failed to create notification")
 	ErrFailedToScanRow            = errors.New("failed to scan row")
 	ErrFailedToIterateRows        = errors.New("failed to iterate rows")
+	ErrUnauthorized               = errors.New("unauthorized access")
+	ErrFailedToFetchCars          = errors.New("failed to fetch list of cars")
+	ErrInvalidUUID                = errors.New("invalid UUID format")
 )

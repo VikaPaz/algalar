@@ -965,22 +965,37 @@ func (s *ServImplemented) GetPositionListcurrent(w http.ResponseWriter, r *http.
 func (s *ServImplemented) GetPositionsListcars(w http.ResponseWriter, r *http.Request, params rest.GetPositionsListcarsParams) {
 	ctx, err := s.getUserID(r)
 	if err != nil {
-		s.log.Error(err)
+		s.log.Errorf("%v: %v", models.ErrUnauthorized, err)
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
-	cars, err := s.service.GetAutoList(ctx, params.Limit, params.Offset)
+	s.log.Debugf("Fetching car positions list: userID=%s, offset=%d, limit=%d", ctx.Value("user_id"), params.Offset, params.Limit)
+
+	cars, err := s.service.GetAutoList(ctx, params.Offset, params.Limit)
 	if err != nil {
-		s.log.Error(err)
-		http.Error(w, "failed to fetch list of cars", http.StatusInternalServerError)
+		s.log.Errorf("%v: %v", models.ErrFailedToFetchCars, err)
+		http.Error(w, models.ErrFailedToFetchCars.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.log.Debug(cars)
+
+	if len(cars) == 0 {
+		s.log.Debugf("No cars found for userID=%s", ctx.Value("user_id"))
+		http.Error(w, models.ErrNoContent.Error(), http.StatusNoContent)
+		return
+	}
+
+	s.log.Debugf("Successfully fetched %d cars for userID=%s", len(cars), ctx.Value("user_id"))
 
 	res := make([]rest.PositionCarListResponse, len(cars))
 	for i, val := range cars {
-		id := uuid.MustParse(val.ID)
+		id, err := uuid.Parse(val.ID)
+		if err != nil {
+			s.log.Errorf("%v: %v", models.ErrInvalidUUID, err)
+			http.Error(w, models.ErrInvalidUUID.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		res[i] = rest.PositionCarListResponse{
 			CarId:       &id,
 			Brand:       &val.Brand,
@@ -989,11 +1004,12 @@ func (s *ServImplemented) GetPositionsListcars(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
 	if err := json.NewEncoder(w).Encode(res); err != nil {
-		s.log.Error(err)
-		http.Error(w, "failed to encode response"+err.Error(), http.StatusInternalServerError)
+		s.log.Errorf("%v: %v", models.ErrFailedToEncodeResponse, err)
+		http.Error(w, models.ErrFailedToEncodeResponse.Error(), http.StatusInternalServerError)
 	}
 }
 
