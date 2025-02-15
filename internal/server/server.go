@@ -44,7 +44,8 @@ type Service interface {
 	UpdateDriverWorktime(ctx context.Context, deviceNum string, workedTime int) error
 	CreatePosition(ctx context.Context, position models.Position) (models.Position, error)
 	GetCarRoutePositions(ctx context.Context, carID string, from time.Time, to time.Time) ([]models.Position, error)
-	GetCurrentCarPositions(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurentPosition, error)
+	GetCurrentCarPositions(ctx context.Context) ([]models.CurrentPosition, error)
+	GetCurrentCarPositionsByPoints(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurrentPosition, error)
 	CreateBreakageFromMqtt(ctx context.Context, breakage models.BreakageFromMqtt) (models.Breakage, error)
 	GetBreakagesByCarId(ctx context.Context, carID string) ([]models.BreakageInfo, error)
 	CreateNotification(ctx context.Context, new models.Notification) (models.Notification, error)
@@ -947,7 +948,7 @@ func (s *ServImplemented) GetPositionCarroute(w http.ResponseWriter, r *http.Req
 
 // Get current car positions
 // (GET /position/listcurrent)
-func (s *ServImplemented) GetPositionListcurrent(w http.ResponseWriter, r *http.Request, params rest.GetPositionListcurrentParams) {
+func (s *ServImplemented) GetPositionListcurrent(w http.ResponseWriter, r *http.Request) {
 	ctx, err := s.getUserID(r)
 	if err != nil {
 		s.log.Errorf("%v: %v", models.ErrUnauthorized, err)
@@ -955,25 +956,9 @@ func (s *ServImplemented) GetPositionListcurrent(w http.ResponseWriter, r *http.
 		return
 	}
 
-	s.log.Debugf("Received request to fetch car positions with params: PointA=%v, PointB=%v", params.WhatsherePointA, params.WhatsherePointB)
+	s.log.Debugf("Received request to fetch current car positions for user_id=%s", ctx.Value("user_id"))
 
-	if len(params.WhatsherePointA) != 2 || len(params.WhatsherePointB) != 2 {
-		err := fmt.Errorf("%w: PointA and PointB must contain exactly 2 coordinates each", models.ErrInvalidPoints)
-		s.log.Errorf("%v", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	pointA := models.Point{
-		Latitude:  float32(params.WhatsherePointA[0]),
-		Longitude: float32(params.WhatsherePointA[1]),
-	}
-	pointB := models.Point{
-		Latitude:  float32(params.WhatsherePointB[0]),
-		Longitude: float32(params.WhatsherePointB[1]),
-	}
-
-	positions, err := s.service.GetCurrentCarPositions(ctx, pointA, pointB)
+	positions, err := s.service.GetCurrentCarPositions(ctx)
 	if err != nil {
 		s.log.Errorf("%v: %v", models.ErrFailedToFetchPositions, err)
 		http.Error(w, fmt.Sprintf("%v: %v", models.ErrFailedToFetchPositions, err), http.StatusInternalServerError)
@@ -981,7 +966,7 @@ func (s *ServImplemented) GetPositionListcurrent(w http.ResponseWriter, r *http.
 	}
 
 	if len(positions) == 0 {
-		s.log.Debugf("%v: No positions found for the given area", models.ErrNoContent)
+		s.log.Debugf("%v: No positions found for user_id=%s", models.ErrNoContent, ctx.Value("user_id"))
 		http.Error(w, models.ErrNoContent.Error(), http.StatusNoContent)
 		return
 	}
@@ -990,7 +975,7 @@ func (s *ServImplemented) GetPositionListcurrent(w http.ResponseWriter, r *http.
 	for i, val := range positions {
 		carID, err := uuid.Parse(val.IDCar)
 		if err != nil {
-			http.Error(w, "Invalid UUID", http.StatusBadRequest)
+			s.log.Errorf("%v: %v", models.ErrInvalidUUID, err)
 			http.Error(w, fmt.Sprintf("%v: %v", models.ErrFailedToFetchPositions, err), http.StatusInternalServerError)
 			return
 		}

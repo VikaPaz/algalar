@@ -39,7 +39,8 @@ type Repository interface {
 	UpdateDriverWorktime(deviceNum string, workedTime int) error
 	CreatePosition(ctx context.Context, position models.Position) (models.Position, error)
 	GetCarRoutePositions(ctx context.Context, carID string, from time.Time, to time.Time) ([]models.Position, error)
-	GetCurrentCarPositions(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurentPosition, error)
+	GetCurrentCarPositions(ctx context.Context, id string) ([]models.CurrentPosition, error)
+	GetCurrentCarPositionsByPoints(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurrentPosition, error)
 	CreateBreakageFromMqtt(ctx context.Context, breakage models.BreakageFromMqtt) (models.Breakage, error)
 	CreateNotification(new models.Notification) (models.Notification, error)
 	UpdateNotificationStatus(ctx context.Context, id string, status string) error
@@ -361,20 +362,44 @@ func (s *Service) GetCarRoutePositions(ctx context.Context, carID string, from t
 	return positions, nil
 }
 
-func (s *Service) GetCurrentCarPositions(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurentPosition, error) {
+func (s *Service) GetCurrentCarPositions(ctx context.Context) ([]models.CurrentPosition, error) {
+	id, ok := ctx.Value("user_id").(string)
+	if !ok {
+		s.log.Errorf("%v: %v", models.ErrInvalidContext, ctx)
+		return []models.CurrentPosition{}, fmt.Errorf("%w: %v", models.ErrInvalidContext, ctx)
+	}
+
+	s.log.Debugf("Fetching current car positions for user_id=%s", id)
+
+	positions, err := s.repo.GetCurrentCarPositions(ctx, id)
+	if err != nil {
+		s.log.Errorf("%v: %v", models.ErrFailedToFetchCarPositions, err)
+		return []models.CurrentPosition{}, fmt.Errorf("%w: %v", models.ErrFailedToFetchCarPositions, err)
+	}
+
+	if len(positions) == 0 {
+		s.log.Debugf("%v: No car positions found for user_id=%s", models.ErrNoContent, id)
+		return nil, models.ErrNoContent
+	}
+
+	s.log.Debugf("Successfully fetched %d current car positions for user_id=%s", len(positions), id)
+	return positions, nil
+}
+
+func (s *Service) GetCurrentCarPositionsByPoints(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurrentPosition, error) {
 	s.log.Debugf("Fetching current car positions: pointA=(%f, %f), pointB=(%f, %f)",
 		pointA.Latitude, pointA.Longitude, pointB.Latitude, pointB.Longitude)
 
-	positions, err := s.repo.GetCurrentCarPositions(ctx, pointA, pointB)
+	positions, err := s.repo.GetCurrentCarPositionsByPoints(ctx, pointA, pointB)
 	if err != nil {
 		s.log.Errorf("%v: %v", models.ErrFailedToFetchPositions, err)
-		return []models.CurentPosition{}, models.ErrFailedToFetchPositions
+		return []models.CurrentPosition{}, models.ErrFailedToFetchPositions
 	}
 
 	if len(positions) == 0 {
 		s.log.Debugf("No car positions found in the specified area: pointA=(%f, %f), pointB=(%f, %f)",
 			pointA.Latitude, pointA.Longitude, pointB.Latitude, pointB.Longitude)
-		return []models.CurentPosition{}, models.ErrNoContent
+		return []models.CurrentPosition{}, models.ErrNoContent
 	}
 
 	s.log.Debugf("Successfully fetched %d car positions", len(positions))

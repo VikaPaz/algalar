@@ -184,9 +184,6 @@ type NotificationListResponse struct {
 	StateNumber string `json:"state_number"`
 }
 
-// Point A point in the format "latitude,longitude" representing the geographical coordinates.
-type Point = []float32
-
 // Position defines model for Position.
 type Position struct {
 	// CreatedAt Timestamp when the position was recorded
@@ -457,15 +454,6 @@ type GetPositionCarrouteParams struct {
 	TimeTo time.Time `form:"time_to" json:"time_to"`
 }
 
-// GetPositionListcurrentParams defines parameters for GetPositionListcurrent.
-type GetPositionListcurrentParams struct {
-	// WhatsherePointA Point A
-	WhatsherePointA Point `form:"whatshere[pointA]" json:"whatshere[pointA]"`
-
-	// WhatsherePointB Point B
-	WhatsherePointB Point `form:"whatshere[pointB]" json:"whatshere[pointB]"`
-}
-
 // GetPositionsListcarsParams defines parameters for GetPositionsListcars.
 type GetPositionsListcarsParams struct {
 	// Limit Limit for pagination
@@ -602,7 +590,7 @@ type ServerInterface interface {
 	GetPositionCarroute(w http.ResponseWriter, r *http.Request, params GetPositionCarrouteParams)
 	// Get current car positions
 	// (GET /position/listcurrent)
-	GetPositionListcurrent(w http.ResponseWriter, r *http.Request, params GetPositionListcurrentParams)
+	GetPositionListcurrent(w http.ResponseWriter, r *http.Request)
 	// Get list of cars
 	// (GET /positions/listcars)
 	GetPositionsListcars(w http.ResponseWriter, r *http.Request, params GetPositionsListcarsParams)
@@ -764,7 +752,7 @@ func (_ Unimplemented) GetPositionCarroute(w http.ResponseWriter, r *http.Reques
 
 // Get current car positions
 // (GET /position/listcurrent)
-func (_ Unimplemented) GetPositionListcurrent(w http.ResponseWriter, r *http.Request, params GetPositionListcurrentParams) {
+func (_ Unimplemented) GetPositionListcurrent(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1494,49 +1482,14 @@ func (siw *ServerInterfaceWrapper) GetPositionCarroute(w http.ResponseWriter, r 
 // GetPositionListcurrent operation middleware
 func (siw *ServerInterfaceWrapper) GetPositionListcurrent(w http.ResponseWriter, r *http.Request) {
 
-	var err error
-
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, AuthorizationScopes, []string{})
 
 	r = r.WithContext(ctx)
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetPositionListcurrentParams
-
-	// ------------- Required query parameter "whatshere[pointA]" -------------
-
-	if paramValue := r.URL.Query().Get("whatshere[pointA]"); paramValue != "" {
-
-	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "whatshere[pointA]"})
-		return
-	}
-
-	err = runtime.BindQueryParameter("form", true, true, "whatshere[pointA]", r.URL.Query(), &params.WhatsherePointA)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "whatshere[pointA]", Err: err})
-		return
-	}
-
-	// ------------- Required query parameter "whatshere[pointB]" -------------
-
-	if paramValue := r.URL.Query().Get("whatshere[pointB]"); paramValue != "" {
-
-	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "whatshere[pointB]"})
-		return
-	}
-
-	err = runtime.BindQueryParameter("form", true, true, "whatshere[pointB]", r.URL.Query(), &params.WhatsherePointB)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "whatshere[pointB]", Err: err})
-		return
-	}
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetPositionListcurrent(w, r, params)
+		siw.Handler.GetPositionListcurrent(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2548,7 +2501,6 @@ func (response GetPositionCarroute200JSONResponse) VisitGetPositionCarrouteRespo
 }
 
 type GetPositionListcurrentRequestObject struct {
-	Params GetPositionListcurrentParams
 }
 
 type GetPositionListcurrentResponseObject interface {
@@ -3495,10 +3447,8 @@ func (sh *strictHandler) GetPositionCarroute(w http.ResponseWriter, r *http.Requ
 }
 
 // GetPositionListcurrent operation middleware
-func (sh *strictHandler) GetPositionListcurrent(w http.ResponseWriter, r *http.Request, params GetPositionListcurrentParams) {
+func (sh *strictHandler) GetPositionListcurrent(w http.ResponseWriter, r *http.Request) {
 	var request GetPositionListcurrentRequestObject
-
-	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GetPositionListcurrent(ctx, request.(GetPositionListcurrentRequestObject))

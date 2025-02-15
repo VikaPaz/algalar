@@ -35,4 +35,5 @@ var (
 	ErrInvalidCarID                = errors.New("invalid car ID format")
 	ErrFailedToFetchCarData        = errors.New("failed to fetch car data")
 	ErrFailedToFetchRoutePositions = errors.New("failed to fetch car route positions")
+	ErrFailedToFetchCarPositions   = errors.New("failed to fetch car positions")
 )

@@ -52,6 +52,15 @@ CREATE TABLE IF NOT EXISTS sensors_data (
 	created_at timestamp
 );
 
+CREATE TABLE IF NOT EXISTS car_positions (
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+	id_company uuid REFERENCES users,
+	id_car uuid REFERENCES cars,
+	latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
+	updated_at TIMESTAMP DEFAULT now()
+)
+
 CREATE TABLE IF NOT EXISTS position_data (
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
 	device_number varchar(100),

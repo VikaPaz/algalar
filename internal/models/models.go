@@ -137,7 +137,7 @@ type RouteCarInfo struct {
 	Points      []Point
 }
 
-type CurentPosition struct {
+type CurrentPosition struct {
 	Point    Point
 	IDCar    string
 	IDUnicum string
