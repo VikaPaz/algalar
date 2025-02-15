@@ -129,6 +129,14 @@ type Point struct {
 	Longitude float32
 }
 
+type RouteCarInfo struct {
+	IDCar       string
+	StateNumber string
+	Brand       string
+	IDUnicum    string
+	Points      []Point
+}
+
 type CurentPosition struct {
 	Point    Point
 	IDCar    string

@@ -187,6 +187,15 @@ type NotificationListResponse struct {
 // Point A point in the format "latitude,longitude" representing the geographical coordinates.
 type Point = []float32
 
+// Position defines model for Position.
+type Position struct {
+	// CreatedAt Timestamp when the position was recorded
+	CreatedAt time.Time `json:"created_at"`
+
+	// Point Coordinates [latitude, longitude]
+	Point []float32 `json:"point"`
+}
+
 // PositionCarListResponse defines model for PositionCarListResponse.
 type PositionCarListResponse struct {
 	// Brand Brand of the car
@@ -200,12 +209,6 @@ type PositionCarListResponse struct {
 
 	// UniqueId Unique identifier of the car
 	UniqueId *string `json:"unique_id,omitempty"`
-}
-
-// PositionCarRouteResponse defines model for PositionCarRouteResponse.
-type PositionCarRouteResponse struct {
-	CreatedAt time.Time `json:"created_at"`
-	Point     []float32 `json:"point"`
 }
 
 // PositionCurrentListResponse defines model for PositionCurrentListResponse.
@@ -236,6 +239,24 @@ type PressureData struct {
 
 // ReportResponse defines model for ReportResponse.
 type ReportResponse = []byte
+
+// RouteCarResponse defines model for RouteCarResponse.
+type RouteCarResponse struct {
+	// Brand Brand of the car
+	Brand string `json:"brand"`
+
+	// CarId Unique identifier of the car
+	CarId openapi_types.UUID `json:"car_id"`
+
+	// Positions List of car positions with timestamps
+	Positions []Position `json:"positions"`
+
+	// StateNumber State number of the car
+	StateNumber string `json:"state_number"`
+
+	// UniqueId Unique identifier of the car
+	UniqueId string `json:"unique_id"`
+}
 
 // SensorsData defines model for SensorsData.
 type SensorsData struct {
@@ -2517,7 +2538,7 @@ type GetPositionCarrouteResponseObject interface {
 	VisitGetPositionCarrouteResponse(w http.ResponseWriter) error
 }
 
-type GetPositionCarroute200JSONResponse []PositionCarRouteResponse
+type GetPositionCarroute200JSONResponse RouteCarResponse
 
 func (response GetPositionCarroute200JSONResponse) VisitGetPositionCarrouteResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")

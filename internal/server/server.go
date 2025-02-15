@@ -881,31 +881,67 @@ func (s *ServImplemented) PostPosition(w http.ResponseWriter, r *http.Request) {
 func (s *ServImplemented) GetPositionCarroute(w http.ResponseWriter, r *http.Request, params rest.GetPositionCarrouteParams) {
 	ctx, err := s.getUserID(r)
 	if err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		s.log.Errorf("%v: %v", models.ErrUnauthorized, err)
+		http.Error(w, models.ErrUnauthorized.Error(), http.StatusUnauthorized)
 		return
 	}
+
+	s.log.Debugf("Received request to fetch car route for car_id=%s, time_from=%v, time_to=%v", params.CarId, params.TimeFrom, params.TimeTo)
+
+	carInfo, err := s.service.GetAutoData(ctx, params.CarId.String())
+	if err != nil {
+		s.log.Errorf("%v: %v", models.ErrFailedToFetchCarData, err)
+		http.Error(w, models.ErrFailedToFetchCarData.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	s.log.Debugf("Fetched car info: %+v", carInfo)
+
+	var res = rest.RouteCarResponse{
+		Brand:       carInfo.Brand,
+		StateNumber: carInfo.StateNumber,
+		UniqueId:    carInfo.IDUnicum,
+	}
+
+	res.CarId, err = uuid.Parse(carInfo.ID)
+	if err != nil {
+		s.log.Errorf("%v: %v", models.ErrInvalidCarID, err)
+		http.Error(w, models.ErrInvalidCarID.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	s.log.Debugf("Fetching route positions for car_id=%s", params.CarId)
 
 	positions, err := s.service.GetCarRoutePositions(ctx, params.CarId.String(), params.TimeFrom, params.TimeTo)
 	if err != nil {
-		s.log.Error(err)
-		http.Error(w, "failed to fetch car route positions", http.StatusInternalServerError)
+		s.log.Errorf("%v: %v", models.ErrFailedToFetchRoutePositions, err)
+		http.Error(w, models.ErrFailedToFetchRoutePositions.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	res := make([]rest.PositionCarRouteResponse, len(positions))
+	if len(positions) == 0 {
+		s.log.Debugf("%v: No route positions found for car_id=%s", models.ErrNoContent, params.CarId)
+		http.Error(w, models.ErrNoContent.Error(), http.StatusNoContent)
+		return
+	}
+
+	s.log.Debugf("Successfully fetched %d route positions for car_id=%s", len(positions), params.CarId)
+
+	route := make([]rest.Position, len(positions))
 	for i, val := range positions {
-		res[i] = rest.PositionCarRouteResponse{
+		route[i] = rest.Position{
 			Point:     []float32{val.Location.Latitude, val.Location.Longitude},
 			CreatedAt: val.CreatedAt,
 		}
 	}
 
-	w.WriteHeader(http.StatusOK)
+	res.Positions = route
+
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(res); err != nil {
-		s.log.Error(err)
-		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+		s.log.Errorf("%v: %v", models.ErrFailedToEncodeResponse, err)
+		http.Error(w, models.ErrFailedToEncodeResponse.Error(), http.StatusInternalServerError)
 	}
 }
 
