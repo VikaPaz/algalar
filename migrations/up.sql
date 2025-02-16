@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS cars_positions (
 	latitude DOUBLE PRECISION,
     longitude DOUBLE PRECISION,
 	updated_at TIMESTAMP DEFAULT now()
-)
+);
 
 CREATE TABLE IF NOT EXISTS position_data (
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
