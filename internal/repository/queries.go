@@ -837,7 +837,7 @@ func (r *Repository) GetCurrentCarPositions(ctx context.Context, id string) ([]m
 		dt.latitude,
 		dt.longitude,
 		c.id_unicum
-	FROM car_positions AS dt
+	FROM cars_positions AS dt
 	JOIN cars AS c ON dt.id_car = c.id
 	WHERE c.id_company = $1;
 	`
