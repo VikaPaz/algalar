@@ -833,7 +833,7 @@ func (r *Repository) GetCarRoutePositions(ctx context.Context, carID string, fro
 func (r *Repository) GetCurrentCarPositions(ctx context.Context, id string) ([]models.CurrentPosition, error) {
 	query := `
 	SELECT 
-		c.id_car,
+		c.id,
 		dt.latitude,
 		dt.longitude,
 		c.id_unicum
