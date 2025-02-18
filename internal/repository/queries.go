@@ -754,7 +754,7 @@ func (r *Repository) GetDriverByCaDviceNum(ctx context.Context, deviceNum string
 			LIMIT 1
 		)
 		SELECT 
-			id, id_company, id_car name, surname, middle_name, phone, birthday, rating, worked_time, created_at
+			id, id_company, id_car, name, surname, middle_name, phone, birthday, rating, worked_time, created_at
 			FROM drivers
 		WHERE id_car = (SELECT id FROM car_info)
 		;
