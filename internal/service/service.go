@@ -20,7 +20,7 @@ type Repository interface {
 	GetWheelById(wheelID string) (models.Wheel, error)
 	ChangeWheel(wheel models.Wheel) error
 	SelectAny(table string, key string, val any) (bool, error)
-	CreateBreakage(breakage models.Breakage) (string, error)
+	CreateBreakage(ctx context.Context, breakage models.Breakage) (models.Breakage, error)
 	GetCarById(carID string) (models.Car, error)
 	GetCarByStateNumber(stateNumber string) (models.Car, error)
 	GetCarsList(user_id string, offset int, limit int) ([]models.Car, error)
@@ -36,6 +36,7 @@ type Repository interface {
 	CreateDriver(driver models.Driver) (models.Driver, error)
 	GetDriversList(user_id string, limit int, offset int) ([]models.DriverStatisticsResponse, error)
 	GetDriverInfo(driverID string) (models.DriverInfoResponse, error)
+	GetDriverByCaDviceNum(ctx context.Context, deviceNum string) (models.Driver, error)
 	UpdateDriverWorktime(deviceNum string, workedTime int) error
 	CreatePosition(ctx context.Context, position models.Position) (models.Position, error)
 	GetCarRoutePositions(ctx context.Context, carID string, from time.Time, to time.Time) ([]models.Position, error)
@@ -165,15 +166,15 @@ func (s *Service) RegisterBeakege(ctx context.Context, breakege models.Breakage)
 	if !ok {
 		return models.Breakage{}, fmt.Errorf("wrong context: %v", ctx)
 	}
-	id_wheel, err := s.repo.CreateBreakage(breakege)
+
+	newDreakage, err := s.repo.CreateBreakage(ctx, breakege)
 	if err != nil {
 		s.log.Debugf("Error registering sensor: %v", id)
 		return models.Breakage{}, err
 	}
-	breakege.ID = id_wheel
 
 	s.log.Debugf("Sensor registered successfully: %v", id)
-	return breakege, nil
+	return newDreakage, nil
 }
 
 func (s *Service) UpdateWheelData(ctx context.Context, wheel models.Wheel) error {
@@ -333,6 +334,14 @@ func (s *Service) GetDriverInfo(ctx context.Context, driverID string) (models.Dr
 	res, err := s.repo.GetDriverInfo(driverID)
 	if err != nil {
 		return models.DriverInfoResponse{}, err
+	}
+	return res, nil
+}
+
+func (s *Service) GetDriverByCaDviceNum(ctx context.Context, deviceNum string) (models.Driver, error) {
+	res, err := s.repo.GetDriverByCaDviceNum(ctx, deviceNum)
+	if err != nil {
+		return models.Driver{}, err
 	}
 	return res, nil
 }

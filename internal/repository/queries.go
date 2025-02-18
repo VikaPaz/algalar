@@ -730,6 +730,45 @@ func (r *Repository) GetDriverInfo(driverID string) (models.DriverInfoResponse, 
 	return driverInfo, nil
 }
 
+func (r *Repository) GetDriverByCaDviceNum(ctx context.Context, deviceNum string) (models.Driver, error) {
+	query := `
+		WITH car_info AS (
+			SELECT id
+			FROM cars 
+			WHERE device_number = $1
+			LIMIT 1
+		)
+		SELECT EXISTS (
+			SELECT 1 
+			FROM drivers
+		id, id_company, id_car name, surname, middle_name, phone, birthday, rating, worked_time, created_at
+		WHERE id_car = (SELECT id FROM car_info);
+	`
+
+	var driverInfo models.Driver
+	err := r.conn.QueryRow(query, deviceNum).Scan(
+		&driverInfo.ID,
+		&driverInfo.IDCompany,
+		&driverInfo.IDCar,
+		&driverInfo.Name,
+		&driverInfo.Surname,
+		&driverInfo.Middle,
+		&driverInfo.Phone,
+		&driverInfo.Birthday,
+		&driverInfo.Rating,
+		&driverInfo.WorkedTime,
+		&driverInfo.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.Driver{}, models.ErrDriverNotFound
+		}
+		return models.Driver{}, fmt.Errorf("failed to fetch driver info: %w", err)
+	}
+
+	return driverInfo, nil
+}
+
 func (r *Repository) UpdateDriverWorktime(deviceNum string, workedTime int) error {
 	query := `
 		UPDATE drivers
@@ -934,17 +973,17 @@ func (r *Repository) GetCurrentCarPositionsByPoints(ctx context.Context, pointA 
 
 // Breakage
 // CreateBreakage inserts a new breakage record into the database and returns the created breakage ID.
-func (r *Repository) CreateBreakage(breakage models.Breakage) (string, error) {
+func (r *Repository) CreateBreakage(ctx context.Context, breakage models.Breakage) (models.Breakage, error) {
 	query := `
 		INSERT INTO breakages (car_id, id_driver, latitude, longitude, type, description, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		RETURNING id`
+		RETURNING id, id_driver, latitude, longitude, type, description, created_at`
 
 	r.log.Debugf("Executing query to create breakage with values: car_id=%s, driver=%s, latitude=%f, longitude=%f, type=%s, description=%s, created_at=%v",
 		breakage.CarID, breakage.DriverID, breakage.Location.Latitude, breakage.Location.Longitude, breakage.Type, breakage.Description, breakage.CreatedAt)
 
-	var breakageID string
-	err := r.conn.QueryRow(query,
+	var newBreakage models.Breakage
+	err := r.conn.QueryRowContext(ctx, query,
 		breakage.CarID,
 		breakage.DriverID,
 		breakage.Location.Latitude,
@@ -952,15 +991,24 @@ func (r *Repository) CreateBreakage(breakage models.Breakage) (string, error) {
 		breakage.Type,
 		breakage.Description,
 		breakage.CreatedAt).
-		Scan(&breakageID)
+		Scan(
+			&newBreakage.ID,
+			&newBreakage.CarID,
+			&newBreakage.DriverID,
+			&newBreakage.Location.Latitude,
+			&newBreakage.Location.Longitude,
+			&newBreakage.Type,
+			&newBreakage.Description,
+			&newBreakage.CreatedAt,
+		)
 
 	if err != nil {
 		r.log.Errorf("Failed to create breakage: %v", err)
-		return "", fmt.Errorf("%w: %v", models.ErrFailedToExecuteQuery, err)
+		return models.Breakage{}, fmt.Errorf("%w: %v", models.ErrFailedToExecuteQuery, err)
 	}
 
-	r.log.Debugf("Breakage created successfully with ID: %s", breakageID)
-	return breakageID, nil
+	r.log.Debugf("Breakage created successfully with ID: %s", breakage.ID)
+	return newBreakage, nil
 }
 
 // CreateBreakageFromMqtt processes the breakage data received from MQTT, inserts it into the database, and returns the created breakage record.

@@ -41,11 +41,13 @@ type Service interface {
 	GetAutoDataByStateNumber(ctx context.Context, stateNumber string) (models.Car, error)
 	GetDriversList(ctx context.Context, offset int, limit int) ([]models.DriverStatisticsResponse, error)
 	GetDriverInfo(ctx context.Context, driverID string) (models.DriverInfoResponse, error)
+	GetDriverByCaDviceNum(ctx context.Context, deviceNum string) (models.Driver, error)
 	UpdateDriverWorktime(ctx context.Context, deviceNum string, workedTime int) error
 	CreatePosition(ctx context.Context, position models.Position) (models.Position, error)
 	GetCarRoutePositions(ctx context.Context, carID string, from time.Time, to time.Time) ([]models.Position, error)
 	GetCurrentCarPositions(ctx context.Context) ([]models.CurrentPosition, error)
 	GetCurrentCarPositionsByPoints(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurrentPosition, error)
+	RegisterBeakege(ctx context.Context, breakege models.Breakage) (models.Breakage, error)
 	CreateBreakageFromMqtt(ctx context.Context, breakage models.BreakageFromMqtt) (models.Breakage, error)
 	GetBreakagesByCarId(ctx context.Context, carID string) ([]models.BreakageInfo, error)
 	CreateNotification(ctx context.Context, new models.Notification) (models.Notification, error)
@@ -1213,6 +1215,8 @@ func (s *ServImplemented) PostBreakage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	s.log.Debugf("Received request to create a breakage from user_id=%s", ctx.Value("user_id"))
+
 	var req rest.BreakageFromMqttRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -1227,24 +1231,35 @@ func (s *ServImplemented) PostBreakage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	breakage := models.BreakageFromMqtt{
-		DeviceNum:   req.DeviceNum,
+	point := models.Point{
+		Latitude:  req.Point[0],
+		Longitude: req.Point[1],
+	}
+
+	s.log.Debugf("Fetching driver by device number: %s", req.DeviceNum)
+	driver, err := s.service.GetDriverByCaDviceNum(ctx, req.DeviceNum)
+	if err != nil {
+		s.log.Errorf("%v: %v", models.ErrFailedToFetchDriver, err)
+		http.Error(w, models.ErrFailedToFetchDriver.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	breakage := models.Breakage{
+		CarID:       driver.IDCar,
+		DriverID:    driver.ID,
+		Location:    point,
 		Type:        req.Type,
 		Description: req.Description,
 		CreatedAt:   req.Datetime,
-		Point:       [2]float32{req.Point[0], req.Point[1]},
 	}
 
 	s.log.Debugf("Creating breakage: %+v", breakage)
-
-	newBreakage, err := s.service.CreateBreakageFromMqtt(ctx, breakage)
+	newBreakage, err := s.service.RegisterBeakege(ctx, breakage)
 	if err != nil {
 		s.log.Errorf("%v: %v", models.ErrFailedToCreateBreakage, err)
 		http.Error(w, models.ErrFailedToCreateBreakage.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	w.WriteHeader(http.StatusCreated)
 
 	notification := models.Notification{
 		IDUser:     ctx.Value("user_id").(string),
@@ -1255,12 +1270,14 @@ func (s *ServImplemented) PostBreakage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.log.Debugf("Creating notification: %+v", notification)
-
 	if _, err := s.service.CreateNotification(ctx, notification); err != nil {
 		s.log.Errorf("%v: %v", models.ErrFailedToCreateNotification, err)
 		http.Error(w, models.ErrFailedToCreateNotification.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	s.log.Debugf("Breakage and notification successfully created for user_id=%s", ctx.Value("user_id"))
+	w.WriteHeader(http.StatusCreated)
 }
 
 // Get a list of breakages for a specific car

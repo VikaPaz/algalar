@@ -36,4 +36,5 @@ var (
 	ErrFailedToFetchCarData        = errors.New("failed to fetch car data")
 	ErrFailedToFetchRoutePositions = errors.New("failed to fetch car route positions")
 	ErrFailedToFetchCarPositions   = errors.New("failed to fetch car positions")
+	ErrFailedToFetchDriver         = errors.New("failed to fetch driver by device number")
 )
