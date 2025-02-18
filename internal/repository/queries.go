@@ -753,11 +753,11 @@ func (r *Repository) GetDriverByCaDviceNum(ctx context.Context, deviceNum string
 			WHERE device_number = $1
 			LIMIT 1
 		)
-		SELECT EXISTS (
-			SELECT 1 
+		SELECT 
+			id, id_company, id_car name, surname, middle_name, phone, birthday, rating, worked_time, created_at
 			FROM drivers
-		id, id_company, id_car name, surname, middle_name, phone, birthday, rating, worked_time, created_at
-		WHERE id_car = (SELECT id FROM car_info);
+		WHERE id_car = (SELECT id FROM car_info)
+		;
 	`
 
 	var driverInfo models.Driver
