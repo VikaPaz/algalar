@@ -1302,7 +1302,12 @@ func (s *ServImplemented) GetBreakageList(w http.ResponseWriter, r *http.Request
 	res := make([]rest.BreakageListResponse, len(breakages))
 
 	for i, val := range breakages {
-		id := uuid.MustParse(val.ID)
+		id, err := uuid.Parse(val.ID)
+		if err != nil {
+			s.log.Errorf("Failed to fetch breakages: %v", err)
+			http.Error(w, models.ErrFailedToFetchBreakages.Error(), http.StatusInternalServerError)
+			return
+		}
 		res[i] = rest.BreakageListResponse{
 			Id:          &id,
 			DriverName:  &val.DriverName,

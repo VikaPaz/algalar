@@ -408,10 +408,18 @@ func (r *Repository) ChangeWheel(wheel models.Wheel) error {
 
 func (r *Repository) GetBreakagesByCarId(carID string) ([]models.BreakageInfo, error) {
 	query := `
-        SELECT b.id, c.state_number, b.type, b.description, b.created_at
+        SELECT 
+			b.id, 
+			CONCAT(d.name, ' ', d.surname, ' ', COALESCE(d.middle_name, '')) AS full_name,
+			c.state_number, 
+			b.type, 
+			b.description, 
+			b.created_at
         FROM breakages b
-        JOIN cars c ON b.car_id = c.id
-        WHERE b.car_id = $1
+        JOIN cars c ON b.id_car = c.id
+		JOIN drivers d ON d.id_car = c.id
+        WHERE b.id_car = $1
+		;
     `
 
 	var breakages []models.BreakageInfo
@@ -429,7 +437,14 @@ func (r *Repository) GetBreakagesByCarId(carID string) ([]models.BreakageInfo, e
 
 	for rows.Next() {
 		var breakage models.BreakageInfo
-		if err := rows.Scan(&breakage.ID, &breakage.StateNumber, &breakage.Type, &breakage.Description, &breakage.CreatedAt); err != nil {
+		if err := rows.Scan(
+			&breakage.ID,
+			&breakage.DriverName,
+			&breakage.StateNumber,
+			&breakage.Type,
+			&breakage.Description,
+			&breakage.CreatedAt,
+		); err != nil {
 			return nil, fmt.Errorf("error scanning row into breakage: %w", err)
 		}
 		breakages = append(breakages, breakage)
