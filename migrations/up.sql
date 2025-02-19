@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS drivers (
 CREATE TABLE IF NOT EXISTS breakages (
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
 	id_car uuid REFERENCES cars,
-	id_driver uuid REFERENCES cars,
+	id_driver uuid REFERENCES drivers,
 	type varchar(100),
 	description varchar(100),
     latitude DOUBLE PRECISION,
