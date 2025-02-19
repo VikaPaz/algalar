@@ -992,7 +992,7 @@ func (r *Repository) CreateBreakage(ctx context.Context, breakage models.Breakag
 	query := `
 		INSERT INTO breakages (id_car, id_driver, latitude, longitude, type, description, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		RETURNING id, id_driver, latitude, longitude, type, description, created_at`
+		RETURNING id, id_car, id_driver, latitude, longitude, type, description, created_at`
 
 	r.log.Debugf("Executing query to create breakage with values: car_id=%s, driver=%s, latitude=%f, longitude=%f, type=%s, description=%s, created_at=%v",
 		breakage.CarID, breakage.DriverID, breakage.Location.Latitude, breakage.Location.Longitude, breakage.Type, breakage.Description, breakage.CreatedAt)
