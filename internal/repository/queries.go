@@ -990,7 +990,7 @@ func (r *Repository) GetCurrentCarPositionsByPoints(ctx context.Context, pointA 
 // CreateBreakage inserts a new breakage record into the database and returns the created breakage ID.
 func (r *Repository) CreateBreakage(ctx context.Context, breakage models.Breakage) (models.Breakage, error) {
 	query := `
-		INSERT INTO breakages (car_id, id_driver, latitude, longitude, type, description, created_at)
+		INSERT INTO breakages (id_car, id_driver, latitude, longitude, type, description, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id, id_driver, latitude, longitude, type, description, created_at`
 
