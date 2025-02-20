@@ -138,6 +138,14 @@ type RouteCarInfo struct {
 }
 
 type CurrentPosition struct {
+	ID        string
+	IDCompany string
+	IDCar     string
+	Location  Point
+	UpdateAt  time.Time
+}
+
+type CurrentPositionResponse struct {
 	Point    Point
 	IDCar    string
 	IDUnicum string

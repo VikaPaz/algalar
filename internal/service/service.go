@@ -23,6 +23,7 @@ type Repository interface {
 	CreateBreakage(ctx context.Context, breakage models.Breakage) (models.Breakage, error)
 	GetCarById(carID string) (models.Car, error)
 	GetCarByStateNumber(stateNumber string) (models.Car, error)
+	GetCarByDeviceNumber(ctx context.Context, device string) (models.Car, error)
 	GetCarsList(user_id string, offset int, limit int) ([]models.Car, error)
 	GetIdCarByStateNumber(stateNumber string) (string, error)
 	GetBreakagesByCarId(carID string) ([]models.BreakageInfo, error)
@@ -40,8 +41,8 @@ type Repository interface {
 	UpdateDriverWorktime(deviceNum string, workedTime int) error
 	CreatePosition(ctx context.Context, position models.Position) (models.Position, error)
 	GetCarRoutePositions(ctx context.Context, carID string, from time.Time, to time.Time) ([]models.Position, error)
-	GetCurrentCarPositions(ctx context.Context, id string) ([]models.CurrentPosition, error)
-	GetCurrentCarPositionsByPoints(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurrentPosition, error)
+	GetCurrentCarPositions(ctx context.Context, id string) ([]models.CurrentPositionResponse, error)
+	GetCurrentCarPositionsByPoints(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurrentPositionResponse, error)
 	CreateBreakageFromMqtt(ctx context.Context, breakage models.BreakageFromMqtt) (models.Breakage, error)
 	CreateNotification(new models.Notification) (models.Notification, error)
 	UpdateNotificationStatus(ctx context.Context, id string, status string) error
@@ -49,6 +50,7 @@ type Repository interface {
 	GetNotificationInfo(ctx context.Context, notificationID string) (models.NotificationInfo, error)
 	GetNotificationList(ctx context.Context, status string, limit, offset int) ([]models.NotificationListItem, error)
 	CheckDriverExists(ctx context.Context, deviceNumber string) (bool, error)
+	CreateOrUpdateCarsPosition(ctx context.Context, position models.CurrentPosition) (models.CurrentPosition, error)
 }
 
 type Service struct {
@@ -356,10 +358,47 @@ func (s *Service) UpdateDriverWorktime(ctx context.Context, deviceNum string, wo
 
 // Position
 func (s *Service) CreatePosition(ctx context.Context, position models.Position) (models.Position, error) {
-	position, err := s.repo.CreatePosition(ctx, position)
-	if err != nil {
-		return models.Position{}, err
+	idCompany, ok := ctx.Value("user_id").(string)
+	if !ok {
+		s.log.Errorf("%v: %v", models.ErrInvalidContext, ctx)
+		return models.Position{}, fmt.Errorf("%w: %v", models.ErrInvalidContext, ctx)
 	}
+
+	s.log.Debugf("Received request to create position for device number: %s", position.DeviceNumber)
+
+	car, err := s.repo.GetCarByDeviceNumber(ctx, position.DeviceNumber)
+	if err != nil {
+		s.log.Errorf("%v: %v", models.ErrFailedToFetchCar, err)
+		return models.Position{}, fmt.Errorf("%w: %v", models.ErrFailedToFetchCar, err)
+	}
+
+	s.log.Debugf("Fetched car data: %+v", car)
+
+	position, err = s.repo.CreatePosition(ctx, position)
+	if err != nil {
+		s.log.Errorf("%v: %v", models.ErrFailedToCreatePosition, err)
+		return models.Position{}, fmt.Errorf("%w: %v", models.ErrFailedToCreatePosition, err)
+	}
+
+	s.log.Debugf("Successfully created position: %+v", position)
+
+	curPosition := models.CurrentPosition{
+		IDCompany: idCompany,
+		IDCar:     car.ID,
+		Location:  position.Location,
+		UpdateAt:  position.CreatedAt,
+	}
+
+	s.log.Debugf("Updating current position for car ID: %s", car.ID)
+
+	_, err = s.repo.CreateOrUpdateCarsPosition(ctx, curPosition)
+	if err != nil {
+		s.log.Errorf("%v: %v", models.ErrFailedToUpdateCurrentPosition, err)
+		return models.Position{}, fmt.Errorf("%w: %v", models.ErrFailedToUpdateCurrentPosition, err)
+	}
+
+	s.log.Debugf("Successfully updated current position for car ID: %s", car.ID)
+
 	return position, nil
 }
 
@@ -371,11 +410,11 @@ func (s *Service) GetCarRoutePositions(ctx context.Context, carID string, from t
 	return positions, nil
 }
 
-func (s *Service) GetCurrentCarPositions(ctx context.Context) ([]models.CurrentPosition, error) {
+func (s *Service) GetCurrentCarPositions(ctx context.Context) ([]models.CurrentPositionResponse, error) {
 	id, ok := ctx.Value("user_id").(string)
 	if !ok {
 		s.log.Errorf("%v: %v", models.ErrInvalidContext, ctx)
-		return []models.CurrentPosition{}, fmt.Errorf("%w: %v", models.ErrInvalidContext, ctx)
+		return []models.CurrentPositionResponse{}, fmt.Errorf("%w: %v", models.ErrInvalidContext, ctx)
 	}
 
 	s.log.Debugf("Fetching current car positions for user_id=%s", id)
@@ -383,7 +422,7 @@ func (s *Service) GetCurrentCarPositions(ctx context.Context) ([]models.CurrentP
 	positions, err := s.repo.GetCurrentCarPositions(ctx, id)
 	if err != nil {
 		s.log.Errorf("%v: %v", models.ErrFailedToFetchCarPositions, err)
-		return []models.CurrentPosition{}, fmt.Errorf("%w: %v", models.ErrFailedToFetchCarPositions, err)
+		return []models.CurrentPositionResponse{}, fmt.Errorf("%w: %v", models.ErrFailedToFetchCarPositions, err)
 	}
 
 	if len(positions) == 0 {
@@ -395,20 +434,20 @@ func (s *Service) GetCurrentCarPositions(ctx context.Context) ([]models.CurrentP
 	return positions, nil
 }
 
-func (s *Service) GetCurrentCarPositionsByPoints(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurrentPosition, error) {
+func (s *Service) GetCurrentCarPositionsByPoints(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurrentPositionResponse, error) {
 	s.log.Debugf("Fetching current car positions: pointA=(%f, %f), pointB=(%f, %f)",
 		pointA.Latitude, pointA.Longitude, pointB.Latitude, pointB.Longitude)
 
 	positions, err := s.repo.GetCurrentCarPositionsByPoints(ctx, pointA, pointB)
 	if err != nil {
 		s.log.Errorf("%v: %v", models.ErrFailedToFetchPositions, err)
-		return []models.CurrentPosition{}, models.ErrFailedToFetchPositions
+		return []models.CurrentPositionResponse{}, models.ErrFailedToFetchPositions
 	}
 
 	if len(positions) == 0 {
 		s.log.Debugf("No car positions found in the specified area: pointA=(%f, %f), pointB=(%f, %f)",
 			pointA.Latitude, pointA.Longitude, pointB.Latitude, pointB.Longitude)
-		return []models.CurrentPosition{}, models.ErrNoContent
+		return []models.CurrentPositionResponse{}, models.ErrNoContent
 	}
 
 	s.log.Debugf("Successfully fetched %d car positions", len(positions))

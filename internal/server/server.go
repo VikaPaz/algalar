@@ -45,8 +45,8 @@ type Service interface {
 	UpdateDriverWorktime(ctx context.Context, deviceNum string, workedTime int) error
 	CreatePosition(ctx context.Context, position models.Position) (models.Position, error)
 	GetCarRoutePositions(ctx context.Context, carID string, from time.Time, to time.Time) ([]models.Position, error)
-	GetCurrentCarPositions(ctx context.Context) ([]models.CurrentPosition, error)
-	GetCurrentCarPositionsByPoints(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurrentPosition, error)
+	GetCurrentCarPositions(ctx context.Context) ([]models.CurrentPositionResponse, error)
+	GetCurrentCarPositionsByPoints(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurrentPositionResponse, error)
 	RegisterBeakege(ctx context.Context, breakege models.Breakage) (models.Breakage, error)
 	CreateBreakageFromMqtt(ctx context.Context, breakage models.BreakageFromMqtt) (models.Breakage, error)
 	GetBreakagesByCarId(ctx context.Context, carID string) ([]models.BreakageInfo, error)

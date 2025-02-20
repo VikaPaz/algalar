@@ -180,6 +180,36 @@ func (r *Repository) GetCarById(carID string) (models.Car, error) {
 	return car, nil
 }
 
+func (r *Repository) GetCarByDeviceNumber(ctx context.Context, device string) (models.Car, error) {
+	query := `
+		SELECT id, id_company, state_number, brand, device_number, id_unicum, car_type, count_axis 
+		FROM cars 
+		WHERE device_number = $1
+	`
+
+	r.log.Debugf("Executing query: %s with value: %s", query, device)
+
+	var car models.Car
+	err := r.conn.QueryRowContext(ctx, query, device).Scan(
+		&car.ID,
+		&car.IDCompany,
+		&car.StateNumber,
+		&car.Brand,
+		&car.DeviceNumber,
+		&car.IDUnicum,
+		&car.Type,
+		&car.CountAxis,
+	)
+
+	if err != nil {
+		r.log.Errorf("Failed to get car by device number: %v", err)
+		return models.Car{}, fmt.Errorf("%w: %v", models.ErrFailedToExecuteQuery, err)
+	}
+
+	r.log.Debugf("Car retrieved successfully: %+v", car)
+	return car, nil
+}
+
 func (r *Repository) GetIdCarByStateNumber(stateNumber string) (string, error) {
 	query := `
 		SELECT id
@@ -836,6 +866,41 @@ func (r *Repository) CreatePosition(ctx context.Context, position models.Positio
 	return newPosition, nil
 }
 
+func (r *Repository) CreateOrUpdateCarsPosition(ctx context.Context, position models.CurrentPosition) (models.CurrentPosition, error) {
+	query := `
+		INSERT INTO cars_positions (id_company, id_car, latitude, longitude, updated_at) 
+		VALUES ($1, $2, $3, $4, $5) 
+		ON CONFLICT (id_car) 
+		DO UPDATE SET 
+			latitude = EXCLUDED.latitude,
+			longitude = EXCLUDED.longitude,
+			updated_at = EXCLUDED.updated_at
+		RETURNING id, id_company, id_car, latitude, longitude, updated_at
+	`
+
+	r.log.Debugf("Executing query: %s with values: %s, %s, %f, %f, %v",
+		query, position.IDCompany, position.IDCar, position.Location.Latitude, position.Location.Longitude, position.UpdateAt)
+
+	var newPosition models.CurrentPosition
+	err := r.conn.QueryRowContext(ctx, query,
+		position.IDCompany, position.IDCar, position.Location.Latitude, position.Location.Longitude, position.UpdateAt).Scan(
+		&newPosition.ID,
+		&newPosition.IDCompany,
+		&newPosition.IDCar,
+		&newPosition.Location.Latitude,
+		&newPosition.Location.Longitude,
+		&newPosition.UpdateAt,
+	)
+
+	if err != nil {
+		r.log.Errorf("Failed to create or update car position: %v", err)
+		return models.CurrentPosition{}, fmt.Errorf("%w: %v", models.ErrFailedToExecuteQuery, err)
+	}
+
+	r.log.Debugf("Car position created or updated successfully: %+v", newPosition)
+	return newPosition, nil
+}
+
 // GetCarRoutePositions retrieves the positions of a car within a specific time range.
 func (r *Repository) GetCarRoutePositions(ctx context.Context, carID string, from time.Time, to time.Time) ([]models.Position, error) {
 	var positions []models.Position
@@ -884,7 +949,7 @@ func (r *Repository) GetCarRoutePositions(ctx context.Context, carID string, fro
 	return positions, nil
 }
 
-func (r *Repository) GetCurrentCarPositions(ctx context.Context, id string) ([]models.CurrentPosition, error) {
+func (r *Repository) GetCurrentCarPositions(ctx context.Context, id string) ([]models.CurrentPositionResponse, error) {
 	query := `
 	SELECT 
 		c.id,
@@ -905,10 +970,10 @@ func (r *Repository) GetCurrentCarPositions(ctx context.Context, id string) ([]m
 	}
 	defer rows.Close()
 
-	var positions []models.CurrentPosition
+	var positions []models.CurrentPositionResponse
 
 	for rows.Next() {
-		var position models.CurrentPosition
+		var position models.CurrentPositionResponse
 		if err := rows.Scan(
 			&position.IDCar,
 			&position.Point.Latitude,
@@ -937,8 +1002,8 @@ func (r *Repository) GetCurrentCarPositions(ctx context.Context, id string) ([]m
 }
 
 // GetCurrentCarPositionsByPoints retrieves cars in the area between two points.
-func (r *Repository) GetCurrentCarPositionsByPoints(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurrentPosition, error) {
-	var positions []models.CurrentPosition
+func (r *Repository) GetCurrentCarPositionsByPoints(ctx context.Context, pointA models.Point, pointB models.Point) ([]models.CurrentPositionResponse, error) {
+	var positions []models.CurrentPositionResponse
 
 	r.log.Debugf("Querying car positions in area: [%f, %f] (lat) x [%f, %f] (lng)", pointA.Latitude, pointB.Latitude, pointA.Longitude, pointB.Longitude)
 
@@ -964,7 +1029,7 @@ func (r *Repository) GetCurrentCarPositionsByPoints(ctx context.Context, pointA 
 	defer rows.Close()
 
 	for rows.Next() {
-		var position models.CurrentPosition
+		var position models.CurrentPositionResponse
 		if err := rows.Scan(
 			&position.Point.Latitude,
 			&position.Point.Longitude,
