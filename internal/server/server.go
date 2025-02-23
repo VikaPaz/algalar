@@ -1143,9 +1143,14 @@ func (s *ServImplemented) GetNotificationList(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	s.log.Debugf("Received request to fetch notifications with status: %s, limit: %d, offset: %d", *params.Status, params.Limit, params.Offset)
+	var status *string
+	if params.Status != nil {
+		status = params.Status
+	}
 
-	notifications, err := s.service.GetNotificationList(ctx, params.Status, params.Limit, params.Offset)
+	s.log.Debugf("Received request to fetch notifications with status: %s, limit: %d, offset: %d", *status, params.Limit, params.Offset)
+
+	notifications, err := s.service.GetNotificationList(ctx, status, params.Limit, params.Offset)
 	if err != nil {
 		s.log.Errorf("%v: %v", models.ErrFailedToRetrieveNotifications, err)
 		http.Error(w, models.ErrFailedToRetrieveNotifications.Error(), http.StatusInternalServerError)

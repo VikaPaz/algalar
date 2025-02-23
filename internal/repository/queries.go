@@ -1413,7 +1413,7 @@ func (r *Repository) GetNotificationList(ctx context.Context, status *string, li
 
 	r.log.Debugf("Executing query to fetch notifications with status: %s, limit: %d, offset: %d", *status, limit, offset)
 
-	rows, err := r.conn.QueryContext(ctx, query, status, limit, offset)
+	rows, err := r.conn.QueryContext(ctx, query, *status, limit, offset)
 	if err != nil {
 		r.log.Errorf("Failed to execute query: %v", err)
 		return nil, fmt.Errorf("%w: %v", models.ErrFailedToExecuteQuery, err)
