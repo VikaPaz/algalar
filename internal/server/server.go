@@ -1148,7 +1148,7 @@ func (s *ServImplemented) GetNotificationList(w http.ResponseWriter, r *http.Req
 		status = params.Status
 	}
 
-	s.log.Debugf("Received request to fetch notifications with status: %s, limit: %d, offset: %d", *status, params.Limit, params.Offset)
+	s.log.Debugf("Received request to fetch notifications with status: %v, limit: %d, offset: %d", status, params.Limit, params.Offset)
 
 	notifications, err := s.service.GetNotificationList(ctx, status, params.Limit, params.Offset)
 	if err != nil {

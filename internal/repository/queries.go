@@ -1411,9 +1411,9 @@ func (r *Repository) GetNotificationList(ctx context.Context, status *string, li
 		ORDER BY n.created_at DESC
 		LIMIT $2 OFFSET $3`
 
-	r.log.Debugf("Executing query to fetch notifications with status: %s, limit: %d, offset: %d", *status, limit, offset)
+	r.log.Debugf("Executing query to fetch notifications with status: %v, limit: %d, offset: %d", status, limit, offset)
 
-	rows, err := r.conn.QueryContext(ctx, query, *status, limit, offset)
+	rows, err := r.conn.QueryContext(ctx, query, status, limit, offset)
 	if err != nil {
 		r.log.Errorf("Failed to execute query: %v", err)
 		return nil, fmt.Errorf("%w: %v", models.ErrFailedToExecuteQuery, err)
