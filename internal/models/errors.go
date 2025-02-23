@@ -40,4 +40,5 @@ var (
 	ErrFailedToFetchCar              = errors.New("failed to fetch car by device number")
 	ErrFailedToCreatePosition        = errors.New("failed to create position")
 	ErrFailedToUpdateCurrentPosition = errors.New("failed to update current car position")
+	ErrFailedToRetrieveNotifications = errors.New("failed to retrieve notifications")
 )

@@ -1138,17 +1138,27 @@ func (s *ServImplemented) GetNotificationInfo(w http.ResponseWriter, r *http.Req
 func (s *ServImplemented) GetNotificationList(w http.ResponseWriter, r *http.Request, params rest.GetNotificationListParams) {
 	ctx, err := s.getUserID(r)
 	if err != nil {
-		s.log.Error(err)
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		s.log.Errorf("%v: %v", models.ErrUnauthorizedRequest, err)
+		http.Error(w, models.ErrUnauthorizedRequest.Error(), http.StatusUnauthorized)
 		return
 	}
 
+	s.log.Debugf("Received request to fetch notifications with status: %s, limit: %d, offset: %d", *params.Status, params.Limit, params.Offset)
+
 	notifications, err := s.service.GetNotificationList(ctx, *params.Status, params.Limit, params.Offset)
 	if err != nil {
-		s.log.Error(err)
-		http.Error(w, "failed to retrieve notifications", http.StatusInternalServerError)
+		s.log.Errorf("%v: %v", models.ErrFailedToRetrieveNotifications, err)
+		http.Error(w, models.ErrFailedToRetrieveNotifications.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	if len(notifications) == 0 {
+		s.log.Debugf("%v: No notifications found", models.ErrNoContent)
+		http.Error(w, models.ErrNoContent.Error(), http.StatusNoContent)
+		return
+	}
+
+	s.log.Debugf("Successfully retrieved %d notifications", len(notifications))
 
 	res := make([]rest.NotificationListResponse, len(notifications))
 	for i, val := range notifications {
@@ -1156,12 +1166,13 @@ func (s *ServImplemented) GetNotificationList(w http.ResponseWriter, r *http.Req
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(notifications); err != nil {
-		s.log.Error(err)
-		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+	if err := json.NewEncoder(w).Encode(res); err != nil {
+		s.log.Errorf("%v: %v", models.ErrFailedToEncodeResponse, err)
+		http.Error(w, models.ErrFailedToEncodeResponse.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	s.log.Debugf("Response successfully encoded and sent")
 	w.WriteHeader(http.StatusOK)
 }
 
