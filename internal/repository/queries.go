@@ -1358,12 +1358,12 @@ func (r *Repository) UpdateAllNotificationsStatus(ctx context.Context, userID st
 func (r *Repository) GetNotificationInfo(ctx context.Context, notificationID string) (models.NotificationInfo, error) {
 	query := `
 	SELECT 
-		b.note,
-		b.status,
+		n.note,
+		n.status,
     	CONCAT(d.surname, d.name, d.middle_name) AS driver_name,
 		b.latitude, 
 		b.longitude,
-		b.created_at
+		n.created_at
 	FROM notifications n
 	INNER JOIN breakages b ON n.id_breakages = b.id
 	INNER JOIN drivers d ON b.id_driver = d.id
