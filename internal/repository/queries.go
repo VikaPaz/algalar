@@ -1396,7 +1396,7 @@ func (r *Repository) GetNotificationInfo(ctx context.Context, notificationID str
 }
 
 // GetNotificationList retrieves a list of notifications based on the provided status, limit, and offset.
-func (r *Repository) GetNotificationList(ctx context.Context, status string, limit, offset int) ([]models.NotificationListItem, error) {
+func (r *Repository) GetNotificationList(ctx context.Context, status *string, limit, offset int) ([]models.NotificationListItem, error) {
 	query := `
 		SELECT 
 			n.id,
@@ -1406,12 +1406,12 @@ func (r *Repository) GetNotificationList(ctx context.Context, status string, lim
 			n.created_at
 		FROM notifications n
 		INNER JOIN breakages b ON n.id_breakages = b.id
-		INNER JOIN cars c ON b.car_id = c.id
+		INNER JOIN cars c ON b.id_car = c.id
 		WHERE n.status = COALESCE($1, n.status)
 		ORDER BY n.created_at DESC
 		LIMIT $2 OFFSET $3`
 
-	r.log.Debugf("Executing query to fetch notifications with status: %s, limit: %d, offset: %d", status, limit, offset)
+	r.log.Debugf("Executing query to fetch notifications with status: %s, limit: %d, offset: %d", *status, limit, offset)
 
 	rows, err := r.conn.QueryContext(ctx, query, status, limit, offset)
 	if err != nil {

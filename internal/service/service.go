@@ -48,7 +48,7 @@ type Repository interface {
 	UpdateNotificationStatus(ctx context.Context, id string, status string) error
 	UpdateAllNotificationsStatus(ctx context.Context, userID string, status string) error
 	GetNotificationInfo(ctx context.Context, notificationID string) (models.NotificationInfo, error)
-	GetNotificationList(ctx context.Context, status string, limit, offset int) ([]models.NotificationListItem, error)
+	GetNotificationList(ctx context.Context, status *string, limit, offset int) ([]models.NotificationListItem, error)
 	CheckDriverExists(ctx context.Context, deviceNumber string) (bool, error)
 	CreateOrUpdateCarsPosition(ctx context.Context, position models.CurrentPosition) (models.CurrentPosition, error)
 }
@@ -521,11 +521,7 @@ func (s *Service) GetNotificationInfo(ctx context.Context, notificationID string
 	return notificationInfo, nil
 }
 
-func (s *Service) GetNotificationList(ctx context.Context, status string, limit, offset int) ([]models.NotificationListItem, error) {
-	if status == "" {
-		return nil, fmt.Errorf("status is required")
-	}
-
+func (s *Service) GetNotificationList(ctx context.Context, status *string, limit, offset int) ([]models.NotificationListItem, error) {
 	notifications, err := s.repo.GetNotificationList(ctx, status, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve notifications: %w", err)

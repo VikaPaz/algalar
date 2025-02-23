@@ -54,7 +54,7 @@ type Service interface {
 	UpdateNotificationStatus(ctx context.Context, id string, status string) error
 	UpdateAllNotificationsStatus(ctx context.Context, status string) error
 	GetNotificationInfo(ctx context.Context, notificationID string) (models.NotificationInfo, error)
-	GetNotificationList(ctx context.Context, status string, limit, offset int) ([]models.NotificationListItem, error)
+	GetNotificationList(ctx context.Context, status *string, limit, offset int) ([]models.NotificationListItem, error)
 }
 
 type AuthService interface {
@@ -1145,7 +1145,7 @@ func (s *ServImplemented) GetNotificationList(w http.ResponseWriter, r *http.Req
 
 	s.log.Debugf("Received request to fetch notifications with status: %s, limit: %d, offset: %d", *params.Status, params.Limit, params.Offset)
 
-	notifications, err := s.service.GetNotificationList(ctx, *params.Status, params.Limit, params.Offset)
+	notifications, err := s.service.GetNotificationList(ctx, params.Status, params.Limit, params.Offset)
 	if err != nil {
 		s.log.Errorf("%v: %v", models.ErrFailedToRetrieveNotifications, err)
 		http.Error(w, models.ErrFailedToRetrieveNotifications.Error(), http.StatusInternalServerError)
