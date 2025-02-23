@@ -1143,7 +1143,7 @@ func (s *ServImplemented) GetNotificationList(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	notifications, err := s.service.GetNotificationList(ctx, params.Status, params.Limit, params.Offset)
+	notifications, err := s.service.GetNotificationList(ctx, *params.Status, params.Limit, params.Offset)
 	if err != nil {
 		s.log.Error(err)
 		http.Error(w, "failed to retrieve notifications", http.StatusInternalServerError)

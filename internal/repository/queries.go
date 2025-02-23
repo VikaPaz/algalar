@@ -1407,7 +1407,7 @@ func (r *Repository) GetNotificationList(ctx context.Context, status string, lim
 		FROM notifications n
 		INNER JOIN breakages b ON n.id_breakages = b.id
 		INNER JOIN cars c ON b.car_id = c.id
-		WHERE n.status = $1
+		WHERE n.status = COALESCE($1, n.status)
 		ORDER BY n.created_at DESC
 		LIMIT $2 OFFSET $3`
 

@@ -575,7 +575,6 @@ paths:
       parameters:
         - name: status
           in: query
-          required: true
           description: Status of notifications 
           schema:
             type: string

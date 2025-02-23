@@ -433,7 +433,7 @@ type GetNotificationInfoParams struct {
 // GetNotificationListParams defines parameters for GetNotificationList.
 type GetNotificationListParams struct {
 	// Status Status of notifications
-	Status string `form:"status" json:"status"`
+	Status *string `form:"status,omitempty" json:"status,omitempty"`
 
 	// Limit Limit for pagination
 	Limit int `form:"limit" json:"limit"`
@@ -1313,16 +1313,9 @@ func (siw *ServerInterfaceWrapper) GetNotificationList(w http.ResponseWriter, r 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetNotificationListParams
 
-	// ------------- Required query parameter "status" -------------
+	// ------------- Optional query parameter "status" -------------
 
-	if paramValue := r.URL.Query().Get("status"); paramValue != "" {
-
-	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "status"})
-		return
-	}
-
-	err = runtime.BindQueryParameter("form", true, true, "status", r.URL.Query(), &params.Status)
+	err = runtime.BindQueryParameter("form", true, false, "status", r.URL.Query(), &params.Status)
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
 		return
