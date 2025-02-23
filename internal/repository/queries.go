@@ -1359,7 +1359,6 @@ func (r *Repository) GetNotificationInfo(ctx context.Context, notificationID str
 	query := `
 	SELECT 
 		n.note,
-		n.status,
     	CONCAT(d.surname, d.name, d.middle_name) AS driver_name,
 		b.latitude, 
 		b.longitude,
