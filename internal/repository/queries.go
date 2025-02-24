@@ -1282,20 +1282,26 @@ func (r *Repository) CheckDriverExists(ctx context.Context, deviceNumber string)
 // Notification
 func (r *Repository) CreateNotification(new models.Notification) (models.Notification, error) {
 	query := `
+		WITH car_info AS (
+			SELECT id, id_company
+			FROM cars 
+			WHERE id = $1
+			LIMIT 1
+		)
         INSERT INTO notifications (id_user, id_breakages, note, status, created_at)
-        VALUES ($1, $2, $3, $4, $5)
+        VALUES ((SELECT id_company FROM car_ifo), $2, $3, $4, $5)
         RETURNING id, id_user, id_breakages, note, status, created_at`
 
 	var createdNotification models.Notification
 	err := r.conn.QueryRow(query,
-		new.IDUser,
+		new.IDCar,
 		new.IDBreakage,
 		new.Note,
 		new.Status,
 		new.CreatedAt).
 		Scan(
 			&createdNotification.ID,
-			&createdNotification.IDUser,
+			&createdNotification.IDCar,
 			&createdNotification.IDBreakage,
 			&createdNotification.Note,
 			&createdNotification.Status,

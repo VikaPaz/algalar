@@ -1278,7 +1278,7 @@ func (s *ServImplemented) PostBreakage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	notification := models.Notification{
-		IDUser:     ctx.Value("user_id").(string),
+		IDCar:      newBreakage.CarID,
 		IDBreakage: newBreakage.ID,
 		Note:       models.NoteBreakage + ": " + breakage.Description,
 		Status:     models.StatusNew,

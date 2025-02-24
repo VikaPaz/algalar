@@ -180,7 +180,7 @@ type BreakageInfo struct {
 
 type Notification struct {
 	ID         string
-	IDUser     string
+	IDCar      string
 	IDBreakage string
 	Note       string
 	Status     string
