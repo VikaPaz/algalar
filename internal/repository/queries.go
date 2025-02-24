@@ -1410,7 +1410,7 @@ func (r *Repository) GetNotificationList(ctx context.Context, userID string, sta
 		ORDER BY n.created_at DESC
 		LIMIT $3 OFFSET $4`
 
-	r.log.Debugf("Executing query to fetch notifications with user_id:%s tatus: %v, limit: %d, offset: %d", userID, status, limit, offset)
+	r.log.Debugf("Executing query to fetch notifications with user_id: %s status: %v, limit: %d, offset: %d", userID, status, limit, offset)
 
 	rows, err := r.conn.QueryContext(ctx, query, userID, status, limit, offset)
 	if err != nil {
