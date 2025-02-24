@@ -1289,7 +1289,7 @@ func (r *Repository) CreateNotification(new models.Notification) (models.Notific
 			LIMIT 1
 		)
         INSERT INTO notifications (id_user, id_breakages, note, status, created_at)
-        VALUES ((SELECT id_company FROM car_ifo), $2, $3, $4, $5)
+        VALUES ((SELECT id_company FROM car_info), $2, $3, $4, $5)
         RETURNING id, id_user, id_breakages, note, status, created_at`
 
 	var createdNotification models.Notification
