@@ -616,7 +616,7 @@ func (r *Repository) Pressuredata(filter models.PressureDataByWheelIDFilter) ([]
 		JOIN cars c ON w.id_car = c.id
 		WHERE w.id = $1
 		)
-	SELECT s.created_at, s.pressure
+	SELECT s.pressure, s.created_at
 	FROM sensors_data s
 	WHERE s.device_number = (SELECT device_number FROM Device)
 	AND s.sensor_number = (SELECT sensor_number FROM Device)
