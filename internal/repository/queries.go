@@ -609,11 +609,20 @@ func (r *Repository) Temperaturedata(filter models.TemperatureDataByWheelIDFilte
 }
 
 func (r *Repository) Pressuredata(filter models.PressureDataByWheelIDFilter) ([]models.PressureData, error) {
-	query := `SELECT s.pressure, s.created_at 
-	FROM sensors_data s 
-	JOIN wheels w ON s.sensor_number = w.sensor_number 
-	WHERE w.id = $1 AND s.created_at BETWEEN $2 AND $3
-	ORDER BY s.created_at`
+	query := `
+	WITH Device AS (
+		SELECT c.device_number
+		FROM wheels w
+		JOIN cars c ON w.id_car = c.id
+		WHERE w.id = $1
+		)
+	SELECT s.created_at, s.pressure
+	FROM sensors_data s
+	JOIN wheels w ON s.sensor_number = w.sensor_number
+	WHERE w.device_number = (SELECT device_number FROM Device)
+	AND s.created_at BETWEEN $2 AND $3
+	ORDER BY s.created_at;
+	`
 
 	rows, err := r.conn.Query(query, filter.IDWheel, filter.From, filter.To)
 	if err != nil {
