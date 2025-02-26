@@ -1,7 +1,7 @@
-DROP TABLE IF EXISTS notifications;
-DROP TABLE IF EXISTS breakages;
+DROP TABLE IF EXISTS cars_positions;
+-- DROP TABLE IF EXISTS notifications;
+-- DROP TABLE IF EXISTS breakages;
 -- DROP TABLE IF EXISTS position_data;
--- DROP TABLE IF EXISTS cars_positions;
 -- DROP TABLE IF EXISTS sensors_data;
 -- DROP TABLE IF EXISTS drivers;
 -- DROP TABLE IF EXISTS wheels;

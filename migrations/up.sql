@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS sensors_data (
 CREATE TABLE IF NOT EXISTS cars_positions (
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
 	id_company uuid REFERENCES users,
-	id_car uuid REFERENCES cars,
+	id_car uuid REFERENCES cars UNIQUE,
 	latitude DOUBLE PRECISION,
     longitude DOUBLE PRECISION,
 	updated_at TIMESTAMP DEFAULT now()
