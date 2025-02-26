@@ -580,12 +580,19 @@ func (r *Repository) SensorsDataByCarID(carID string) ([]models.SensorsData, err
 
 // Data
 func (r *Repository) Temperaturedata(filter models.TemperatureDataByWheelIDFilter) ([]models.TemperatureData, error) {
-	query := `SELECT s.temperature, s.created_at 
-	FROM sensors_data s 
-	JOIN wheels w ON s.sensor_number = w.sensor_number 
-	WHERE w.id = $1 AND s.created_at 
-	BETWEEN $2 AND $3
-	ORDER BY s.created_at`
+	query := `
+	WITH Device AS (
+		SELECT c.device_number, w.sensor_number
+		FROM wheels w
+		JOIN cars c ON w.id_car = c.id
+		WHERE w.id = $1
+		)
+	SELECT s.temperature, s.created_at
+	FROM sensors_data s
+	WHERE s.device_number = (SELECT device_number FROM Device)
+	AND s.sensor_number = (SELECT sensor_number FROM Device)
+	AND s.created_at BETWEEN $2 AND $3
+	ORDER BY s.created_at;`
 
 	rows, err := r.conn.Query(query, filter.IDWheel, filter.From, filter.To)
 	if err != nil {
