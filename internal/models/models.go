@@ -234,3 +234,8 @@ type CarWithWheels struct {
 	AutoType     string  `json:"AutoType"`
 	Wheels       []Wheel `json:"wheels"`
 }
+
+type UpdateMileage struct {
+	DeviceNum string
+	Mileage   float32
+}

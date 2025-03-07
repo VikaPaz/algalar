@@ -55,6 +55,7 @@ type Service interface {
 	UpdateAllNotificationsStatus(ctx context.Context, status string) error
 	GetNotificationInfo(ctx context.Context, notificationID string) (models.NotificationInfo, error)
 	GetNotificationList(ctx context.Context, status *string, limit, offset int) ([]models.NotificationListItem, error)
+	UpdateWheelsMilagelData(ctx context.Context, update models.UpdateMileage) error
 }
 
 type AuthService interface {
@@ -453,7 +454,36 @@ func (s *ServImplemented) GetAutoList(w http.ResponseWriter, r *http.Request, pa
 // Update car mileage
 // (PUT /mileage)
 func (s *ServImplemented) PutMileage(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+	ctx, err := s.getUserID(r)
+	if err != nil {
+		s.log.Errorf("%v: %v", models.ErrUnauthorizedRequest, err)
+		http.Error(w, models.ErrUnauthorizedRequest.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	var req rest.UpdateMileageRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.log.Errorf("%v: %v", models.ErrInvalidRequestBody, err)
+		http.Error(w, models.ErrInvalidRequestBody.Error(), http.StatusBadRequest)
+		return
+	}
+
+	s.log.Debugf("Mileage data parsed successfully. DeviceNum: %s, NewMileage: %f", req.DeviceNum, req.NewMileage)
+
+	var update = models.UpdateMileage{
+		DeviceNum: req.DeviceNum,
+		Mileage:   req.NewMileage,
+	}
+
+	err = s.service.UpdateWheelsMilagelData(ctx, update)
+	if err != nil {
+		s.log.Errorf("%v: %v", models.ErrFailedToUpdateMileage, err)
+		http.Error(w, models.ErrFailedToUpdateMileage.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	s.log.Debugf("Mileage data updated successfully for device number: %s", req.DeviceNum)
+	w.WriteHeader(http.StatusOK)
 }
 
 // Wheel

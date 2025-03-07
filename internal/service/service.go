@@ -51,6 +51,7 @@ type Repository interface {
 	GetNotificationList(ctx context.Context, userID string, status *string, limit, offset int) ([]models.NotificationListItem, error)
 	CheckDriverExists(ctx context.Context, deviceNumber string) (bool, error)
 	CreateOrUpdateCarsPosition(ctx context.Context, position models.CurrentPosition) (models.CurrentPosition, error)
+	UpdateWheelsMilagelData(ctx context.Context, update models.UpdateMileage) error
 }
 
 type Service struct {
@@ -533,6 +534,24 @@ func (s *Service) GetNotificationList(ctx context.Context, status *string, limit
 	}
 
 	return notifications, nil
+}
+
+// Mileage
+func (s *Service) UpdateWheelsMilagelData(ctx context.Context, update models.UpdateMileage) error {
+	s.log.Debugf("Starting mileage update for device number: %s, mileage: %f", update.DeviceNum, update.Mileage)
+
+	err := s.repo.UpdateWheelsMilagelData(ctx, update)
+	if err == models.ErrNoContent {
+		s.log.Errorf("Failed to update mileage for device number %s: %v", update.DeviceNum, models.ErrNoContent)
+		return fmt.Errorf("failed to update mileage: %w", models.ErrNoContent)
+	}
+	if err != nil {
+		s.log.Errorf("Failed to update mileage for device number %s: %v", update.DeviceNum, err)
+		return fmt.Errorf("failed to update mileage: %w", err)
+	}
+
+	s.log.Debugf("Mileage update successful for device number: %s", update.DeviceNum)
+	return nil
 }
 
 func NewService(repo Repository, log *logrus.Logger) *Service {

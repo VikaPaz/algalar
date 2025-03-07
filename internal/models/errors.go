@@ -41,4 +41,5 @@ var (
 	ErrFailedToCreatePosition        = errors.New("failed to create position")
 	ErrFailedToUpdateCurrentPosition = errors.New("failed to update current car position")
 	ErrFailedToRetrieveNotifications = errors.New("failed to retrieve notifications")
+	ErrFailedToUpdateMileage         = errors.New("failed to update mileage data")
 )

@@ -304,6 +304,47 @@ func (r *Repository) GetCarByStateNumber(stateNumber string) (models.Car, error)
 	return car, nil
 }
 
+// Mileage
+func (r *Repository) UpdateWheelsMilagelData(ctx context.Context, update models.UpdateMileage) error {
+	query := `
+		WITH car_info AS (
+		SELECT id, id_company
+		FROM cars
+		WHERE device_number = $1
+	)
+	UPDATE wheels
+	SET mileage = mileage + $2
+	FROM car_info
+	WHERE wheels.id_car = car_info.id
+	AND wheels.id_company = car_info.id_company;
+	`
+
+	r.log.Debugf("Executing mileage update query for device number: %s, mileage increment: %f", update.DeviceNum, update.Mileage)
+
+	res, err := r.conn.ExecContext(ctx, query,
+		update.DeviceNum,
+		update.Mileage,
+	)
+	if err != nil {
+		r.log.Errorf("Failed to execute query for device number %s: %v", update.DeviceNum, err)
+		return fmt.Errorf("%w: %v", models.ErrFailedToExecuteQuery, err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		r.log.Errorf("Failed to get affected rows count for device number %s: %v", update.DeviceNum, err)
+		return fmt.Errorf("%w: %v", models.ErrFailedToProcessRow, err)
+	}
+
+	if rowsAffected == 0 {
+		r.log.Infof("No rows were affected by the mileage update query for device number: %s", update.DeviceNum)
+		return models.ErrNoContent
+	}
+
+	r.log.Debugf("Successfully updated mileage for device number: %s, affected rows: %d", update.DeviceNum, rowsAffected)
+	return nil
+}
+
 // Wheel
 func (r *Repository) CreateWheel(wheel models.Wheel) (string, error) {
 	query := `
